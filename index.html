@@ -134,6 +134,10 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .lv-val{font-size:12px;color:var(--muted);min-width:40px;text-align:right}
 .recording .layer-vol{display:none!important}
 .ed-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.denoise-btn{display:inline-flex;align-items:center;gap:6px}
+.denoise-btn[hidden]{display:none}
+.denoise-btn .ic{width:16px;height:16px}
+.switch.mon-switch + .switch.mon-switch{flex-basis:100%;justify-content:flex-end}
 .danger-link{color:var(--err)}
 .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
 .me-photo{display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -861,6 +865,7 @@ legend{padding:0}
         <span id="lvVal" class="lv-val mono">100%</span>
       </div>
       <div class="ed-links">
+        <button type="button" id="edDenoise" class="btn small denoise-btn" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/><path d="M4 20 20 4"/></svg>Clear background noise</button>
         <button type="button" id="edSaveSfx" class="linkish" hidden>Save selection as a sound effect</button>
         <button type="button" id="edRemoveLayer" class="linkish danger-link" hidden>Remove layer</button>
       </div>
@@ -879,6 +884,7 @@ legend{padding:0}
         <button type="button" id="fxLibBtn" class="btn small">Effects library</button>
       </div>
       <label class="switch mon-switch" id="monitorBtn" for="monitorSw"><span>Hear yourself</span><input type="checkbox" id="monitorSw" role="switch"></label>
+      <label class="switch mon-switch" id="cleanBtn" for="cleanSw"><span>Clear background noise</span><input type="checkbox" id="cleanSw" role="switch"></label>
     </div>
 
     <div id="status1" class="status" role="status" aria-live="polite"></div>
@@ -3131,6 +3137,7 @@ function edReadouts(){
   $('#edDel').textContent = 'Delete'; $('#edDel').setAttribute('aria-label', sel ? 'Delete ' + fmtS(sel.b - sel.a) : 'Delete');
   $('#edLayer').disabled = state.layers.length >= MAX_LAYERS || !has;
   $('#edSaveSfx').hidden = !sel;
+  $('#edDenoise').hidden = !has || rec.state !== 'idle';
   $('#edRemoveLayer').hidden = state.activeLayer === 0;
   $('#edRemoveLayer').textContent = 'Remove layer ' + (state.activeLayer + 1);
   const where = (state.layers.length > 1 ? 'layer ' + (state.activeLayer + 1) : 'your song') + ' at ' + fmtT(state.activeLayer === 0 ? Math.min(state.playhead1, state.layers[0].segs.reduce((d, s) => Math.max(d, segEnd(s)), 0)) : state.playhead1);
@@ -3747,7 +3754,88 @@ function edStop(keepLabel){
 $('#edPlay').addEventListener('click', () => { if (edPlayState.playing) edStop(); else { stopAllPlayback(); edPlay(); } });
 
 /* ---------- a finished recording goes into the song ---------- */
+/* Clear background noise: learn what the room sounds like from the quiet moments (hum, fan, hiss),
+   then turn that sound down everywhere while keeping the voice (spectral noise gate). */
+function fftInPlace(re, im){
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++){ let bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit; if (i < j){ let t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+  for (let len = 2; len <= n; len <<= 1){
+    const ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang), half = len >> 1;
+    for (let i = 0; i < n; i += len){
+      let cr = 1, ci = 0;
+      for (let k = 0; k < half; k++){
+        const a = i + k, b = a + half, xr = re[b] * cr - im[b] * ci, xi = re[b] * ci + im[b] * cr;
+        re[b] = re[a] - xr; im[b] = im[a] - xi; re[a] += xr; im[a] += xi;
+        const t = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = t;
+      }
+    }
+  }
+}
+async function denoise(x, sr, onProgress){
+  const N = 1024, hop = 256, bins = N / 2 + 1, win = new Float32Array(N);
+  for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / N);
+  if (x.length < N * 2) return new Float32Array(x);
+  const frames = Math.ceil((x.length - N) / hop) + 1;
+  // 1. the noise: average spectrum of the quietest tenth of the recording
+  const energy = new Float32Array(frames);
+  for (let f = 0; f < frames; f++){ let e = 0; const o = f * hop; for (let i = 0; i < N; i += 4){ const v = x[o + i] || 0; e += v * v; } energy[f] = e; }
+  const order = Array.from(energy.keys()).sort((a, b) => energy[a] - energy[b]);
+  const pick = order.slice(0, Math.max(4, Math.floor(frames * 0.1)));
+  const noise = new Float32Array(bins), re = new Float32Array(N), im = new Float32Array(N);
+  for (const f of pick){
+    const o = f * hop; for (let i = 0; i < N; i++){ re[i] = (x[o + i] || 0) * win[i]; im[i] = 0; }
+    fftInPlace(re, im); for (let k = 0; k < bins; k++) noise[k] += Math.hypot(re[k], im[k]);
+  }
+  for (let k = 0; k < bins; k++) noise[k] /= pick.length;
+  // 2. turn that sound down in every frame (extra below 80 Hz for rumble), smoothed so it doesn't warble
+  const out = new Float32Array(x.length + N), norm = new Float32Array(x.length + N), prev = new Float32Array(bins).fill(1), g = new Float32Array(bins);
+  const lowBin = Math.floor(80 / (sr / N)), OVER = 2.2, FLOOR = 0.06;
+  for (let f = 0; f < frames; f++){
+    const o = f * hop;
+    for (let i = 0; i < N; i++){ re[i] = (x[o + i] || 0) * win[i]; im[i] = 0; }
+    fftInPlace(re, im);
+    for (let k = 0; k < bins; k++){
+      const m = Math.hypot(re[k], im[k]) + 1e-12, nz = noise[k] * OVER;
+      let gain = m > nz ? Math.sqrt(1 - (nz * nz) / (m * m)) : 0;
+      if (k < lowBin) gain *= 0.3;
+      g[k] = Math.max(FLOOR, gain, prev[k] * 0.55);   // quick attack, gentle release
+    }
+    for (let k = 0; k < bins; k++){ const sm = (g[Math.max(0, k - 1)] + 2 * g[k] + g[Math.min(bins - 1, k + 1)]) / 4; prev[k] = g[k]; re[k] *= sm; im[k] *= sm; if (k > 0 && k < N / 2){ re[N - k] = re[k]; im[N - k] = -im[k]; } }
+    for (let i = 0; i < N; i++) im[i] = -im[i];   // inverse FFT by the conjugate trick
+    fftInPlace(re, im);
+    for (let i = 0; i < N; i++){ out[o + i] += (re[i] / N) * win[i]; norm[o + i] += win[i] * win[i]; }
+    if ((f & 511) === 0){ if (onProgress) onProgress(f / frames); await nextTick(); }
+  }
+  const y = new Float32Array(x.length);
+  for (let i = 0; i < x.length; i++) y[i] = norm[i] > 1e-6 ? out[i] / norm[i] : 0;
+  return y;
+}
+// clean every take in the song (Undo takes it back)
+async function denoiseSong(statusEl, quiet){
+  const srcs = [...new Set(state.clips.map((c) => c.src))], map = new Map();
+  for (let i = 0; i < srcs.length; i++){
+    const src = srcs[i];
+    const raw = await denoise(src.raw, src.sr, (f) => setStatus(statusEl, 'Clearing background noise' + (srcs.length > 1 ? ' (' + (i + 1) + ' of ' + srcs.length + ')' : '') + '… ' + Math.round(f * 100) + '%'));
+    const ns = { id:uid('src'), raw, sr:src.sr, events:src.events, hist:src.hist, segs:src.segs, key:null, buffer:null };
+    storeRender(ns, await renderTake(ns.raw, ns.sr, ns.events, state.key), state.key); saveSrc(ns);
+    map.set(src, ns);
+  }
+  state.layers.forEach((l) => l.segs.forEach((sg) => { if (map.has(sg.src)) sg.src = map.get(sg.src); }));
+  peakCache.clear(); invalidateJoined();
+  if (!quiet) setStatus(statusEl, '');
+  return srcs.length;
+}
+$('#edDenoise').addEventListener('click', async () => {
+  if (state.busy || rec.state !== 'idle' || !state.clips.length) return;
+  stopAllPlayback();
+  const b = $('#edDenoise'); b.disabled = true;
+  try { await denoiseSong($('#status1')); histNext = 'Cleared background noise'; renderClips(); setStatus($('#status1'), 'Background noise cleared. Undo brings it back.', 'ok'); toast('Background noise cleared'); }
+  catch (err){ setStatus($('#status1'), 'Noise couldn\'t be cleared: ' + (err.message || err), 'error'); }
+  finally { b.disabled = false; }
+});
+$('#cleanSw').addEventListener('change', () => { lib.cleanVoice = $('#cleanSw').checked; saveLib(); if (lib.cleanVoice) setStatus($('#status1'), 'New takes will have their background noise cleared automatically. To clean what you already recorded, press Clear background noise under the wave.', 'ok'); });
 async function placeRecording(raw, sr, events){
+  if (lib.cleanVoice){ try { raw = await denoise(raw, sr, (f) => setStatus($('#status1'), 'Clearing background noise… ' + Math.round(f * 100) + '%')); } catch (_) {} }
   const label = 'your recording';
   const src = await makeSrc(raw, sr, events, label);
   const layer = state.layers[rec.layer] || state.layers[0];
@@ -3857,6 +3945,8 @@ async function aiMakeSong(){
   hist.muted = true;
   try {
     await prepareAll($('#status1'));
+    // 0. clear the background noise
+    await denoiseSong($('#status1'), true); done.push('cleared the background noise');
     // 1. cut the silence
     const used = state.layers.filter((l) => l.segs.length), single = used.length === 1;
     let cutSec = 0, cuts = 0;
@@ -5434,7 +5524,7 @@ function saveLib(){ clearTimeout(libTimer); libTimer = setTimeout(() => store.se
 async function loadLib(){
   const v = await store.get('lib');
   if (v && typeof v === 'object'){
-    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'likes', 'activity', 'sales', 'withdrawals', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media', 'customFx', 'board', 'savedFx']) if (Array.isArray(v[k])) lib[k] = v[k]; if (v.fxUses && typeof v.fxUses === 'object') lib.fxUses = v.fxUses; }
+    lib.premium = !!v.premium; lib.cleanVoice = !!v.cleanVoice; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'likes', 'activity', 'sales', 'withdrawals', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media', 'customFx', 'board', 'savedFx']) if (Array.isArray(v[k])) lib[k] = v[k]; if (v.fxUses && typeof v.fxUses === 'object') lib.fxUses = v.fxUses; }
 }
 const uid = (p) => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -6915,10 +7005,11 @@ const TOURS = {
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where an effect should start (or select a part), then hold a pad to add it to your song. A quick tap still just turns a pad on or off. Tap a gold effect strip to change it or remove it.' },
     { sel:'#pads', title:'Add all your effects', text:'After you record, turn on the pads you want (or tap a preset), then hold the gold "Hold to add all your effects" button. Your song plays and every effect you have on goes in from the red line until you let go. If you selected a part, it stops at the end of the part.' },
     { sel:'.fx-tools', title:'Edit, add and your library', text:'Edit lets you drag your pads into any order, or tap the red x to take one off. Add effects (in Edit) shows what\'s trending, more effects and the basics: + puts one on your pads, the flag saves it. Effects library is yours: Created (effects you mixed yourself) and Saved. On uses an effect right now, even while you record.' },
+    { sel:'#cleanBtn', title:'Clear background noise', text:'Turn this on and every new take has its background noise (hum, fan, room hiss) cleared, so it\'s just your voice. To clean what you already recorded, press Clear background noise under the wave. Undo brings the noise back.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does.' },
     { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on, then name it or skip. Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
-    { sel:'#aiMake', title:'Let AI make my song', text:'Want it done for you? AI trims the silence, balances your layers, adds voice effects that suit your vibe, plans a soft intro, a beat drop and a big chorus, then makes the music. It all lands on the last step, and Undo on step 1 takes its edits back.' },
+    { sel:'#aiMake', title:'Let AI make my song', text:'Want it done for you? AI clears the background noise, trims the silence, balances your layers, adds voice effects that suit your vibe, plans a soft intro, a beat drop and a big chorus, then makes the music. It all lands on the last step, and Undo on step 1 takes its edits back.' },
     { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to step 2, Prep and adjust.' }
   ],
   p2:[
@@ -7205,7 +7296,7 @@ setKey(state.key);
 renderClips(); updateAiMode();
 renderPresets();
 loadLib().catch(() => {}).then(async () => {
-  loadFxBoard(); renderPresets(); renderDrafts(); syncPremiumUI(); renderHome();
+  loadFxBoard(); renderPresets(); $('#cleanSw').checked = !!lib.cleanVoice; renderDrafts(); syncPremiumUI(); renderHome();
   if (needsProfile()) showOnboarding();
   // pick up where you left off
   try {
