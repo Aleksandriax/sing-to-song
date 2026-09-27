@@ -969,6 +969,7 @@ legend{padding:0}
     <input id="renameInput" class="text" type="text" maxlength="14" placeholder="e.g. Chorus voice">
     <div class="actions">
       <button type="button" id="renameCancel" class="btn">Cancel</button>
+      <button type="button" id="renameSkip" class="btn" hidden>Skip</button>
       <button type="button" id="renameSave" class="btn primary">Save</button>
     </div>
   </div>
@@ -1966,6 +1967,7 @@ function openRename(i, undo){
   $('#renameCancel').textContent = 'Cancel';
   $('#renameInput').value = presetName(i);
   $('#renameSave').disabled = !$('#renameInput').value.trim();
+  $('#renameSkip').hidden = !renameUndo;
   $('#renameSheet').hidden = false;
   setTimeout(() => { $('#renameInput').focus(); $('#renameInput').select(); }, 50);
 }
@@ -1985,6 +1987,7 @@ function saveRename(){
   saveLib(); closeRename(); renderPresets();
 }
 $('#renameSave').addEventListener('click', saveRename);
+$('#renameSkip').addEventListener('click', () => { renameUndo = null; closeRename(); });
 $('#renameInput').addEventListener('input', () => { $('#renameSave').disabled = !$('#renameInput').value.trim(); });
 $('#renameCancel').addEventListener('click', closeRename);
 $('#renameInput').addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); saveRename(); } else if (e.key === 'Escape') closeRename(); });
@@ -4899,7 +4902,7 @@ const TOURS = {
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does, and slide up or down to hear it get stronger or weaker.' },
-    { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on to it, then give it a name. Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
+    { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on to it. You can name it or skip. Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
     { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to step 2, Prep and adjust.' }
   ],
   p2:[
