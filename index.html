@@ -360,7 +360,6 @@ legend{padding:0}
 .gen-panel textarea,.gen-panel .text{background:rgba(3,14,24,.55);border-color:rgba(153,246,228,.22)}
 .ref-pick{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .ref-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:72px;padding:10px;border-radius:14px;border:1.5px solid rgba(153,246,228,.3);background:rgba(45,212,191,.08);color:#e6fffb;font:inherit;font-size:13px;font-weight:700;text-align:center;cursor:pointer}
-.ref-tile span{font-size:20px;line-height:1}
 .ref-tile:active{transform:scale(.98)}
 .ref-row:empty{display:none}
 .ref-box{display:flex;flex-direction:column;gap:8px}
@@ -377,7 +376,11 @@ legend{padding:0}
 .point-list li > span{flex:1;min-width:0;overflow-wrap:anywhere}
 .point-list li.empty-note > span{color:var(--faint);font-style:italic}
 .tstamp{appearance:none;border:0;background:var(--bg);color:var(--accent-b);font-size:12px;padding:6px 8px;border-radius:8px;cursor:pointer;flex:none}
-.x{appearance:none;border:0;background:transparent;color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:19px;line-height:1;cursor:pointer;flex:none}
+.ic{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.18em;flex:none}
+.x .ic{width:18px;height:18px;vertical-align:middle}
+.cover-mark .ic{width:44%;height:44%;stroke-width:2}
+.ref-tile .ic{width:22px;height:22px}
+.x{appearance:none;display:inline-grid;place-items:center;border:0;background:transparent;color:var(--muted);width:32px;height:32px;border-radius:8px;font-size:19px;line-height:1;cursor:pointer;flex:none}
 .x:hover{background:var(--line);color:var(--text)}
 
 /* progress */
@@ -628,8 +631,8 @@ legend{padding:0}
       <input id="artists" class="text" type="text" maxlength="200" placeholder="Artists you like">
       <div class="ref-box">
         <div class="ref-pick">
-          <label class="ref-tile file-pick"><span aria-hidden="true">♪</span>Upload a song file<input id="refFile" class="sr-only" type="file" accept="audio/*,video/*"></label>
-          <button type="button" id="refLinkBtn" class="ref-tile"><span aria-hidden="true">🔗</span>Upload song link</button>
+          <label class="ref-tile file-pick"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5.5l10-2.2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>Upload a song file<input id="refFile" class="sr-only" type="file" accept="audio/*,video/*"></label>
+          <button type="button" id="refLinkBtn" class="ref-tile"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M10.5 13.5a3.8 3.8 0 0 0 5.4 0l3.1-3.1a3.8 3.8 0 0 0-5.4-5.4l-1.2 1.2"/><path d="M13.5 10.5a3.8 3.8 0 0 0-5.4 0L5 13.6a3.8 3.8 0 0 0 5.4 5.4l1.2-1.2"/></svg>Upload song link</button>
         </div>
         <label class="sr-only" for="refLink">Song link</label>
         <input id="refLink" class="text" type="url" maxlength="300" placeholder="Paste the song link" hidden>
@@ -734,7 +737,7 @@ legend{padding:0}
       </div>
       <button type="button" id="dRefresh" class="icon-btn" aria-label="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></button>
     </div>
-    <div id="dBack" hidden><button type="button" id="dBackBtn" class="linkish">← All creators</button></div>
+    <div id="dBack" hidden><button type="button" id="dBackBtn" class="linkish"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg> All creators</button></div>
     <div id="dList" class="d-list"></div>
   </main>
 
@@ -929,7 +932,7 @@ legend{padding:0}
     <input id="renameInput" class="text" type="text" maxlength="14" placeholder="e.g. Chorus voice">
     <div class="actions">
       <button type="button" id="renameCancel" class="btn">Cancel</button>
-      <button type="button" id="renameSave" class="btn primary">Save name</button>
+      <button type="button" id="renameSave" class="btn primary">Save</button>
     </div>
   </div>
 </div>
@@ -1068,6 +1071,18 @@ function h(tag, props, ...kids){
     el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
   }
   return el;
+}
+const ICONS = {
+  note:'<path d="M9 18V5.5l10-2.2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
+  link:'<path d="M10.5 13.5a3.8 3.8 0 0 0 5.4 0l3.1-3.1a3.8 3.8 0 0 0-5.4-5.4l-1.2 1.2"/><path d="M13.5 10.5a3.8 3.8 0 0 0-5.4 0L5 13.6a3.8 3.8 0 0 0 5.4 5.4l1.2-1.2"/>',
+  check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  x:'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  back:'<path d="M15 5l-7 7 7 7"/>'
+};
+function icon(name, cls){
+  const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  el.setAttribute('viewBox', '0 0 24 24'); el.setAttribute('aria-hidden', 'true'); el.setAttribute('class', 'ic' + (cls ? ' ' + cls : ''));
+  el.innerHTML = ICONS[name]; return el;
 }
 function setStatus(el, msg, kind){ el.textContent = msg || ''; el.className = 'status' + (kind ? ' ' + kind : ''); }
 function roundRectPath(g, x, y, w, hh, r){
@@ -1871,9 +1886,10 @@ function renderPresets(){
     let timer = 0, longDone = false;
     const save = () => {
       if (!PADS.some((p) => fx[p.id].on)){ setStatus($('#status1'), 'Turn on the pads you like first, then hold a number to save them.', 'error'); return; }
+      const undo = { preset:lib.presets[i], active:activePreset, name:presetName(i) };
       lib.presets[i] = snapshot(); activePreset = i; saveLib(); renderPresets();
       if (navigator.vibrate) navigator.vibrate(15);
-      openRename(i, true);
+      openRename(i, undo);
     };
     b.addEventListener('pointerdown', (e) => {
       longDone = false;
@@ -1902,26 +1918,37 @@ function renderPresets(){
   }), h('button', { type:'button', class:'preset preset-off', 'aria-label':'Turn all pads off', onclick:() => { resetPads(); renderPresets(); } },
     h('span', { class:'preset-num' }, 'Off')));
 }
-let renameIdx = null;
-function openRename(i, justSaved){
-  renameIdx = i;
-  $('#renameTitle').textContent = justSaved ? 'Saved to ' + (i + 1) + '. Name it?' : 'Name preset ' + (i + 1);
-  $('#renameCancel').textContent = justSaved ? 'Skip' : 'Cancel';
+let renameIdx = null, renameUndo = null;
+// after holding a number to save, you name it; Cancel puts back what was there before
+function openRename(i, undo){
+  renameIdx = i; renameUndo = undo || null;
+  $('#renameTitle').textContent = 'Name preset ' + (i + 1);
+  $('#renameCancel').textContent = 'Cancel';
   $('#renameInput').value = presetName(i);
+  $('#renameSave').disabled = !$('#renameInput').value.trim();
   $('#renameSheet').hidden = false;
   setTimeout(() => { $('#renameInput').focus(); $('#renameInput').select(); }, 50);
 }
-function closeRename(){ $('#renameSheet').hidden = true; renameIdx = null; }
+function closeRename(){
+  if (renameUndo && renameIdx != null){
+    lib.presets[renameIdx] = renameUndo.preset; activePreset = renameUndo.active;
+    lib.presetNames = lib.presetNames || []; lib.presetNames[renameIdx] = renameUndo.name;
+    saveLib(); renderPresets();
+  }
+  $('#renameSheet').hidden = true; renameIdx = null; renameUndo = null;
+}
 function saveRename(){
-  if (renameIdx == null) return;
+  if (renameIdx == null || !$('#renameInput').value.trim()) return;
+  renameUndo = null;
   lib.presetNames = lib.presetNames || [];
   lib.presetNames[renameIdx] = $('#renameInput').value.trim().slice(0, 14);
   saveLib(); closeRename(); renderPresets();
 }
 $('#renameSave').addEventListener('click', saveRename);
+$('#renameInput').addEventListener('input', () => { $('#renameSave').disabled = !$('#renameInput').value.trim(); });
 $('#renameCancel').addEventListener('click', closeRename);
 $('#renameInput').addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); saveRename(); } else if (e.key === 'Escape') closeRename(); });
-$('#renameSheet').addEventListener('click', (e) => { if (e.target === $('#renameSheet')) closeRename(); });
+
 $('#monitorBtn').addEventListener('click', () => {
   state.monitor = !state.monitor;
   $('#monitorBtn').setAttribute('aria-pressed', state.monitor ? 'true' : 'false');
@@ -2822,7 +2849,8 @@ function drawTimeline(){
   state.sfx2.forEach((p) => {
     const x = tlX(p.at) - sl; if (x < -10 || x > w + 10) return;
     g.fillStyle = '#fbbf24'; g.beginPath(); g.arc(x, top + wh - 16, 9, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#1a1206'; g.fillText('♪', x, top + wh - 12);
+    g.save(); g.translate(x - 6, top + wh - 22); g.scale(0.5, 0.5); g.strokeStyle = '#1a1206'; g.lineWidth = 2.6; g.lineCap = 'round'; g.lineJoin = 'round';
+    g.stroke(new Path2D('M9 18V5.5l10-2.2V16')); g.fillStyle = '#1a1206'; g.beginPath(); g.arc(6.5, 18, 2.5, 0, Math.PI * 2); g.arc(16.5, 16, 2.5, 0, Math.PI * 2); g.fill(); g.restore();
   });
   g.textAlign = 'left';
   // playhead
@@ -2848,7 +2876,7 @@ function renderMarkerList(){
   $('#mkList').replaceChildren(...sorted.map((m, i) => h('li', { class:m.text ? '' : 'empty-note' },
     h('button', { type:'button', class:'tstamp mono', 'aria-label':'Go to note ' + (i + 1), onclick:() => { setPlayhead2(m.t, true); selectMarker(m.id); } }, (i + 1) + ' · ' + fmtT(m.t) + (m.end != null ? '–' + fmtT(m.end) : '')),
     h('span', { text:m.text || 'Empty note' }),
-    h('button', { type:'button', class:'x', 'aria-label':'Delete note ' + (i + 1), onclick:() => deleteMarker(m.id) }, '×'))));
+    h('button', { type:'button', class:'x', 'aria-label':'Delete note ' + (i + 1), onclick:() => deleteMarker(m.id) }, icon('x')))));
   refreshMood();
 }
 function updateTlReadouts(){
@@ -2888,7 +2916,7 @@ function updateDurUI(m){
   $('#mkLabel').textContent = 'Note for the AI at ' + fmtT(m.t) + (has ? ' to ' + fmtT(m.end) : '');
   $('#mkDurBtn').hidden = has; $('#mkDurCtl').hidden = !has;
   if (has){
-    $('#mkRange').textContent = fmtT(m.t) + ' → ' + fmtT(m.end) + ' (' + fmtS(m.end - m.t) + ')';
+    $('#mkRange').textContent = fmtT(m.t) + ' to ' + fmtT(m.end) + ' (' + fmtS(m.end - m.t) + ')';
   }
 }
 function setNoteEnd(m, end){
@@ -4023,7 +4051,7 @@ function renderSfxPanel(){
   $('#sfxPlaced').replaceChildren(...(placed.length ? placed.map((p) => h('li', {},
     h('button', { type:'button', class:'tstamp mono', onclick:() => setPlayhead2(p.at, true) }, fmtT(p.at)),
     h('span', { text:p.name }),
-    h('button', { type:'button', class:'x', 'aria-label':'Remove ' + p.name, onclick:() => { state.sfx2 = state.sfx2.filter((x) => x !== p); renderSfxPanel(); drawTimeline(); syncResultSfx(); scheduleAutosave(); } }, '×'))) : [h('li', { class:'empty-note' }, h('span', {}, 'None yet'))]));
+    h('button', { type:'button', class:'x', 'aria-label':'Remove ' + p.name, onclick:() => { state.sfx2 = state.sfx2.filter((x) => x !== p); renderSfxPanel(); drawTimeline(); syncResultSfx(); scheduleAutosave(); } }, icon('x')))) : [h('li', { class:'empty-note' }, h('span', {}, 'None yet'))]));
 }
 const sourceLabel = (it) => it.source === 'take' ? 'From your takes' : it.source === 'file' ? 'Uploaded' : it.source === 'bought' ? 'Bought from ' + it.from : 'Saved from ' + it.from;
 function placeSfx(it){
@@ -4417,7 +4445,7 @@ $('#premBuy').addEventListener('click', () => {
 });
 function syncPremiumUI(){
   $('#blendSw').checked = lib.premium && state.blend;
-  document.querySelectorAll('.premium-tag').forEach((t) => { t.textContent = lib.premium ? 'Premium ✓' : 'Premium'; });
+  document.querySelectorAll('.premium-tag').forEach((t) => { t.textContent = 'Premium'; if (lib.premium){ t.append(' '); t.append(icon('check')); } });
 }
 $('#blendSw').addEventListener('change', (e) => {
   if (!lib.premium){ e.target.checked = false; openPremium('AI Blend is part of Premium.'); return; }
@@ -4498,10 +4526,10 @@ function miniSwitch(label, checked, onchange){
   return h('label', { class:'mini' }, input, label);
 }
 function deleteBtn(onconfirm){
-  const b = h('button', { type:'button', class:'x', 'aria-label':'Delete' }, '×'); let armed = 0;
+  const b = h('button', { type:'button', class:'x', 'aria-label':'Delete' }, icon('x')); let armed = 0;
   b.addEventListener('click', () => {
     if (armed){ clearTimeout(armed); onconfirm(); return; }
-    b.textContent = 'Sure?'; b.classList.add('armed'); armed = setTimeout(() => { armed = 0; b.textContent = '×'; b.classList.remove('armed'); }, 3000);
+    b.textContent = 'Sure?'; b.classList.add('armed'); armed = setTimeout(() => { armed = 0; b.replaceChildren(icon('x')); b.classList.remove('armed'); }, 3000);
   });
   return b;
 }
@@ -4674,7 +4702,7 @@ const TOURS = {
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does, and slide up or down to hear it get stronger or weaker.' },
-    { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on to it (you can name it then). Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
+    { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on to it, then give it a name. Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
     { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to step 2, Prep and adjust.' }
   ],
   p2:[
@@ -4785,7 +4813,7 @@ $('#helpBtn').addEventListener('click', () => {
 const hue = (t) => { let h = 0; for (const ch of t || '') h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
 function coverEl(title, cover, extraClass){
   const el = h('span', { class:'cover' + (extraClass ? ' ' + extraClass : ''), style:'--c1:hsl(' + hue(title) + ' 70% 45%);--c2:hsl(' + ((hue(title) + 60) % 360) + ' 75% 55%)' });
-  el.append(cover ? h('img', { src:cover, alt:'' }) : h('span', { class:'cover-mark', 'aria-hidden':'true' }, (title || '?')[0].toUpperCase()));
+  el.append(cover ? h('img', { src:cover, alt:'' }) : extraClass && /is-sound/.test(extraClass) ? h('span', { class:'cover-mark', 'aria-hidden':'true' }, icon('note')) : h('span', { class:'cover-mark', 'aria-hidden':'true' }, (title || '?')[0].toUpperCase()));
   return el;
 }
 const PLAY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
@@ -4851,10 +4879,10 @@ function resetProject(){
 function renderAlbum(){
   const tiles = [];
   lib.songs.forEach((s) => tiles.push({ key:'lib:' + s.id, title:s.title, cover:s.cover, cap:s.title, get:() => store.get('blob:' + s.id).then(decodeBlob) }));
-  lib.sfx.filter((x) => x.source === 'take' || x.source === 'file').forEach((x) => tiles.push({ key:'sfx:' + x.id, title:'♪ ' + x.name, cap:x.name, sound:true, get:() => getSfxBuffer(x) }));
+  lib.sfx.filter((x) => x.source === 'take' || x.source === 'file').forEach((x) => tiles.push({ key:'sfx:' + x.id, title:x.name, cap:x.name, sound:true, get:() => getSfxBuffer(x) }));
   $('#pAlbum').replaceChildren(...(tiles.length ? tiles.map((t) => {
     const btn = h('button', { type:'button', class:'album-tile', 'aria-label':'Play ' + t.cap },
-      coverEl(t.sound ? '♪' : t.title, t.cover), h('span', { class:'cap', text:t.cap }));
+      coverEl(t.title, t.cover, t.sound ? 'is-sound' : ''), h('span', { class:'cap', text:t.cap }));
     btn.addEventListener('click', async () => {
       const was = pv.key === t.key;
       document.querySelectorAll('.album-tile.playing').forEach((x) => x.classList.remove('playing'));
@@ -4867,7 +4895,7 @@ function renderAlbum(){
 // step 3: album photo for this song
 function paintCoverThumb(){
   const r = state.result;
-  $('#coverThumb').replaceChildren(r && r.cover ? h('img', { src:r.cover, alt:'' }) : h('span', { class:'cover-mark', 'aria-hidden':'true' }, '♪'));
+  $('#coverThumb').replaceChildren(r && r.cover ? h('img', { src:r.cover, alt:'' }) : h('span', { class:'cover-mark', 'aria-hidden':'true' }, icon('note')));
   $('#coverLabel').firstChild.textContent = r && r.cover ? 'Change' : 'Add';
 }
 $('#coverFile').addEventListener('change', async (e) => {
