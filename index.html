@@ -4240,14 +4240,14 @@ const FEE = 0.15;
 const money = (v) => '$' + (Math.round(v * 100) / 100).toFixed(2);
 const lib = {
   profile:{ name:'', handle:'', bio:'', isPublic:true, postSongs:true, allowSaves:true, sellSfx:true, showLikes:true },
-  songs:[], sfx:[], saved:[], likes:[], follows:[], requests:[], purchases:[], presets:[], drafts:[], media:[], premium:false, verify:{ status:'none', link:'' }
+  songs:[], sfx:[], saved:[], likes:[], activity:[], follows:[], requests:[], purchases:[], presets:[], drafts:[], media:[], premium:false, verify:{ status:'none', link:'' }
 };
 let libTimer = 0;
 function saveLib(){ clearTimeout(libTimer); libTimer = setTimeout(() => store.set('lib', JSON.parse(JSON.stringify(lib))), 250); }
 async function loadLib(){
   const v = await store.get('lib');
   if (v && typeof v === 'object'){
-    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'likes', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media']) if (Array.isArray(v[k])) lib[k] = v[k]; }
+    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'likes', 'activity', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media']) if (Array.isArray(v[k])) lib[k] = v[k]; }
 }
 const uid = (p) => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -4805,7 +4805,7 @@ function likeBtn(kind, item, c){
   b.addEventListener('click', (e) => {
     e.stopPropagation();
     if (isLiked(kind, id)) lib.likes = lib.likes.filter((l) => l.key !== likeKey(kind, id));
-    else lib.likes.unshift({ key:likeKey(kind, id), kind, id, creator:c.id, at:Date.now() });
+    else { lib.likes.unshift({ key:likeKey(kind, id), kind, id, creator:c.id, at:Date.now() }); track('like', kind + ':' + id); }
     saveLib();
     const nb = likeBtn(kind, item, c); b.replaceWith(nb);
   });
@@ -4813,24 +4813,24 @@ function likeBtn(kind, item, c){
 }
 function songRow(s, c){
   const play = h('button', { type:'button', class:'btn small round', 'aria-label':'Play ' + s.title }, 'Play');
-  play.addEventListener('click', () => previewToggle('song:' + s.id, () => s.mine ? store.get('blob:' + s.id).then(decodeBlob) : exampleSongBuffer(s), play));
+  play.addEventListener('click', () => { if (pv.key !== 'song:' + s.id) track('play', 'song:' + s.id); previewToggle('song:' + s.id, () => s.mine ? store.get('blob:' + s.id).then(decodeBlob) : exampleSongBuffer(s), play); });
   const saved = lib.saved.some((x) => x.id === s.id);
   let action;
   if (s.mine) action = h('span', { class:'tag' }, 'Yours');
   else if (!s.allowSave) action = h('span', { class:'tag muted' }, 'Listen only');
-  else action = h('button', { type:'button', class:'btn small', disabled:saved, onclick:() => { lib.saved.unshift({ kind:'song', id:s.id, title:s.title, from:c.name, creator:c.id }); saveLib(); renderDiscover(); } }, saved ? 'Saved' : 'Save');
+  else action = h('button', { type:'button', class:'btn small', disabled:saved, onclick:() => { lib.saved.unshift({ kind:'song', id:s.id, title:s.title, from:c.name, creator:c.id }); track('save', 'song:' + s.id); renderDiscover(); } }, saved ? 'Saved' : 'Save');
   return h('div', { class:'item' }, s.cover ? h('img', { class:'cover cover-sm', src:s.cover, alt:'' }) : null, play,
     h('div', { class:'item-main' }, h('div', { class:'title-row' }, h('span', { class:'item-title', text:s.title }), likeBtn('song', s, c)), h('span', { class:'item-meta', text:'Song · ' + c.name + ' · ' + lenTxt(s.mine ? (s.dur || 0) : exampleDur(s)) })), action);
 }
 function sfxRow(x, c){
   const meta = h('span', { class:'item-meta', text:'Sound effect · ' + c.name }); sfxLen(x, meta, 'Sound effect · ' + c.name);
   const play = h('button', { type:'button', class:'btn small round', 'aria-label':'Play ' + x.name }, 'Play');
-  play.addEventListener('click', () => previewToggle('sfx:' + x.id, () => getSfxBuffer(x), play));
+  play.addEventListener('click', () => { if (pv.key !== 'sfx:' + x.id) track('play', 'sfx:' + x.id); previewToggle('sfx:' + x.id, () => getSfxBuffer(x), play); });
   let action;
   if (x.mine) action = h('span', { class:'tag' }, x.forSale ? money(x.price) + ' · yours' : 'Yours');
   else if (owned(x.id)) action = h('span', { class:'tag' }, 'In your library');
   else if (x.forSale) action = h('button', { type:'button', class:'btn small primary', onclick:() => openCheckout(x, c) }, 'Buy ' + money(x.price));
-  else action = h('button', { type:'button', class:'btn small', onclick:async () => { await addSfxToLib({ name:x.name, recipe:x.recipe, source:'saved', from:c.name, origin:x.id }); renderDiscover(); showAd(); } }, 'Get free');
+  else action = h('button', { type:'button', class:'btn small', onclick:async () => { await addSfxToLib({ name:x.name, recipe:x.recipe, source:'saved', from:c.name, origin:x.id }); track('save', 'sfx:' + x.id); renderDiscover(); showAd(); } }, 'Get free');
   return h('div', { class:'item' }, play,
     h('div', { class:'item-main' }, h('div', { class:'title-row' }, h('span', { class:'item-title', text:x.name }), likeBtn('sfx', x, c)), meta), action);
 }
@@ -4856,11 +4856,31 @@ function creatorCard(c){
   return card;
 }
 // trending: most followed first, shuffled a little each time you refresh
-function trendOrder(items, score, key){
-  if (!dState.refresh) return items.slice().sort((a, b) => score(b) - score(a));
-  const r = mulberry(dState.refresh * 9973 + hashStr(key)), w = new Map(items.map((x) => [x, Math.log10(score(x) + 10) * (0.6 + r() * 0.8)]));
-  return items.slice().sort((a, b) => w.get(b) - w.get(a));
+/* Trending: what's new and getting interactions fast.
+   Every tap counts: opening a profile or playing (1), a like (3), a save or free get (4), a buy (6).
+   Recent interactions count far more than old ones, and the total is divided by the post's age,
+   so a new post that's getting attention quickly rises above an older, bigger one. */
+const TREND_W = { view:1, play:1, like:3, save:4, buy:6 };
+function track(type, key){
+  lib.activity.push({ k:key, type, t:Date.now() });
+  if (lib.activity.length > 600) lib.activity = lib.activity.slice(-600);
+  saveLib();
 }
+function seedStats(id){
+  // the example posts' made-up history (a real server would count everyone's taps)
+  let x = 0; for (const ch of id) x = (x * 131 + ch.charCodeAt(0)) >>> 0;
+  const likes = baseLikes(id);
+  return { ageH:3 + (x % 200), views:likes * (3 + (x >> 3) % 5), likes, saves:Math.round(likes * (0.08 + ((x >> 5) % 10) / 100)), buys:Math.round(likes * ((x >> 7) % 6) / 100) };
+}
+function trendScore(key, id, created){
+  const now = Date.now(), ex = /^ex-/.test(id), st = ex ? seedStats(id) : { ageH:Math.max(0, (now - (created || now)) / 3.6e6), views:0, likes:0, saves:0, buys:0 };
+  let pts = st.views * TREND_W.view + st.likes * TREND_W.like + st.saves * TREND_W.save + st.buys * TREND_W.buy;
+  for (const a of lib.activity){ if (a.k !== key) continue; const hrs = (now - a.t) / 3.6e6; pts += (TREND_W[a.type] || 1) * (1 + 24 / (1 + hrs)); }
+  return pts / Math.pow(st.ageH + 2, 1.4);
+}
+const itemTrend = (kind, it) => trendScore(kind + ':' + it.id, it.id, it.created);
+const creatorTrend = (c) => trendScore('creator:' + c.id, c.id, null) + c.songs.reduce((a, s) => a + itemTrend('song', s), 0) + c.sfx.reduce((a, x) => a + itemTrend('sfx', x), 0);
+function trendOrder(items, score){ return items.map((x) => [x, score(x)]).sort((a, b) => b[1] - a[1]).map((p) => p[0]); }
 function savedSfxRow(x){
   const pre = 'Sound effect' + (x.from ? ' · ' + x.from : ''), meta = h('span', { class:'item-meta', text:pre }); sfxLen(x, meta, pre);
   const play = h('button', { type:'button', class:'btn small round', 'aria-label':'Play ' + x.name }, 'Play');
@@ -4896,14 +4916,14 @@ function renderDiscover(){
     rows = EXAMPLES.filter((c) => (lib.follows.includes(c.id) || lib.requests.includes(c.id)) && match(c.name, c.handle, c.bio)).map(creatorCard);
     empty = 'You aren\'t following anyone yet. Switch to Trending and follow the singers you like.';
   }
-  else if (dState.view === 'creators') rows = trendOrder(EXAMPLES.filter((c) => match(c.name, c.handle, c.bio)), followers, 'c').map(creatorCard);
+  else if (dState.view === 'creators') rows = trendOrder(EXAMPLES.filter((c) => match(c.name, c.handle, c.bio)), creatorTrend).map(creatorCard);
   else if (dState.view === 'songs' && sub !== 'trending'){
     lib.saved.filter((x) => x.kind === 'song').forEach((sv) => { const c = all.find((y) => y.songs.some((z) => z.id === sv.id)), s = c && c.songs.find((y) => y.id === sv.id); if (s && match(s.title, c.name)) rows.push(songRow(s, c)); });
     empty = 'Songs you save show up here. Switch to Trending to find some.';
   }
   else if (dState.view === 'songs'){
     const pairs = []; all.filter((c) => c.isPublic).forEach((c) => c.songs.forEach((s) => { if (match(s.title, c.name)) pairs.push({ s, c }); }));
-    rows = trendOrder(pairs, (x) => followers(x.c), 's').map((x) => songRow(x.s, x.c));
+    rows = trendOrder(pairs, (x) => itemTrend('song', x.s)).map((x) => songRow(x.s, x.c));
   }
   else if (sub !== 'trending'){
     rows = lib.sfx.filter((x) => (x.source === 'bought' || x.source === 'saved') && match(x.name, x.from)).map(savedSfxRow);
@@ -4911,7 +4931,7 @@ function renderDiscover(){
   }
   else {
     const pairs = []; all.filter((c) => c.isPublic).forEach((c) => c.sfx.forEach((x) => { if (match(x.name, c.name)) pairs.push({ x, c }); }));
-    rows = trendOrder(pairs, (p) => followers(p.c) * (p.x.forSale ? 1.2 : 1), 'x').map((p) => sfxRow(p.x, p.c));
+    rows = trendOrder(pairs, (p) => itemTrend('sfx', p.x)).map((p) => sfxRow(p.x, p.c));
   }
   list.replaceChildren(...(rows.length ? rows : [h('p', { class:'empty' }, q ? 'Nothing matches "' + dState.q + '".' : empty)]));
 }
@@ -4940,7 +4960,7 @@ document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if
 $('#sheetBuy').addEventListener('click', async () => {
   if (!checkoutItem) return;
   const { x, c } = checkoutItem, fee = x.price * FEE;
-  lib.purchases.unshift({ id:x.id, name:x.name, from:c.name, price:x.price, fee, at:Date.now() });
+  lib.purchases.unshift({ id:x.id, name:x.name, from:c.name, price:x.price, fee, at:Date.now() }); track('buy', 'sfx:' + x.id);
   await addSfxToLib({ name:x.name, recipe:x.recipe, source:'bought', from:c.name, origin:x.id, price:x.price });
   closeCheckout(); renderDiscover(); showAd();
 });
@@ -4990,7 +5010,7 @@ function openPublicView(tab){ pubStack.length = 0; pubWho = null; if (tab) pubTa
 function openCreatorView(c){
   if (c.mine){ openPublicView('songs'); return; }
   if (!$('#pubView').hidden) pubStack.push({ who:pubWho, tab:pubTab });
-  pubWho = c.id; pubTab = 'songs'; previewStop(); renderPublicView(); $('#pubView').hidden = false; $('#pubView').scrollTop = 0;
+  pubWho = c.id; pubTab = 'songs'; track('view', 'creator:' + c.id); previewStop(); renderPublicView(); $('#pubView').hidden = false; $('#pubView').scrollTop = 0;
 }
 function closePublicView(){
   previewStop();
@@ -5332,7 +5352,7 @@ const TOURS = {
   ],
   discover:[
     { sel:'#dFilters', title:'Discover', text:'Search creators, songs and sounds. Creators marked Example are made up to show how this works; your own public songs and sounds show up here too.' },
-    { sel:'#dSubRow', title:'Trending, Following and Saved', text:'Creators: Trending or the singers you Follow. Songs and Sounds: Trending, or the ones you Saved or bought. The arrow on the right refreshes the list.' },
+    { sel:'#dSubRow', title:'Trending, Following and Saved', text:'Trending is what\'s new and getting attention fast: profile views, plays, likes, saves and buys all count, the most recent count the most, and newer posts get a boost. Following shows singers you follow; Saved shows songs and sounds you saved or bought. The arrow refreshes the list.' },
     { sel:'#dList', title:'Follow and get sounds', text:'Follow singers, play their songs, and get sound effects. Paid sounds are test purchases for now, so no money moves. A purple check means the account is verified.' }
   ],
   profile:[
