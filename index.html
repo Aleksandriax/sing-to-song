@@ -250,8 +250,10 @@ body:not(.recording) #recTime{display:none}
 .prof-head{cursor:pointer}
 .pstat{appearance:none;border:0;font:inherit;cursor:pointer}
 .trophy-wrap{display:inline-flex;flex:none}
-.ic.trophy{width:18px;height:18px;stroke-width:2.2}
-.pub-name .ic.trophy{width:24px;height:24px}
+.trophy{width:20px;height:20px;flex:none}
+.pub-name .trophy{width:26px;height:26px}
+.trophy.first{overflow:visible;width:24px;height:24px;margin:-2px}
+.pub-name .trophy.first{width:30px;height:30px}
 .rank{flex:none;width:26px;text-align:center;font-size:15px;font-weight:700;color:var(--muted)}
 .rank.top{color:#fbbf24}
 #dSub label[hidden]{display:none}
@@ -4892,10 +4894,23 @@ function leaderScore(c){
   return pts;
 }
 function leaderboard(){ return creators().filter((c) => c.isPublic).map((c) => [c, leaderScore(c)]).sort((a, b) => b[1] - a[1]).map((p) => p[0]); }
-const TROPHY = ['#fbbf24', '#cbd5e1', '#d97706'];
+// filled trophies with a darker outline; 1st is brighter and glows
+const TROPHY = [{ fill:'#ffd84d', line:'#a16207' }, { fill:'#e2e8f0', line:'#64748b' }, { fill:'#e08a3c', line:'#7c2d12' }];
+function trophySvg(i){
+  const { fill, line } = TROPHY[i], el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  el.setAttribute('viewBox', '0 0 24 24'); el.setAttribute('aria-hidden', 'true'); el.setAttribute('class', 'trophy' + (i === 0 ? ' first' : ''));
+  el.innerHTML = (i === 0 ? '<defs><radialGradient id="trGlow"><stop offset="0" stop-color="#ffd84d" stop-opacity=".6"/><stop offset=".55" stop-color="#ffc928" stop-opacity=".22"/><stop offset="1" stop-color="#ffc928" stop-opacity="0"/></radialGradient></defs><circle cx="12" cy="11" r="12" fill="url(#trGlow)"/>' : '')
+    + '<path d="M8 6.2H5.2a3 3 0 0 0 3 4M16 6.2h2.8a3 3 0 0 1-3 4" fill="none" stroke="' + line + '" stroke-width="2.4" stroke-linecap="round"/>'
+    + '<path d="M8 6.2H5.2a3 3 0 0 0 3 4M16 6.2h2.8a3 3 0 0 1-3 4" fill="none" stroke="' + fill + '" stroke-width="1.2" stroke-linecap="round"/>'
+    + '<path d="M7.5 3.5h9v6.5a4.5 4.5 0 0 1-9 0z" fill="' + fill + '" stroke="' + line + '" stroke-width="1.1" stroke-linejoin="round"/>'
+    + '<path d="M10.8 14.3h2.4v2.9h-2.4z" fill="' + fill + '" stroke="' + line + '" stroke-width="1"/>'
+    + '<rect x="7.8" y="17.2" width="8.4" height="3" rx="1.2" fill="' + fill + '" stroke="' + line + '" stroke-width="1.1"/>'
+    + (i === 0 ? '<path d="M10 5.5v3.2" stroke="#fff8d6" stroke-width="1.3" stroke-linecap="round" opacity=".9"/>' : '');
+  return el;
+}
 function trophyFor(c){
   const i = leaderboard().findIndex((x) => x.id === c.id); if (i < 0 || i > 2) return null;
-  const t = icon('trophy', 'trophy'); t.style.color = TROPHY[i];
+  const t = trophySvg(i);
   const w = h('span', { class:'trophy-wrap', title:['1st', '2nd', '3rd'][i] + ' on the leaderboard', 'aria-label':['1st', '2nd', '3rd'][i] + ' on the leaderboard' }); w.append(t); return w;
 }
 function creatorCard(c){
