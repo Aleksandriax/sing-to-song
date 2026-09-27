@@ -141,9 +141,10 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .tour{position:fixed;inset:0;z-index:60}
 .tour-spot{position:fixed;border-radius:16px;box-shadow:0 0 0 9999px rgba(8,5,16,.74),0 0 0 3px var(--accent-b);pointer-events:none;transition:left .25s,top .25s,width .25s,height .25s}
 .tour-spot.none{box-shadow:0 0 0 9999px rgba(8,5,16,.74)}
-.tour-card{position:fixed;left:16px;right:16px;max-width:448px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.tour-card{position:fixed;left:16px;right:16px;max-width:448px;margin:0 auto;max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
 .tour-card h2{font-size:20px}
-.tour-card p{margin:0;font-size:15px;color:var(--text)}
+.tour-card p{margin:0;font-size:15px;color:var(--text);overflow-y:auto;min-height:0;flex:0 1 auto}
+.tour-card > :not(p){flex:none}
 .tour-count{font-size:12px;color:var(--accent-b)}
 .tour-actions{display:flex;align-items:center;gap:8px;margin-top:6px}
 .tour-actions .spacer{flex:1}
@@ -331,6 +332,9 @@ body:not(.recording) #recTime{display:none}
 .item-meta .shield-mark{display:inline-flex;vertical-align:-2px;margin-right:4px;color:#a78bfa}
 .item-meta .shield-mark .ic{width:14px;height:14px}
 .sheet-backdrop#detSheet{z-index:70}
+.toast{position:fixed;left:50%;bottom:calc(104px + env(safe-area-inset-bottom));z-index:95;max-width:min(88vw,420px);padding:12px 18px;border-radius:14px;background:#2a2140;border:1px solid rgba(255,255,255,.14);color:#fff;font-size:15px;font-weight:700;text-align:center;box-shadow:0 12px 34px rgba(0,0,0,.45);pointer-events:none;transform:translate(-50%,calc(100% + 140px));transition:transform .25s ease}
+.toast.show{transform:translate(-50%,0)}
+@media (prefers-reduced-motion: reduce){ .toast{transition:none} }
 .sheet-backdrop#sheet{z-index:72}
 #detSheet .sheet{max-height:88vh;overflow-y:auto}
 .det-kind{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
@@ -1192,6 +1196,8 @@ legend{padding:0}
     </div>
   </div>
 </div>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
 <div id="detSheet" class="sheet-backdrop" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="detTitle">
@@ -2754,8 +2760,15 @@ function goHist(to){
   updHistBtns();
 }
 // undo and redo say what they changed
-function undo(){ if (hist.idx <= 0) return; const e = hist.stack[hist.idx], l = e.label; goHist(hist.idx - 1); putBack(e.before); setStatus($('#status1'), 'Undid: ' + l, ''); }
-function redo(){ if (hist.idx >= hist.stack.length - 1) return; const e = hist.stack[hist.idx + 1], l = e.label; goHist(hist.idx + 1); putBack(e.after); setStatus($('#status1'), 'Redid: ' + l, ''); }
+function undo(){ if (hist.idx <= 0) return; const e = hist.stack[hist.idx], l = e.label; goHist(hist.idx - 1); putBack(e.before); setStatus($('#status1'), 'Undid: ' + l, ''); toast('Undid: ' + l); }
+function redo(){ if (hist.idx >= hist.stack.length - 1) return; const e = hist.stack[hist.idx + 1], l = e.label; goHist(hist.idx + 1); putBack(e.after); setStatus($('#status1'), 'Redid: ' + l, ''); toast('Redid: ' + l); }
+// a short message that slides up from the bottom of the screen, then goes away
+let toastTimer = 0;
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  t.classList.remove('show'); void t.offsetWidth; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.classList.remove('show'); toastTimer = setTimeout(() => { t.hidden = true; }, 250); }, 2200);
+}
 function putBack(pos){
   if (!pos) return;
   state.activeLayer = Math.min(pos.layer, state.layers.length - 1); state.playhead1 = clamp(pos.t, 0, Math.max(pos.t, songDur()));
@@ -3278,7 +3291,7 @@ $('#toStep2').addEventListener('click', async () => {
     await refreshSongKey($('#status1'));
     if (!state.markers.length) state.markers.push({ id:nextId++, t:3.8, end:null, text:'beat comes in here, upbeat' });
     setStatus($('#status1'), '');
-    renderClips(); showPage(2);
+    histNext = 'Loaded the demo song'; renderClips(); showPage(2);
     setStatus($('#status2'), 'Demo song loaded.', 'ok');
   } catch (err){
     setStatus($('#status1'), 'Couldn\'t load the demo song: ' + (err.message || err), 'error');
@@ -5822,47 +5835,50 @@ $('#obCreate').addEventListener('click', () => {
 const TOURS = {
   home:[
     { sel:'#tileNew', title:'Create new', text:'Start a new song. If you were in the middle of one, it goes to Drafts first, so nothing is lost.' },
-    { sel:'#tileDrafts', title:'Drafts', text:'Songs you saved to finish later. Tap to see them and open one.' },
+    { sel:'#tileDrafts', title:'Drafts', text:'Songs you saved to finish later. Tap play to hear one before you open it. The two icons duplicate it and rename it, Open picks up where you left off, and the x deletes it.' },
     { sel:'#libHead', title:'Your songs', text:'Finished songs you saved live here. Tap play to listen, and add an album photo.' },
-    { sel:'.tabbar', title:'Menu', text:'Discover to find singers and sounds, Create for your songs, Profile for your account. Everything saves on this device as you go.' }
+    { sel:'.tabbar', title:'Menu', text:'Discover to find singers, songs and sounds. Studio to make songs. Profile for your account. Everything saves on this device as you go.' }
   ],
   p1:[
-    { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
-    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. The round button on the left of each layer jumps the red line to the start of that layer. Tap the wave to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it. Drag its pink handles inward to trim it; drag them back out to bring trimmed audio back (a dotted outline shows how far), then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end of the audio to record more there, or add audio from a file or your camera roll. Double-tap a clip to delete it. With a section selected, Fade lets you fade in its start and fade out its end. With more than one layer, tap a layer to change its volume with the slider under the wave; tap an empty layer and press Delete to remove it. Hold a clip, then drag, to move it; drag it up or down to put it on another layer, or below the last layer to make a new one. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Spread two fingers on the wave to zoom in, pinch them together to zoom out (or use + and −). + Layer stacks up to 4 layers; the other layers play while you record.' },
-    { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
+    { sel:'#recBtn', title:'Record', text:'Tap to start and tap again to stop, or hold it and let go. Your phone is enough, no headphones needed. While recording you can switch pads and presets. Press Done when you\'re finished; the arrows undo and redo (it says what it undid), and play listens back.' },
+    { sel:'.editor', title:'Your wave', text:'Tap the wave to place the red line, or drag its round handle. Slide to scroll. Spread two fingers to zoom in, pinch to zoom out, or use + and −. The round button left of each layer jumps the red line to that layer\'s start. Tap outside the wave to hide the red line.' },
+    { sel:'.editor', title:'Edit a part', text:'Tap a part to select it. Drag its pink handles in to trim, or back out to bring trimmed audio back. Then Duplicate, Delete, Split at the red line, or Fade its start and end. Hold a part and drag to move it, even onto another layer. Double-tap a part to delete it.' },
+    { sel:'.editor', title:'Layers', text:'+ Layer stacks up to 4 layers, and the new one records from the red line while the others play. Tap a layer to set its volume. Tap an empty layer and press Delete to remove it. The + at the end of your audio records more there or adds audio from a file or your camera roll.' },
+    { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where an effect should start (or select a part), then hold a pad. Tap a gold effect strip to change it or remove it.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
-    { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does, and slide up or down to hear it get stronger or weaker.' },
-    { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on to it. You can name it or skip. Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
+    { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does.' },
+    { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on, then name it or skip. Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
     { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to step 2, Prep and adjust.' }
   ],
   p2:[
-    { sel:'.tl-card', title:'Your song timeline', text:'Scroll through your song. Tap the wave, then + to pin a note for the AI, like "beat drops here". Add duration to turn a note into a box you can slide and stretch over a whole part.' },
-    { sel:'#sfxHead', title:'Sound effects', text:'Press Add on a sound, then drag its gold note along your song to place it. Tap a note to delete it from the song. Hold a sound in the list to delete it for good. Tap + to record a sound effect, upload one, or cut one from part of your song, then name it and set a price to sell it (Premium).' },
+    { sel:'.tl-card', title:'Your song timeline', text:'Drag the red line\'s handle to move through your song. Tap the wave, then + to pin a note for the AI, like "beat drops here". Add duration to turn a note into a box over a whole part.' },
+    { sel:'#sfxHead', title:'Sound effects', text:'Press Add on a sound, then drag its gold pin along your song. Tap a pin, then the trash can, to take it off. Hold a sound in the list to delete it for good. Tap + to record one, upload one, or pick part of your song, then name it and set a price to sell it (Premium).' },
     { sel:'#vibe', title:'Generation prompt', text:'Words like slow, dance, acoustic, 80s synth or dark shape the music. The key comes from your voice, or write one here, like "in A minor".' },
     { sel:'#artists', title:'Artists you like', text:'Artists are style hints only: tempo, sound and mood. The app never copies their songs, recordings or voice.' },
     { sel:'.ref-box', title:'A song you like', text:'Upload a song file and the app matches its tempo and energy. A link is passed to the AI as a hint; the app can\'t open links.' },
-    { sel:'.blend-panel', title:'AI Blend', text:'Premium. On: the AI polishes your voice so it comes through clearer, evens out your volume and blends the music around it. Off: it only makes music that fits your voice.' },
+    { sel:'.blend-panel', title:'AI Blend', text:'Premium. On: the AI polishes your voice, evens out your volume and blends the music around it. Off: it only makes music that fits your voice.' },
     { sel:'#savePlain', title:'Save without music', text:'Want just your voice? This saves your edited recording, with its effects and sound effects, and no AI music.' },
     { sel:'#genBtn', title:'Generate', text:'The music is built around your voice: its key, tempo and melody. The backing uses the app\'s own synths and drums, never real recordings.' }
   ],
   p3:[
     { sel:'#viz', title:'Your song', text:'Play it and drag the slider to move around.' },
     { sel:'#regenBtn', title:'Regenerate', text:'Not quite right? Get a new arrangement of the same singing.' },
-    { sel:'#keepPanel', title:'Keep it', text:'Add an album photo, save it to your songs, or save a draft to finish later.' },
+    { sel:'#keepPanel', title:'Keep it', text:'Add an album photo, pick Public (on Discover) or Private (just you), then save it to your songs. Or save a draft and name it to finish later.' },
     { sel:'#saveAudio', title:'Save to your phone', text:'On a phone this opens the share menu: Save Video puts it in your camera roll, Save to Files keeps the audio.' }
   ],
   discover:[
     { sel:'#dFilters', title:'Discover', text:'Search creators, songs and sounds. Creators marked Example are made up to show how this works; your own public songs and sounds show up here too.' },
-    { sel:'#dSubRow', title:'Trending, Following and Saved', text:'Trending is what\'s new and getting attention fast: profile views, plays, likes, saves and buys all count, the most recent count the most, and newer posts get a boost. Leaderboard ranks creators by everything they\'ve earned (followers, likes, saves, buys); the top three get a trophy. Following shows singers you follow; Saved shows songs and sounds you saved or bought. The arrow refreshes the list.' },
-    { sel:'#dList', title:'Follow and get sounds', text:'Follow singers, play their songs, and get sound effects. Paid sounds are test purchases for now, so no money moves. A purple check means the account is verified.' }
+    { sel:'#dSubRow', title:'Trending, Following, Saved and Leaderboard', text:'Trending is what\'s new and getting attention fast: views, plays, likes, saves and buys all count, and recent ones count most. Leaderboard ranks creators by everything they\'ve earned; the top three get a trophy. Following shows who you follow; Saved shows what you saved or bought. The arrow refreshes.' },
+    { sel:'#dList', title:'Songs and sounds', text:'Tap play to listen. Tap the heart to like, the gold flag to save (tap again to unsave), or the price to buy. Buys are test purchases for now. A shield means a verified creator\'s sound is protected from copies.' },
+    { sel:'#dList', title:'Details and creators', text:'Tap a song or sound to see its description, whether it\'s protected, and who made it. Tap the creator to open their profile, then tap the boxes under their name to see their songs, sounds, followers and following.' }
   ],
   profile:[
-    { sel:'#pMe', title:'Your profile', text:'Tap this card to see your profile full screen the way others see it: your published songs, sounds and who you follow. Tap Edit to change your photo, name and bio.' },
+    { sel:'#pMe', title:'Your profile', text:'Tap this card to see your profile full screen the way others see it. Tap the boxes to switch between songs, sounds, followers, following and likes. Tap Edit to change your photo, banner, name and bio, and to adjust how the photos sit.' },
     { sel:'#pAlbumHead', title:'Your album', text:'The songs and sound effects you made. Tap one to play it. Things you save or buy from others are in Discover, under Saved.' },
     { sel:'#pPlanRow', title:'Premium', text:'Premium adds AI Blend, lets you sell your sound effects (you keep 85%, the app keeps 15%), and removes ads. Upgrades are test upgrades for now.' },
-    { sel:'#pVerifyRow', title:'Verified badge', text:'Ask for a purple check that shows this account is really you, so no one can pretend to be you. Verified creators\' sounds are protected: copies of them can\'t be posted or sold by anyone else.' },
-    { sel:'#pSwitches', title:'Privacy and selling', text:'Public account: people can find you on Discover. Post my new songs: songs you save start out public. Let people save my songs: others can keep a copy. Sell my sounds: your sound effects can be bought (Premium).' },
-    { sel:'.manage', title:'Manage songs and sounds', text:'Make each song or sound public or private, set prices, upload sound effects, or delete them.' },
+    { sel:'#pVerifyRow', title:'Verified badge', text:'Ask for a purple check that shows this account is really you. Verified creators\' sounds are protected: copies of them can\'t be posted or sold by anyone else.' },
+    { sel:'#pSwitches', title:'Privacy and selling', text:'Public account: people can find you on Discover. Let people save my songs: others can keep a copy. Show my likes and Show followers and following: turn off to keep them to yourself. Sell my sounds: your sound effects can be bought (Premium).' },
+    { sel:'.manage', title:'Manage songs and sounds', text:'Make each song or sound public or private, write a description people see when they tap it, set prices, upload sound effects, or delete them.' },
     { sel:'#pEarnHead', title:'Earnings', text:'What you earn from selling sounds (after the 15% app fee) adds up here. Withdraw once you have at least $5; each withdrawal has a fee of $0.50 + 1%. It\'s test mode until real payments are connected.' },
     { sel:'#helpBtn', title:'Need help?', text:'Tap here any time to see all the tutorials again.' }
   ]
@@ -5905,18 +5921,19 @@ function showTourStep(){
   const spot = $('#tourSpot'), card = $('#tourCard');
   if (el && !el.closest('.tabbar')) el.scrollIntoView({ block:'center' });
   requestAnimationFrame(() => {
-    const vh = window.innerHeight;
-    card.style.top = card.style.bottom = '';
+    // the card always fits on screen, so Next and Skip are always there to tap
+    const vh = window.innerHeight, edge = 16, ch = card.offsetHeight, fit = (y) => Math.max(edge, Math.min(vh - ch - edge, y));
+    card.style.bottom = '';
     if (el && el.getClientRects().length){
       const r = el.getBoundingClientRect(), pad = 8;
       spot.classList.remove('none');
       Object.assign(spot.style, { left:(r.left - pad) + 'px', top:(r.top - pad) + 'px', width:(r.width + pad * 2) + 'px', height:(r.height + pad * 2) + 'px' });
-      if (r.top + r.height / 2 < vh / 2) card.style.top = Math.min(vh - 220, r.bottom + pad + 12) + 'px';
-      else card.style.bottom = Math.min(vh - 220, vh - r.top + pad + 12) + 'px';
+      const below = r.bottom + pad + 12, above = r.top - pad - 12 - ch;
+      card.style.top = fit(vh - below >= ch + edge ? below : above >= edge ? above : (r.top + r.height / 2 < vh / 2 ? vh - ch - edge : edge)) + 'px';
     } else {
       spot.classList.add('none');
       Object.assign(spot.style, { left:'50%', top:'50%', width:'0px', height:'0px' });
-      card.style.top = Math.max(24, vh / 2 - 110) + 'px';
+      card.style.top = fit(vh / 2 - ch / 2) + 'px';
     }
     $('#tourNext').focus({ preventScroll:true });
   });
