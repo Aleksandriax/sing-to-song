@@ -1748,7 +1748,8 @@ PADS.forEach((p) => {
       if (g.wasOn) s.on = false;                                   // tap an active pad: off
       else if (performance.now() - g.t >= HOLD_MS) s.on = false;   // held still: on only while held
     }
-    g = null; paintPad(p); pushPads(); padEdited(true);
+    const lbl = g.moved && s.on ? p.name + ' ' + padText(p) : p.name + (s.on ? ' on' : ' off');
+    g = null; paintPad(p); pushPads(); padEdited(true, lbl);
   };
   el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up);
   el.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -1890,7 +1891,7 @@ async function applyPaint(lane, a, b, over, name){
   }
   } finally { paint.busy = false; document.body.classList.remove('painting'); }
   state.sel1 = null;
-  setStatus($('#status1'), name + ' added from ' + fmtT(a) + ' to ' + fmtT(b) + '.', 'ok');
+  histNext = name + ' added'; setStatus($('#status1'), name + ' added from ' + fmtT(a) + ' to ' + fmtT(b) + '.', 'ok');
   renderClips();
 }
 
@@ -1904,10 +1905,10 @@ function erasePreset(i){
   presetTrash = null; saveLib(); renderPresets();
 }
 document.addEventListener('pointerdown', (e) => { if (presetTrash != null && !e.target.closest('.preset-trash')){ presetTrash = null; renderPresets(); } }, true);
-function padEdited(full){
+function padEdited(full, label){
   // changing the pads after loading a preset doesn't change the preset; hold its number to save over it
-  if (activePreset == null) return;
-  activePreset = null; renderPresets();
+  if (activePreset != null){ activePreset = null; renderPresets(); }
+  if (full && rec.state === 'idle' && !cd.on && state.page === 1){ histNext = label || 'Voice effects'; pushHist(); }
 }
 const snapshot = () => { const o = {}; PADS.forEach((p) => { o[p.id] = Object.assign({}, fx[p.id]); }); return o; };
 const presetNames = (o) => PADS.filter((p) => o[p.id] && o[p.id].on).map((p) => p.name);
@@ -1950,11 +1951,11 @@ function renderPresets(){
       if (pr && lastPresetTap.i === i && now - lastPresetTap.t < 380){ lastPresetTap = { i:null, t:0 }; presetTrash = i; renderPresets(); return; }
       lastPresetTap = pr ? { i, t:now } : { i:null, t:0 };
       if (pr && activePreset === i){ activePreset = null; renderPresets(); }
-      else if (pr){ applyPreset(pr); activePreset = i; renderPresets(); }
+      else if (pr){ applyPreset(pr); histNext = 'Loaded ' + label; pushHist(); activePreset = i; renderPresets(); }
       else { setStatus($('#status1'), 'Hold a number to save your pads to it.', ''); setTimeout(() => { if (/Hold a number/.test($('#status1').textContent)) setStatus($('#status1'), ''); }, 2500); }
     });
     return b;
-  }), h('button', { type:'button', class:'preset preset-off', 'aria-label':'Turn all pads off', onclick:() => { resetPads(); renderPresets(); } },
+  }), h('button', { type:'button', class:'preset preset-off', 'aria-label':'Turn all pads off', onclick:() => { resetPads(); renderPresets(); if (rec.state === 'idle'){ histNext = 'All pads off'; pushHist(); } } },
     h('span', { class:'preset-num' }, 'Off')));
 }
 let renameIdx = null, renameUndo = null;
@@ -2273,7 +2274,22 @@ function drawEditor(){
     const mv = state.moving, { y, h:lh } = box(mv.lane);
     g.lineWidth = 3; g.strokeStyle = pink;
     roundRectPath(g, X(mv.seg.at), y + 2, Math.max(6, X(segEnd(mv.seg)) - X(mv.seg.at)), lh - 4, 8); g.stroke();
-    if (mv.lane === 0){ const bx = X(dropBoundary(mv.seg, mv.dropT)); g.fillStyle = pink; g.fillRect(bx - 2, y - 2, 4, lh + 4); }
+    if (mv.target === mv.lane){
+      if (mv.lane === 0){ const bx = X(dropBoundary(mv.seg, mv.dropT)); g.fillStyle = pink; g.fillRect(bx - 2, y - 2, 4, lh + 4); }
+    } else {
+      // where it will land in the other layer
+      const len = segLen(mv.seg), xa = X(mv.newAt), xb = X(mv.newAt + len);
+      g.setLineDash([5, 4]); g.lineWidth = 2.5; g.strokeStyle = '#fbbf24'; g.fillStyle = 'rgba(251,191,36,.14)';
+      if (mv.target === 'new'){
+        const yb = hh - 16; roundRectPath(g, ED_L - 4, yb - 2, w - ED_L + 2, 16, 6); g.fill(); g.stroke();
+        g.setLineDash([]); g.fillStyle = '#fbbf24'; g.font = '700 11px "Figtree", system-ui, sans-serif'; g.fillText('Let go for a new layer', ED_L + 6, yb + 10);
+      } else {
+        const tb = box(mv.target);
+        if (mv.target === 0){ g.setLineDash([]); const bx = X(boundaryIn(state.layers[0], mv.newAt + len / 2)); g.fillStyle = '#fbbf24'; g.fillRect(bx - 2, tb.y - 2, 4, tb.h + 4); }
+        else { roundRectPath(g, xa, tb.y + 2, Math.max(6, xb - xa), tb.h - 4, 8); g.fill(); g.stroke(); }
+      }
+      g.setLineDash([]);
+    }
   }
   // a + at the end of each layer's audio, so you can see where it ends and continue from there
   ed.plus = [];
@@ -2430,6 +2446,7 @@ $('#fxSave').addEventListener('click', async () => {
     storeRender(ns, await renderTake(ns.raw, ns.sr, events, state.key, (f) => setStatus($('#status1'), 'Updating the effect… ' + Math.round(f * 100) + '%')), state.key);
     saveSrc(ns); seg.src = ns;
   } finally { paint.busy = false; document.body.classList.remove('painting'); }
+  histNext = changed.map((x) => fxName(x.key) + (x.removed ? ' removed' : ' changed')).join(', ');
   setStatus($('#status1'), changed.every((x) => x.removed) ? 'Effect removed.' : 'Effect updated.', 'ok');
   renderClips();
 });
@@ -2437,13 +2454,15 @@ $('#fxSave').addEventListener('click', async () => {
 /* ---------- undo and redo ---------- */
 const hist = { stack:[], idx:-1, muted:false };
 const snapLayers = () => state.layers.map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((x) => Object.assign({}, x)) }));
+let histNext = null;   // what the next history entry is called ("Split", "Echo on"...)
 const snapKey = (sn) => sn.map((l) => l.id + 'v' + (l.vol == null ? 1 : l.vol) + ':' + l.segs.map((x) => [x.id, x.src.id, x.start.toFixed(4), x.end.toFixed(4), x.at.toFixed(4)].join('/')).join(',')).join('|');
 function resetHist(){ hist.stack = []; hist.idx = -1; updHistBtns(); }
 function pushHist(){
   if (hist.muted) return;
-  const sn = snapLayers(), k = snapKey(sn), cur = hist.stack[hist.idx];
+  const sn = snapLayers(), pads = snapshot(), k = snapKey(sn) + '#' + JSON.stringify(pads), cur = hist.stack[hist.idx];
+  const label = histNext || 'Edit'; histNext = null;
   if (cur && cur.k === k) return;
-  hist.stack = hist.stack.slice(0, hist.idx + 1); hist.stack.push({ sn, k });
+  hist.stack = hist.stack.slice(0, hist.idx + 1); hist.stack.push({ sn, k, pads, label });
   if (hist.stack.length > 80) hist.stack.shift();
   hist.idx = hist.stack.length - 1; updHistBtns();
 }
@@ -2453,15 +2472,20 @@ function goHist(to){
   stopAllPlayback();
   hist.idx = to;
   state.layers = hist.stack[to].sn.map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((x) => Object.assign({}, x)) }));
+  const pads = hist.stack[to].pads;
+  if (pads){ PADS.forEach((p) => { if (pads[p.id]) Object.assign(fx[p.id], pads[p.id]); paintPad(p); }); activePreset = null; pushPads(); renderPresets(); }
   state.activeLayer = Math.min(state.activeLayer, state.layers.length - 1); state.sel1 = null;
   state.playhead1 = Math.min(state.playhead1, songDur());
   hist.muted = true; try { renderClips(); } finally { hist.muted = false; }
   updHistBtns();
 }
-$('#recUndo').addEventListener('click', () => goHist(hist.idx - 1));
-$('#recRedo').addEventListener('click', () => goHist(hist.idx + 1));
-$('#edUndo').addEventListener('click', () => { goHist(hist.idx - 1); setStatus($('#status1'), 'Undone.', ''); });
-$('#edRedo').addEventListener('click', () => { goHist(hist.idx + 1); setStatus($('#status1'), 'Redone.', ''); });
+// undo and redo say what they changed
+function undo(){ if (hist.idx <= 0) return; const l = hist.stack[hist.idx].label; goHist(hist.idx - 1); setStatus($('#status1'), 'Undid: ' + l, ''); }
+function redo(){ if (hist.idx >= hist.stack.length - 1) return; const l = hist.stack[hist.idx + 1].label; goHist(hist.idx + 1); setStatus($('#status1'), 'Redid: ' + l, ''); }
+$('#recUndo').addEventListener('click', undo);
+$('#recRedo').addEventListener('click', redo);
+$('#edUndo').addEventListener('click', undo);
+$('#edRedo').addEventListener('click', redo);
 
 /* ---------- touch: tap to move the playhead, drag to select, hold then drag to move a clip, double-tap a clip to delete it ---------- */
 function reorderSeg(seg, dropT){
@@ -2470,6 +2494,8 @@ function reorderSeg(seg, dropT){
   rest.splice(idx, 0, seg); rest.forEach((x, i) => { x.at = i; });
   lane.segs = rest; ripple(lane);
 }
+// layer 1 has no gaps, so a clip dropped onto it goes in between clips (nearest boundary)
+function boundaryIn(layer, t){ const nx = layer.segs.find((x) => x.at + segLen(x) / 2 > t); return nx ? nx.at : layer.segs.reduce((m, x) => Math.max(m, segEnd(x)), 0); }
 function dropBoundary(seg, dropT){
   const rest = state.layers[0].segs.filter((x) => x !== seg), next = rest.find((x) => x.at + segLen(x) / 2 > dropT);
   return next ? next.at : rest.reduce((d, x) => Math.max(d, segEnd(x)), 0);
@@ -2488,7 +2514,7 @@ $('#clipDelete').addEventListener('click', () => {
   layer.segs = layer.segs.filter((x) => x !== clipToDelete.seg); ripple(layer);
   $('#clipSheet').hidden = true; clipToDelete = null; state.sel1 = null;
   state.playhead1 = Math.min(state.playhead1, songDur());
-  setStatus($('#status1'), 'Clip deleted.', 'ok');
+  histNext = 'Deleted a clip'; setStatus($('#status1'), 'Clip deleted.', 'ok');
   renderClips();
 });
 {
@@ -2496,7 +2522,7 @@ $('#clipDelete').addEventListener('click', () => {
   const HOLD = 420;
   const t0Raw = (e) => { const r = edCanvas.getBoundingClientRect(); return Math.max(0, ed.viewStart + ((e.clientX - r.left - ED_L) / (r.width - ED_L - ED_R)) * edSpan()); };
   const tAt = (e) => Math.min(t0Raw(e), songDur());
-  document.addEventListener('keydown', (e) => { if (state.page !== 1 || state.section !== 'create' || /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return; if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ e.preventDefault(); goHist(hist.idx + (e.shiftKey ? 1 : -1)); } });
+  document.addEventListener('keydown', (e) => { if (state.page !== 1 || state.section !== 'create' || /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return; if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ e.preventDefault(); if (e.shiftKey) redo(); else undo(); } });
   const laneAt = (e) => { const r = edCanvas.getBoundingClientRect(), box = laneBox(r.height), y = e.clientY - r.top; for (let i = 0; i < state.layers.length; i++){ const b = box(i); if (y >= b.y - LANE_PAD && y <= b.y + b.h + LANE_PAD) return i; } return y < RULER ? 0 : state.layers.length - 1; };
   let glide = 0;
   // two fingers: spread to zoom in, pinch together to zoom out (works while recording too)
@@ -2559,7 +2585,7 @@ $('#clipDelete').addEventListener('click', () => {
     if (d.seg) d.timer = setTimeout(() => {
       if (!d || d.moved) return;
       d.mode = 'move'; d.origAt = d.seg.at; state.sel1 = null;
-      state.moving = { seg:d.seg, lane:d.lane, dropT:d.t0 };
+      state.moving = { seg:d.seg, lane:d.lane, dropT:d.t0, target:d.lane, newAt:d.seg.at };
       if (navigator.vibrate) navigator.vibrate(12);
       drawEditor();
     }, HOLD);
@@ -2579,7 +2605,13 @@ $('#clipDelete').addEventListener('click', () => {
     if (!d) return;
     const t = tAt(e);
     if (d.mode === 'move'){
-      if (d.lane === 0) state.moving.dropT = t; else d.seg.at = Math.max(0, d.origAt + (t - d.t0));
+      // drag up or down into another layer; below the last layer makes a new one
+      const r = edCanvas.getBoundingClientRect(), yy = e.clientY - r.top, mv = state.moving;
+      let tgt = laneAt(e);
+      if (yy > r.height + 8 && state.layers.length < MAX_LAYERS) tgt = 'new';
+      mv.target = tgt; mv.newAt = Math.max(0, d.origAt + (t0Raw(e) - d.t0));
+      if (tgt === d.lane){ if (d.lane === 0) mv.dropT = t; else d.seg.at = mv.newAt; }
+      else if (d.lane > 0) d.seg.at = d.origAt;
       drawEditor(); return;
     }
     if (d.mode === 'scrub'){ state.playhead1 = t; follow(t); drawEditor(); edReadouts(); return; }
@@ -2615,7 +2647,7 @@ $('#clipDelete').addEventListener('click', () => {
         ripple(layer);
         state.sel1 = { layer:sl.layer, a:sg.at, b:segEnd(sg), seg:sg };
         state.playhead1 = Math.min(state.playhead1, songDur());
-        setStatus($('#status1'), 'Now ' + fmtS(segLen(sg)) + ' long.', 'ok');
+        histNext = 'Trimmed a clip'; setStatus($('#status1'), 'Now ' + fmtS(segLen(sg)) + ' long.', 'ok');
         renderClips(); return;
       }
       drawEditor(); edReadouts(); return;
@@ -2636,9 +2668,23 @@ $('#clipDelete').addEventListener('click', () => {
       return;
     }
     if (d.mode === 'move'){
-      if (d.lane === 0) reorderSeg(d.seg, state.moving.dropT); else ripple(state.layers[d.lane]);
+      const mv = state.moving, seg = d.seg;
+      if (mv.target !== d.lane){
+        const from = state.layers[d.lane];
+        from.segs = from.segs.filter((x) => x !== seg); if (d.lane === 0) ripple(from);
+        let dest;
+        if (mv.target === 'new'){ dest = { id:nextId++, segs:[] }; state.layers.push(dest); }
+        else dest = state.layers[mv.target];
+        if (dest === state.layers[0]) insertPiece(dest, boundaryIn(dest, mv.newAt + segLen(seg) / 2), seg);
+        else { seg.at = mv.newAt; dest.segs.push(seg); ripple(dest); }
+        state.activeLayer = state.layers.indexOf(dest);
+        state.moving = null; d = null;
+        histNext = 'Moved a clip to layer ' + (state.activeLayer + 1); setStatus($('#status1'), 'Moved to layer ' + (state.activeLayer + 1) + '.', 'ok');
+        renderClips(); return;
+      }
+      if (d.lane === 0) reorderSeg(seg, mv.dropT); else ripple(state.layers[d.lane]);
       state.moving = null; d = null;
-      setStatus($('#status1'), 'Clip moved.', 'ok');
+      histNext = 'Moved a clip'; setStatus($('#status1'), 'Clip moved.', 'ok');
       renderClips(); return;
     }
     if (!d.moved && e.type === 'pointerup'){
@@ -2689,7 +2735,7 @@ $('#addRec').addEventListener('click', () => { closeAddSheet(); if (addAt){ stat
     const piece = { id:nextId++, src, start:0, end:raw.length / sr, at:0 };
     insertPiece(layer, t, piece);
     state.activeLayer = state.layers.indexOf(layer); state.playhead1 = segEnd(piece); state.sel1 = null;
-    follow(state.playhead1); renderClips();
+    histNext = 'Added ' + fileName(f); follow(state.playhead1); renderClips();
     await refreshSongKey($('#status1'));
     setStatus($('#status1'), 'Added ' + fileName(f) + ' (' + fmtS(segLen(piece)) + ').', 'ok');
     renderClips();
@@ -2710,7 +2756,7 @@ document.addEventListener('pointerdown', (e) => {
 $('#edSplit').addEventListener('click', () => {
   const layer = state.layers[state.activeLayer];
   if (!splitSegAt(layer, state.playhead1)){ setStatus($('#status1'), 'Move the playhead onto the wave, then press Split.', 'error'); return; }
-  setStatus($('#status1'), 'Split at ' + fmtT(state.playhead1) + '. Press record to add a new part right here.', 'ok');
+  histNext = 'Split'; setStatus($('#status1'), 'Split at ' + fmtT(state.playhead1) + '. Press record to add a new part right here.', 'ok');
   renderClips();
 });
 $('#edDup').addEventListener('click', () => {
@@ -2720,7 +2766,7 @@ $('#edDup').addEventListener('click', () => {
   else { const s = segAt(layer, state.playhead1); if (!s) return; a = s.at; b = segEnd(s); }
   if (!duplicateRange(layer, a, b)){ setStatus($('#status1'), 'There\'s no audio in that part to copy.', 'error'); return; }
   state.sel1 = null;
-  setStatus($('#status1'), 'Copied ' + fmtT(a) + '–' + fmtT(b) + ' and placed the copy right after it.', 'ok');
+  histNext = 'Duplicate'; setStatus($('#status1'), 'Copied ' + fmtT(a) + '–' + fmtT(b) + ' and placed the copy right after it.', 'ok');
   renderClips();
 });
 $('#edDel').addEventListener('click', () => {
@@ -2731,12 +2777,12 @@ $('#edDel').addEventListener('click', () => {
     if (state.layers.length < 2 || !l || l.segs.length) return;
     state.layers.splice(li, 1); state.activeLayer = Math.max(0, li - 1);
     if (li === 0) ripple(state.layers[0]);
-    setStatus($('#status1'), 'Layer ' + (li + 1) + ' removed.', 'ok');
+    histNext = 'Removed layer ' + (li + 1); setStatus($('#status1'), 'Layer ' + (li + 1) + ' removed.', 'ok');
     renderClips(); return;
   }
   removeRange(state.layers[sel.layer], sel.a, sel.b);
   state.sel1 = null; state.playhead1 = Math.min(sel.a, songDur());
-  setStatus($('#status1'), 'Deleted ' + fmtT(sel.a) + '–' + fmtT(sel.b) + (sel.layer === 0 ? '. The rest moved up to close the gap.' : ' from layer ' + (sel.layer + 1) + '.'), 'ok');
+  histNext = 'Delete'; setStatus($('#status1'), 'Deleted ' + fmtT(sel.a) + '–' + fmtT(sel.b) + (sel.layer === 0 ? '. The rest moved up to close the gap.' : ' from layer ' + (sel.layer + 1) + '.'), 'ok');
   renderClips();
 });
 $('#lvRange').addEventListener('input', (e) => {
@@ -2745,12 +2791,12 @@ $('#lvRange').addEventListener('input', (e) => {
   const g = edPlayState.gains && edPlayState.gains[state.activeLayer]; if (g) g.gain.value = l.vol;
   drawEditor();
 });
-$('#lvRange').addEventListener('change', () => { renderClips(); });
+$('#lvRange').addEventListener('change', () => { histNext = 'Layer ' + (state.activeLayer + 1) + ' volume'; renderClips(); });
 $('#edLayer').addEventListener('click', () => {
   if (state.layers.length >= MAX_LAYERS) return;
   state.layers.push({ id:nextId++, segs:[] });
   state.activeLayer = state.layers.length - 1; state.sel1 = null; state.cursorOn = true;
-  setStatus($('#status1'), 'Layer ' + state.layers.length + ' added. It records from the red line; move it to where the layer should start.', 'ok');
+  histNext = 'Added layer ' + state.layers.length; setStatus($('#status1'), 'Layer ' + state.layers.length + ' added. It records from the red line; move it to where the layer should start.', 'ok');
   renderClips();
 });
 {
@@ -2760,7 +2806,7 @@ $('#edLayer').addEventListener('click', () => {
     if (!armed){ b.textContent = 'Tap again to remove layer ' + (state.activeLayer + 1); armed = setTimeout(() => { armed = 0; edReadouts(); }, 3000); return; }
     clearTimeout(armed); armed = 0;
     state.layers.splice(state.activeLayer, 1); state.activeLayer = 0; state.sel1 = null;
-    setStatus($('#status1'), 'Layer removed.', 'ok'); renderClips();
+    histNext = 'Removed a layer'; setStatus($('#status1'), 'Layer removed.', 'ok'); renderClips();
   });
 }
 $('#edSaveSfx').addEventListener('click', async () => {
@@ -2840,7 +2886,7 @@ async function placeRecording(raw, sr, events){
   state.activeLayer = state.layers.indexOf(layer);
   state.playhead1 = segEnd(piece); state.sel1 = null; state.cursorOn = false;
   follow(state.playhead1);
-  renderClips();
+  histNext = 'Recording'; renderClips();
   await refreshSongKey($('#status1'));
   renderClips();
 }
@@ -4849,7 +4895,7 @@ const TOURS = {
   ],
   p1:[
     { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
-    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. The round button on the left of each layer jumps the red line to the start of that layer. Tap the wave to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it. Drag its pink handles inward to trim it; drag them back out to bring trimmed audio back (a dotted outline shows how far), then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end of the audio to record more there, or add audio from a file or your camera roll. Double-tap a clip to delete it. With more than one layer, tap a layer to change its volume with the slider under the wave; tap an empty layer and press Delete to remove it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Spread two fingers on the wave to zoom in, pinch them together to zoom out (or use + and −). + Layer stacks up to 4 layers; the other layers play while you record.' },
+    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. The round button on the left of each layer jumps the red line to the start of that layer. Tap the wave to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it. Drag its pink handles inward to trim it; drag them back out to bring trimmed audio back (a dotted outline shows how far), then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end of the audio to record more there, or add audio from a file or your camera roll. Double-tap a clip to delete it. With more than one layer, tap a layer to change its volume with the slider under the wave; tap an empty layer and press Delete to remove it. Hold a clip, then drag, to move it; drag it up or down to put it on another layer, or below the last layer to make a new one. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Spread two fingers on the wave to zoom in, pinch them together to zoom out (or use + and −). + Layer stacks up to 4 layers; the other layers play while you record.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does, and slide up or down to hear it get stronger or weaker.' },
