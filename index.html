@@ -252,8 +252,6 @@ body:not(.recording) #recTime{display:none}
 .trophy-wrap{display:inline-flex;flex:none}
 .trophy{width:20px;height:20px;flex:none}
 .pub-name .trophy{width:26px;height:26px}
-.trophy.first{overflow:visible;width:24px;height:24px;margin:-2px}
-.pub-name .trophy.first{width:30px;height:30px}
 .rank{flex:none;width:26px;text-align:center;font-size:15px;font-weight:700;color:var(--muted)}
 .rank.top{color:#fbbf24}
 #dSub label[hidden]{display:none}
@@ -274,6 +272,12 @@ body:not(.recording) #recTime{display:none}
 .pub-hero{position:relative;overflow:hidden;padding-top:0 !important}
 .pub-banner{align-self:stretch;height:140px;margin:0 -16px -56px;background:var(--bnr, linear-gradient(135deg,#3b1170,#7a1d5c));background-size:cover;background-position:center}
 .pub-hero .avatar{position:relative;z-index:1}
+.sheet-backdrop#cropSheet{z-index:85}
+.crop-frame{position:relative;overflow:hidden;margin:0 auto;touch-action:none;cursor:grab;background:#000;border-radius:14px}
+.crop-frame.round{border-radius:50%}
+.crop-frame img{position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none;pointer-events:none;max-width:none}
+.crop-frame::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 2px rgba(255,255,255,.7);pointer-events:none}
+#cropZoom{width:100%;accent-color:var(--accent-b);height:30px;margin:0}
 .pub-view{position:fixed;inset:0;z-index:60;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
 .pub-view[hidden]{display:none}
 .pub-top{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 10px;background:linear-gradient(var(--bg) 75%,transparent)}
@@ -882,6 +886,7 @@ legend{padding:0}
         <div id="pBannerPrev" class="banner-prev"></div>
         <div class="banner-acts">
           <label class="btn small file-pick">Add banner<input id="pBanner" class="sr-only" type="file" accept="image/*"></label>
+          <button type="button" id="pBannerAdjust" class="linkish" hidden>Adjust</button>
           <button type="button" id="pBannerRemove" class="linkish" hidden>Remove</button>
         </div>
       </div>
@@ -889,6 +894,7 @@ legend{padding:0}
         <div class="me-photo">
           <div id="pAvatar"></div>
           <label id="pPhotoLabel" class="linkish file-pick">Add photo<input id="pPhoto" class="sr-only" type="file" accept="image/*"></label>
+          <button type="button" id="pPhotoAdjust" class="linkish" hidden>Adjust</button>
           <button type="button" id="pPhotoRemove" class="linkish" hidden>Remove</button>
         </div>
         <div class="me-fields">
@@ -989,6 +995,19 @@ legend{padding:0}
     <span id="pubNote" class="pub-note">How others see you</span>
   </div>
   <div id="pubBody" class="pub-body"></div>
+</div>
+
+<div id="cropSheet" class="sheet-backdrop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cropTitle">
+    <h2 id="cropTitle">Adjust</h2>
+    <div id="cropFrame" class="crop-frame"><img id="cropImg" alt=""></div>
+    <p class="hint" style="margin:0;text-align:center">Drag to move it. Pinch or slide to zoom.</p>
+    <input type="range" id="cropZoom" min="100" max="400" step="1" value="100" aria-label="Zoom">
+    <div class="actions">
+      <button type="button" id="cropCancel" class="btn">Cancel</button>
+      <button type="button" id="cropSave" class="btn primary">Save</button>
+    </div>
+  </div>
 </div>
 
 <div id="countdown" class="countdown" hidden role="status" aria-live="assertive"><span id="cdNum">3</span><small>Tap to cancel</small></div>
@@ -4894,13 +4913,12 @@ function leaderScore(c){
   return pts;
 }
 function leaderboard(){ return creators().filter((c) => c.isPublic).map((c) => [c, leaderScore(c)]).sort((a, b) => b[1] - a[1]).map((p) => p[0]); }
-// filled trophies with a darker outline; 1st is brighter and glows
-const TROPHY = [{ fill:'#ffd84d', line:'#a16207' }, { fill:'#e2e8f0', line:'#64748b' }, { fill:'#e08a3c', line:'#7c2d12' }];
+// filled trophies with a darker outline; 1st is the brightest
+const TROPHY = [{ fill:'#ffd84d', line:'#a16207' }, { fill:'#e2e8f0', line:'#64748b' }, { fill:'#a8703f', line:'#5a2d12' }];
 function trophySvg(i){
   const { fill, line } = TROPHY[i], el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   el.setAttribute('viewBox', '0 0 24 24'); el.setAttribute('aria-hidden', 'true'); el.setAttribute('class', 'trophy' + (i === 0 ? ' first' : ''));
-  el.innerHTML = (i === 0 ? '<defs><radialGradient id="trGlow"><stop offset="0" stop-color="#ffd84d" stop-opacity=".6"/><stop offset=".55" stop-color="#ffc928" stop-opacity=".22"/><stop offset="1" stop-color="#ffc928" stop-opacity="0"/></radialGradient></defs><circle cx="12" cy="11" r="12" fill="url(#trGlow)"/>' : '')
-    + '<path d="M8 6.2H5.2a3 3 0 0 0 3 4M16 6.2h2.8a3 3 0 0 1-3 4" fill="none" stroke="' + line + '" stroke-width="2.4" stroke-linecap="round"/>'
+  el.innerHTML = '<path d="M8 6.2H5.2a3 3 0 0 0 3 4M16 6.2h2.8a3 3 0 0 1-3 4" fill="none" stroke="' + line + '" stroke-width="2.4" stroke-linecap="round"/>'
     + '<path d="M8 6.2H5.2a3 3 0 0 0 3 4M16 6.2h2.8a3 3 0 0 1-3 4" fill="none" stroke="' + fill + '" stroke-width="1.2" stroke-linecap="round"/>'
     + '<path d="M7.5 3.5h9v6.5a4.5 4.5 0 0 1-9 0z" fill="' + fill + '" stroke="' + line + '" stroke-width="1.1" stroke-linejoin="round"/>'
     + '<path d="M10.8 14.3h2.4v2.9h-2.4z" fill="' + fill + '" stroke="' + line + '" stroke-width="1"/>'
@@ -5283,7 +5301,7 @@ function paintMyAvatar(){
   const pr = lib.profile;
   if ($('#pHeadAvatar')) renderProfileHead();
   $('#pAvatar').replaceChildren(avatar({ name:pr.name || 'You', color:'#8b5cf6', photo:pr.photo }));
-  $('#pPhotoRemove').hidden = !pr.photo;
+  $('#pPhotoRemove').hidden = $('#pPhotoAdjust').hidden = !pr.photo;
   $('#pPhotoLabel').firstChild.textContent = pr.photo ? 'Change photo' : 'Add photo';
 }
 // Profile photo: cropped to a centered square and shrunk to 256 px before it's saved
@@ -5291,37 +5309,89 @@ function paintMyAvatar(){
 $('#pBanner').addEventListener('change', async (e) => {
   const f = e.target.files && e.target.files[0]; e.target.value = '';
   if (!f) return;
-  try {
-    const url = URL.createObjectURL(f);
-    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
-    const W = 960, H = 360, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-    const r = Math.max(W / img.naturalWidth, H / img.naturalHeight), sw = W / r, sh = H / r;
-    cv.getContext('2d').drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, 0, 0, W, H);
-    URL.revokeObjectURL(url);
-    lib.profile.banner = cv.toDataURL('image/jpeg', 0.82); saveLib(); paintBanner();
-  } catch (err){ $('#pHandleNote').textContent = 'That picture couldn\'t be used. Try a JPG or PNG.'; }
+  try { await openCrop('banner', await fileToSrc(f)); }
+  catch (err){ $('#pHandleNote').textContent = 'That picture couldn\'t be used. Try a JPG or PNG.'; }
 });
-$('#pBannerRemove').addEventListener('click', () => { lib.profile.banner = null; saveLib(); paintBanner(); });
+$('#pBannerRemove').addEventListener('click', () => { Object.assign(lib.profile, { banner:null, bannerSrc:null, bannerPos:null }); saveLib(); paintBanner(); });
 function paintBanner(){
   const b = lib.profile.banner, val = b ? 'url(' + b + ')' : '';
   $('#pBannerPrev').style.setProperty('--bnr', val || 'linear-gradient(135deg,#3b1170,#7a1d5c)');
-  $('#pBannerRemove').hidden = !b;
+  $('#pBannerRemove').hidden = $('#pBannerAdjust').hidden = !b;
   const head = $('#pMe'); head.classList.toggle('has-banner', !!b); if (b) head.style.setProperty('--bnr', val); else head.style.removeProperty('--bnr');
 }
+/* place your profile photo and banner: drag to move, pinch or slide to zoom */
+const crop = { kind:null, img:null, src:null, fw:0, fh:0, z:1, ox:0, oy:0 };
+const CROP_OUT = { photo:{ w:256, h:256 }, banner:{ w:960, h:360 } };
+function loadImg(src){ return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+async function fileToSrc(f){
+  // keep a copy of the picture (at most 1600 px) so it can be adjusted again later
+  const url = URL.createObjectURL(f);
+  try {
+    const img = await loadImg(url), k = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+    const cv = document.createElement('canvas'); cv.width = Math.round(img.naturalWidth * k); cv.height = Math.round(img.naturalHeight * k);
+    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+    return cv.toDataURL('image/jpeg', 0.85);
+  } finally { URL.revokeObjectURL(url); }
+}
+const cropBase = () => Math.max(crop.fw / crop.img.naturalWidth, crop.fh / crop.img.naturalHeight);
+function cropClamp(){
+  const s = cropBase() * crop.z, w = crop.img.naturalWidth * s, hh = crop.img.naturalHeight * s;
+  crop.ox = clamp(crop.ox, crop.fw - w, 0); crop.oy = clamp(crop.oy, crop.fh - hh, 0);
+}
+function cropPaint(){ cropClamp(); $('#cropImg').style.transform = 'translate(' + crop.ox + 'px,' + crop.oy + 'px) scale(' + (cropBase() * crop.z) + ')'; $('#cropZoom').value = Math.round(crop.z * 100); }
+function cropZoomTo(z, cx, cy){
+  // zoom around a point in the frame so what's under your fingers stays put
+  const s0 = cropBase() * crop.z; crop.z = clamp(z, 1, 4); const s1 = cropBase() * crop.z;
+  cx = cx == null ? crop.fw / 2 : cx; cy = cy == null ? crop.fh / 2 : cy;
+  crop.ox = cx - (cx - crop.ox) * s1 / s0; crop.oy = cy - (cy - crop.oy) * s1 / s0; cropPaint();
+}
+async function openCrop(kind, src){
+  const img = await loadImg(src), fr = $('#cropFrame'), pr = lib.profile;
+  Object.assign(crop, { kind, img, src });
+  const avail = Math.min(360, window.innerWidth - 64);
+  crop.fw = avail; crop.fh = kind === 'photo' ? avail * 0.8 : avail * 3 / 8;
+  if (kind === 'photo'){ crop.fw = crop.fh; }
+  fr.style.width = crop.fw + 'px'; fr.style.height = crop.fh + 'px'; fr.classList.toggle('round', kind === 'photo');
+  $('#cropImg').src = src; $('#cropImg').style.width = img.naturalWidth + 'px'; $('#cropImg').style.height = img.naturalHeight + 'px';
+  $('#cropTitle').textContent = kind === 'photo' ? 'Adjust profile photo' : 'Adjust banner';
+  const saved = kind === 'photo' ? pr.photoPos : pr.bannerPos;
+  if (saved && pr[kind + 'Src'] === src){ crop.z = saved.z; crop.ox = saved.px * crop.fw; crop.oy = saved.py * crop.fh; }
+  else { crop.z = 1; const s = cropBase(); crop.ox = (crop.fw - img.naturalWidth * s) / 2; crop.oy = (crop.fh - img.naturalHeight * s) / 2; }
+  $('#cropSheet').hidden = false; cropPaint();
+}
+{
+  const fr = $('#cropFrame'), pts = new Map(); let last = null, pinch = null;
+  const info = () => { const [a, b] = [...pts.values()], r = fr.getBoundingClientRect(); return { d:Math.hypot(a.x - b.x, a.y - b.y), cx:(a.x + b.x) / 2 - r.left, cy:(a.y + b.y) / 2 - r.top }; };
+  fr.addEventListener('pointerdown', (e) => { pts.set(e.pointerId, { x:e.clientX, y:e.clientY }); try { fr.setPointerCapture(e.pointerId); } catch (_) {} last = { x:e.clientX, y:e.clientY }; if (pts.size === 2){ const i = info(); pinch = { d:i.d, z:crop.z }; } });
+  fr.addEventListener('pointermove', (e) => {
+    if (!pts.has(e.pointerId)) return; pts.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    if (pinch && pts.size >= 2){ const i = info(); cropZoomTo(pinch.z * i.d / pinch.d, i.cx, i.cy); return; }
+    if (last){ crop.ox += e.clientX - last.x; crop.oy += e.clientY - last.y; last = { x:e.clientX, y:e.clientY }; cropPaint(); }
+  });
+  const up = (e) => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (!pts.size) last = null; else { const p = [...pts.values()][0]; last = { x:p.x, y:p.y }; } };
+  fr.addEventListener('pointerup', up); fr.addEventListener('pointercancel', up);
+  fr.addEventListener('wheel', (e) => { e.preventDefault(); const r = fr.getBoundingClientRect(); cropZoomTo(crop.z * (e.deltaY < 0 ? 1.08 : 0.92), e.clientX - r.left, e.clientY - r.top); }, { passive:false });
+}
+$('#cropZoom').addEventListener('input', (e) => cropZoomTo(+e.target.value / 100));
+$('#cropCancel').addEventListener('click', () => { $('#cropSheet').hidden = true; });
+$('#cropSave').addEventListener('click', () => {
+  const out = CROP_OUT[crop.kind], k = out.w / crop.fw, s = cropBase() * crop.z, cv = document.createElement('canvas');
+  cv.width = out.w; cv.height = out.h;
+  cv.getContext('2d').drawImage(crop.img, crop.ox * k, crop.oy * k, crop.img.naturalWidth * s * k, crop.img.naturalHeight * s * k);
+  const url = cv.toDataURL('image/jpeg', crop.kind === 'photo' ? 0.88 : 0.82), pr = lib.profile, pos = { z:crop.z, px:crop.ox / crop.fw, py:crop.oy / crop.fh };
+  if (crop.kind === 'photo'){ pr.photo = url; pr.photoSrc = crop.src; pr.photoPos = pos; saveLib(); paintMyAvatar(); }
+  else { pr.banner = url; pr.bannerSrc = crop.src; pr.bannerPos = pos; saveLib(); paintBanner(); }
+  $('#cropSheet').hidden = true; renderProfileHead();
+});
 $('#pPhoto').addEventListener('change', async (e) => {
   const f = e.target.files && e.target.files[0]; e.target.value = '';
   if (!f) return;
-  try {
-    const url = URL.createObjectURL(f);
-    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
-    const side = Math.min(img.naturalWidth, img.naturalHeight), cv = document.createElement('canvas'); cv.width = cv.height = 256;
-    cv.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
-    URL.revokeObjectURL(url);
-    lib.profile.photo = cv.toDataURL('image/jpeg', 0.85); saveLib(); paintMyAvatar();
-    $('#pHandleNote').textContent = '';
-  } catch (err){ $('#pHandleNote').textContent = 'That file couldn\'t be used as a photo. Try a JPG or PNG.'; }
+  try { await openCrop('photo', await fileToSrc(f)); $('#pHandleNote').textContent = ''; }
+  catch (err){ $('#pHandleNote').textContent = 'That file couldn\'t be used as a photo. Try a JPG or PNG.'; }
 });
-$('#pPhotoRemove').addEventListener('click', () => { lib.profile.photo = null; saveLib(); paintMyAvatar(); });
+$('#pPhotoAdjust').addEventListener('click', () => { const pr = lib.profile; if (pr.photo) openCrop('photo', pr.photoSrc || pr.photo); });
+$('#pBannerAdjust').addEventListener('click', () => { const pr = lib.profile; if (pr.banner) openCrop('banner', pr.bannerSrc || pr.banner); });
+$('#pPhotoRemove').addEventListener('click', () => { Object.assign(lib.profile, { photo:null, photoSrc:null, photoPos:null }); saveLib(); paintMyAvatar(); });
 $('#pHandle').addEventListener('input', (e) => {
   const v = e.target.value.replace(/[^a-z0-9_.]/gi, '').slice(0, 30);
   if (EXAMPLES.some((c) => c.handle.toLowerCase() === v.toLowerCase())){ $('#pHandleNote').textContent = '@' + v + ' is taken. Pick another username.'; e.target.value = lib.profile.handle; return; }
