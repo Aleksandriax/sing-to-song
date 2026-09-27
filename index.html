@@ -679,6 +679,16 @@ legend{padding:0}
 .tab-create{margin-top:-22px}
 .tab-orb{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;border:3px solid transparent;background:radial-gradient(circle at 50% 45%,#2a1240,#120a1f 70%) padding-box,linear-gradient(135deg,#a855f7,#ec4899) border-box;color:#fff;box-shadow:0 0 0 3px var(--surface),0 8px 24px rgba(236,72,153,.45)}
 .tab-orb svg{width:24px;height:24px}
+/* Discover and Profile: the same art as Studio (gradient ring, dark circle, gradient shapes with white lines), no glow */
+.tab-ring{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:2px solid transparent;background:radial-gradient(circle at 50% 45%,#2a1240,#120a1f 70%) padding-box,linear-gradient(135deg,#a855f7,#ec4899) border-box;opacity:.55;filter:saturate(.55);transition:opacity .15s,filter .15s}
+.tab[aria-current="page"] .tab-ring{opacity:1;filter:none}
+.tab .tab-ring svg.art{width:24px;height:24px}
+.tab svg.art .a-line{fill:none;stroke:#fff;stroke-width:1.4}
+.tab svg.art .a-fill{fill:url(#discGrad);stroke:#fff;stroke-width:.8}
+.tab svg.art .a-soft{fill:url(#discGrad);opacity:.28;stroke:none}
+.tab svg.art .a-fill2{fill:url(#profGrad);stroke:none}
+.tab svg.art .a-white{fill:#fff;stroke:none}
+.tab svg.art .a-dot{fill:#2a1240;stroke:#fff;stroke-width:1.1}
 /* Studio: a little mixing desk (sliders at different heights) */
 .tab-orb svg.mixer{width:36px;height:36px;overflow:visible}
 .tab-orb svg.mixer rect{stroke:none;fill:url(#mixGrad)}
@@ -1216,9 +1226,9 @@ legend{padding:0}
 
 <nav class="tabbar" aria-label="Sections">
   <div class="tabbar-inner">
-    <button type="button" class="tab" data-sec="discover"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>Discover</button>
+    <button type="button" class="tab" data-sec="discover"><span class="tab-ring"><svg class="art" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="discGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a855f7"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><circle cx="12" cy="12" r="8.8" class="a-soft"/><circle cx="12" cy="12" r="8.8" class="a-line"/><path d="M17.2 6.8 13.6 13.6 10.4 10.4z" class="a-fill"/><path d="M6.8 17.2 10.4 10.4 13.6 13.6z" class="a-white"/><circle cx="12" cy="12" r="1.4" class="a-dot"/></svg></span>Discover</button>
     <button type="button" class="tab tab-create" data-sec="create" aria-current="page"><span class="tab-orb"><svg class="mixer" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="mixGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a855f7"/><stop offset="1" stop-color="#ec4899"/></linearGradient><filter id="mixGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="0.6"/></filter></defs><rect x="4.6" y="3.2" width="4.6" height="17.6" rx="2.3" fill="url(#mixGrad)" opacity=".85"/><rect x="9.7" y="2" width="4.6" height="20" rx="2.3" fill="url(#mixGrad)" opacity=".9"/><rect x="14.8" y="3.2" width="4.6" height="17.6" rx="2.3" fill="url(#mixGrad)" opacity=".85"/><g class="mix-lines" stroke="#fff" stroke-linecap="round" filter="url(#mixGlow)"><path d="M6.9 5v14M12 3.6v16.8M17.1 5v14" stroke-width="1.3" opacity=".9"/></g><g class="knob k1"><circle cx="6.9" cy="10.5" r="1.9" fill="#2a1240" stroke="#fff" stroke-width="1.3"/></g><g class="knob k2"><circle cx="12" cy="7.2" r="1.9" fill="#2a1240" stroke="#fff" stroke-width="1.3"/></g><g class="knob k3"><circle cx="12" cy="15.4" r="1.9" fill="#2a1240" stroke="#fff" stroke-width="1.3"/></g><g class="knob k4"><circle cx="17.1" cy="11.4" r="1.9" fill="#2a1240" stroke="#fff" stroke-width="1.3"/></g></svg></span>Studio</button>
-    <button type="button" class="tab" data-sec="profile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</button>
+    <button type="button" class="tab" data-sec="profile"><span class="tab-ring"><svg class="art" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="profGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a855f7"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><circle cx="12" cy="8.6" r="3.9" class="a-fill2"/><path d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0z" class="a-fill2"/><circle cx="12" cy="8.6" r="3.9" class="a-line"/><path d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0" class="a-line"/></svg></span>Profile</button>
   </div>
 </nav>
 
