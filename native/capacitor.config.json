@@ -1,0 +1,7 @@
+{
+  "appId": "com.singtosong.app",
+  "appName": "Sing to Song",
+  "webDir": "www",
+  "ios": { "contentInset": "never", "backgroundColor": "#0c0816" },
+  "android": { "backgroundColor": "#0c0816" }
+}
