@@ -358,6 +358,10 @@ legend{padding:0}
 .file-pick{position:relative}
 .file-pick:focus-within{outline:2px solid var(--focus);outline-offset:2px}
 .plain-btn{background:var(--surface-2);color:var(--muted);border-color:var(--line);margin-top:-6px}
+.draft-acts{display:flex;gap:14px;margin-top:6px}
+#homeDrafts .item-title{white-space:normal;overflow-wrap:anywhere}
+.draft-act{appearance:none;border:0;background:none;padding:2px 0;color:var(--accent-b);font:inherit;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.draft-act .ic{width:15px;height:15px}
 .draft-name{appearance:none;border:0;background:none;padding:0;color:inherit;font:inherit;display:flex;align-items:center;gap:6px;text-align:left;cursor:pointer;min-width:0}
 .draft-name .ic{width:15px;height:15px;color:var(--muted)}
 .sfx-panel{background:linear-gradient(160deg,#4a3107 0%,#3a220c 55%,#221812 100%);border-color:rgba(251,191,36,.32)}
@@ -1168,7 +1172,8 @@ const ICONS = {
   check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   x:'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
   back:'<path d="M15 5l-7 7 7 7"/>',
-  pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>'
+  pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  copy:'<rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'
 };
 function icon(name, cls){
   const el = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -4661,11 +4666,21 @@ function renderDrafts(){
     });
     return h('div', { class:'item' },
       h('div', { class:'item-main' },
-        h('button', { type:'button', class:'draft-name', 'aria-label':'Rename ' + d.name, onclick:async () => {
-          const v = await askName('Rename draft', d.name); if (!v) return;
-          d.name = v; saveLib(); renderDrafts();
-        } }, h('span', { class:'item-title', text:d.name }), icon('pencil')),
-        h('span', { class:'item-meta', text:fmt(d.dur || 0) + ' · saved ' + new Date(d.saved).toLocaleString() })),
+        h('span', { class:'item-title', text:d.name }),
+        h('span', { class:'item-meta', text:fmt(d.dur || 0) + ' · saved ' + new Date(d.saved).toLocaleString() }),
+        h('div', { class:'draft-acts' },
+          h('button', { type:'button', class:'draft-act', onclick:async () => {
+            const v = await askName('Rename draft', d.name); if (!v) return;
+            d.name = v; saveLib(); renderDrafts();
+          } }, icon('pencil'), 'Rename'),
+          h('button', { type:'button', class:'draft-act', onclick:async () => {
+            const doc = await store.get('draft:' + d.id);
+            if (!doc){ setStatus($('#homeStatus'), 'That draft\'s data is missing on this device.', 'error'); return; }
+            const id = uid('draft'), name = d.name + ' duplicate';
+            await store.set('draft:' + id, JSON.parse(JSON.stringify(doc)));
+            lib.drafts.splice(lib.drafts.indexOf(d), 0, { id, name, saved:Date.now(), dur:d.dur });
+            saveLib(); renderDrafts();
+          } }, icon('copy'), 'Duplicate'))),
       open,
       deleteBtn(async () => { lib.drafts = lib.drafts.filter((x) => x !== d); await store.del('draft:' + d.id); saveLib(); renderDrafts(); gcMedia(); }));
   });
