@@ -2266,7 +2266,8 @@ function drawEditor(){
   // a + at the end of each layer's audio, so you can see where it ends and continue from there
   ed.plus = [];
   if (rec.state === 'idle') state.layers.forEach((layer, li) => {
-    const end = layer.segs.reduce((m, x) => Math.max(m, segEnd(x)), 0), { y, h:lh } = box(li);
+    // an empty layer's + sits at the red line (that's where its recording starts)
+    const end = layer.segs.length ? layer.segs.reduce((m, x) => Math.max(m, segEnd(x)), 0) : (li > 0 ? state.playhead1 : 0), { y, h:lh } = box(li);
     const r = Math.min(13, lh / 2 - 4), cx = X(end) + r + 6, cy = y + lh / 2;
     if (cx - r > w || cx + r < 0) return;
     const pg = g.createLinearGradient(cx - r, cy - r, cx + r, cy + r); pg.addColorStop(0, '#8b5cf6'); pg.addColorStop(1, '#ec4899');
@@ -2494,8 +2495,11 @@ $('#clipDelete').addEventListener('click', () => {
     cancelAnimationFrame(glide);
     const r = edCanvas.getBoundingClientRect(), hit = (ed.plus || []).find((q) => Math.hypot(e.clientX - r.left - q.x, e.clientY - r.top - q.y) <= q.r);
     if (hit){
-      state.activeLayer = hit.lane; state.sel1 = null; setPlayhead1(hit.t); state.cursorOn = false;
-      openAddSheet(hit.lane, hit.t);
+      // if the red line is on this layer, new audio starts there; otherwise at the end of the layer
+      const useCursor = state.cursorOn && state.activeLayer === hit.lane;
+      const at = useCursor ? state.playhead1 : hit.t;
+      state.activeLayer = hit.lane; state.sel1 = null; setPlayhead1(at); state.cursorOn = useCursor;
+      openAddSheet(hit.lane, at);
       return;
     }
     const t0 = tAt(e), lane = laneAt(e), cx = e.clientX - r.left, cy = e.clientY - r.top;
@@ -2709,8 +2713,8 @@ $('#lvRange').addEventListener('change', () => { renderClips(); });
 $('#edLayer').addEventListener('click', () => {
   if (state.layers.length >= MAX_LAYERS) return;
   state.layers.push({ id:nextId++, segs:[] });
-  state.activeLayer = state.layers.length - 1; state.sel1 = null;
-  setStatus($('#status1'), 'Layer ' + state.layers.length + ' added. Move to where it should start and press record. The other layers play from your phone while you record, and it filters them out of your voice (headphones do it perfectly).', 'ok');
+  state.activeLayer = state.layers.length - 1; state.sel1 = null; state.cursorOn = true;
+  setStatus($('#status1'), 'Layer ' + state.layers.length + ' added. It records from the red line; move it to where the layer should start.', 'ok');
   renderClips();
 });
 {
