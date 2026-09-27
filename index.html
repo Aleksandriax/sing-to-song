@@ -2471,7 +2471,7 @@ function edReadouts(){
   $('#edTime').textContent = fmtT(state.playhead1) + ' / ' + fmtT(dur) + (dur > MAX_SEC ? ' (over 10:00)' : '');
   const layer = state.layers[state.activeLayer], sel = state.sel1, has = dur > 0;
   if (state.recView && rec.state === 'idle' && !cd.on) recTime.textContent = fmt(dur);
-  $('.ed-tools').hidden = !has; $('.editor .tl-bar').hidden = !has && hist.idx <= 0;
+  $('.ed-tools').hidden = !has; $('.editor .tl-bar').hidden = !has && hist.stack.length <= 1;
   $('#edSplit').disabled = !segAt(layer, state.playhead1);
   $('#edZoomIn').disabled = state.span1 !== Infinity && edSpan() <= 0.051; $('#edZoomOut').disabled = state.span1 === Infinity || !has;
   $('#edDup').disabled = !(sel || segAt(layer, state.playhead1));
