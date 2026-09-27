@@ -121,6 +121,38 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 @media (prefers-reduced-motion: reduce){ .tour-spot{transition:none} }
 .share-box{display:flex;flex-direction:column;gap:10px;border:1px solid var(--accent-b);border-radius:14px;padding:14px;background:color-mix(in srgb,var(--accent-b) 10%,var(--surface))}
 .share-box .summary{margin:0}
+.seg4{grid-template-columns:repeat(4,1fr)}
+.seg4 label{font-size:13px;padding-inline:2px}
+.home-tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tile{appearance:none;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:2px;aspect-ratio:1/0.85;padding:14px;border-radius:18px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.tile svg{width:30px;height:30px;fill:none;stroke:var(--accent-b);stroke-width:1.8;stroke-linejoin:round;margin-bottom:auto}
+.tile[aria-expanded="true"]{border-color:var(--accent-b)}
+.tile-new{border:0;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:#fff;box-shadow:0 10px 30px var(--glow)}
+.tile-plus{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:44px;font-weight:800;line-height:1;margin-bottom:auto}
+.tile-title{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:19px}
+.tile-sub{font-size:13px;opacity:.8}
+.continue-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line)}
+.lib-grid,.album-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.album-grid{grid-template-columns:repeat(3,1fr);gap:8px}
+.song-card{display:flex;flex-direction:column;gap:6px;min-width:0}
+.cover{position:relative;display:block;width:100%;aspect-ratio:1;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,var(--c1,#8b5cf6),var(--c2,#ec4899))}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover .cover-mark{position:absolute;inset:0;display:grid;place-items:center;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:34px;color:rgba(255,255,255,.9)}
+.cover-play{position:absolute;right:8px;bottom:8px;width:40px;height:40px;border-radius:50%;border:0;background:rgba(10,6,20,.72);color:#fff;display:grid;place-items:center;cursor:pointer}
+.cover-play svg{width:18px;height:18px;fill:currentColor}
+.cover-sm{width:56px;flex:none;border-radius:10px}
+.song-card .item-title{font-size:14px}
+.song-card .linkish{align-self:flex-start;padding:0;font-size:12px}
+.album-tile{appearance:none;border:0;padding:0;background:none;color:var(--text);font:inherit;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:4px;min-width:0}
+.album-tile .cover{border-radius:12px}
+.album-tile .cover-mark{font-size:24px}
+.album-tile span.cap{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.album-tile.playing .cover{outline:3px solid var(--accent-b);outline-offset:2px}
+.cover-pick{display:flex;align-items:center;gap:12px}
+.panel.earn-panel{border:0;background:linear-gradient(135deg,#064e3b,#0f766e);color:#ecfdf5}
+.earn-panel h2{color:#fff}
+.earn-panel .stat{background:rgba(255,255,255,.12);color:#fff}
+.earn-panel .stat-label{color:rgba(236,253,245,.8)}
 .back-top{appearance:none;align-self:flex-start;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);cursor:pointer;padding:0;margin-bottom:-6px}
 .back-top svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .pad-sub{position:relative;font-size:12px;color:var(--muted)}
@@ -316,11 +348,39 @@ legend{padding:0}
   </header>
 
   <!-- STEP 1 -->
-  <main id="page1" class="page">
+  <main id="page0" class="page">
+    <h1>Create</h1>
+    <div id="continueCard" class="continue-card" hidden>
+      <div class="item-main"><span class="item-title">Continue your song</span><span id="continueMeta" class="item-meta"></span></div>
+      <button type="button" id="continueBtn" class="btn small primary">Continue</button>
+    </div>
+    <div class="home-tiles">
+      <button type="button" id="tileDrafts" class="tile" aria-expanded="false" aria-controls="draftsPanel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A1.5 1.5 0 0 1 5.5 5H10l2 2h6.5A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/></svg>
+        <span class="tile-title">Drafts</span><span id="tileDraftsSub" class="tile-sub">none yet</span>
+      </button>
+      <button type="button" id="tileNew" class="tile tile-new">
+        <span class="tile-plus" aria-hidden="true">+</span>
+        <span class="tile-title">Create new</span><span class="tile-sub">start a song</span>
+      </button>
+    </div>
+    <div id="homeStatus" class="status" role="status" aria-live="polite"></div>
+    <section id="draftsPanel" class="panel" hidden aria-labelledby="draftsHead">
+      <h2 id="draftsHead">Drafts</h2>
+      <div id="homeDrafts" class="d-list"></div>
+    </section>
+    <section aria-labelledby="libHead" class="page" style="gap:12px">
+      <h2 id="libHead">Your songs</h2>
+      <div id="homeLibrary" class="lib-grid"></div>
+    </section>
+    <input id="coverPickLib" class="sr-only" type="file" accept="image/*" aria-label="Choose an album photo">
+  </main>
+
+  <main id="page1" class="page" hidden>
+    <button type="button" class="back-top" data-to="0" aria-label="Back to Create"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div>
       <h1>Sing it</h1>
       <p class="lede">Press record and sing. Hit the pads to add effects as you go.</p>
-      <button type="button" id="openDrafts" class="linkish" hidden>Open a draft</button>
     </div>
 
     <div class="recorder">
@@ -467,14 +527,6 @@ legend{padding:0}
       <div class="bar"><span id="barFill"></span></div>
     </section>
 
-    <aside class="good-to-know" aria-label="Limitations">
-      <span class="label">Good to know</span>
-      <ul>
-        <li><strong>No artist cloning.</strong> Artist names only steer the style. The backing track uses simple built-in synths and drums, never real recordings.</li>
-        <li><strong>The AI has a small toolbox.</strong> It picks tempo, chords, synth sound, beat, reverb, harmonies and where things change. It can't write new melodies or lyrics.</li>
-        <li><strong>Without Claude, it reads keywords.</strong> Opened as a plain file, the app matches words like slow, dance, synth or dark instead of reading your notes in full.</li>
-      </ul>
-    </aside>
 
   </main>
 
@@ -512,10 +564,21 @@ legend{padding:0}
         <ul id="sfxPlaced" class="point-list"></ul>
       </div>
     </section>
-    <div class="downloads">
-      <button type="button" id="saveSong" class="btn">Save to my songs</button>
-      <button type="button" id="saveDraft" class="btn">Save draft</button>
-    </div>
+    <section id="keepPanel" class="panel keep-panel" aria-labelledby="keepHead">
+      <h2 id="keepHead">Keep it</h2>
+      <div class="cover-pick">
+        <div id="coverThumb" class="cover cover-sm" aria-hidden="true"></div>
+        <div class="item-main">
+          <span class="item-title">Album photo</span>
+          <span class="item-meta">Optional. Shown on your songs and on Discover.</span>
+        </div>
+        <label class="btn small file-pick" id="coverLabel">Add<input id="coverFile" class="sr-only" type="file" accept="image/*"></label>
+      </div>
+      <div class="downloads">
+        <button type="button" id="saveSong" class="btn primary">Save to my songs</button>
+        <button type="button" id="saveDraft" class="btn">Save draft</button>
+      </div>
+    </section>
     <div class="downloads">
       <button type="button" id="saveAudio" class="btn">Save audio (.wav)</button>
       <button type="button" id="saveVideo" class="btn">Save video</button>
@@ -536,11 +599,11 @@ legend{padding:0}
       <h1>Discover</h1>
       <p class="lede">Find creators, play their songs and pick up sound effects for your own tracks.</p>
     </div>
-    <p class="preview-note">Preview: creators marked Example are made up to show how Discover works. Your own public songs and sounds appear here too, on this device only.</p>
     <div id="dFilters" class="page" style="gap:10px">
       <label class="sr-only" for="dSearch">Search</label>
       <input id="dSearch" class="text" type="search" placeholder="Search creators, songs and sounds">
-      <div class="seg" role="radiogroup" aria-label="Show">
+      <div class="seg seg4" role="radiogroup" aria-label="Show">
+        <input type="radio" name="dview" id="dvF" value="following"><label for="dvF">Following</label>
         <input type="radio" name="dview" id="dvC" value="creators" checked><label for="dvC">Creators</label>
         <input type="radio" name="dview" id="dvS" value="songs"><label for="dvS">Songs</label>
         <input type="radio" name="dview" id="dvX" value="sounds"><label for="dvX">Sounds</label>
@@ -556,9 +619,8 @@ legend{padding:0}
       <h1>Profile</h1>
       <p class="lede">Your account, what's public, and what's for sale.</p>
     </div>
-    <p class="preview-note">Preview: your profile and library are saved in this browser only. Real accounts, sharing between people and real payments need the app's server, which isn't built yet.</p>
     <section class="panel" aria-label="About you">
-      <div class="me">
+      <div class="me" id="pMe">
         <div class="me-photo">
           <div id="pAvatar"></div>
           <label id="pPhotoLabel" class="linkish file-pick">Add photo<input id="pPhoto" class="sr-only" type="file" accept="image/*"></label>
@@ -574,9 +636,9 @@ legend{padding:0}
       <label class="sr-only" for="pBio">Bio</label>
       <textarea id="pBio" class="text" rows="2" maxlength="160" placeholder="A line about your music"></textarea>
     </section>
-    <section class="panel" aria-labelledby="pFollowHead">
-      <h2 id="pFollowHead">Following</h2>
-      <div id="pFollowing" class="d-list"></div>
+    <section class="panel" aria-labelledby="pAlbumHead">
+      <h2 id="pAlbumHead">Your album</h2>
+      <div id="pAlbum" class="album-grid"></div>
     </section>
     <section class="panel" aria-labelledby="pPlanHead">
       <h2 id="pPlanHead">Your plan</h2>
@@ -598,14 +660,11 @@ legend{padding:0}
       <label class="btn small file-pick" style="align-self:flex-start">Upload a sound effect<input id="pSfxFile" class="sr-only" type="file" accept="audio/*"></label>
       <p id="pSfxNote" class="hint"></p>
     </section>
-    <section class="panel" aria-labelledby="pDraftsHead"><h2 id="pDraftsHead">Drafts</h2><div id="pDrafts" class="d-list"></div><p id="pDraftNote" class="hint"></p></section>
-    <section class="panel" aria-labelledby="pSavedHead"><h2 id="pSavedHead">Saved and bought</h2><div id="pSaved" class="d-list"></div></section>
-    <section class="panel" aria-labelledby="pEarnHead">
+    <section class="panel earn-panel" aria-labelledby="pEarnHead">
       <h2 id="pEarnHead">Earnings</h2>
       <div id="pEarn" class="stats"></div>
-      <p class="hint">Sales show up here once real accounts and payments are connected. Purchases in this preview are test purchases.</p>
     </section>
-    <button type="button" id="helpBtn" class="btn big help-btn">Need help? Show me how it works</button>
+    <button type="button" id="helpBtn" class="btn big help-btn">Need help?</button>
   </main>
 </div>
 
@@ -717,7 +776,7 @@ const NOTE_NAMES = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
 const LOGO_PATH = 'M3.5 23 Q 6 20.5 8 23.5 Q 10 26.5 14 26.5 C 19 26.5 22 24 21.5 20.5 C 21 16.5 11 17.5 10.5 12 C 10 7.5 15 6 18.5 6.5 Q 21.5 7 22.8 9.2 Q 24.5 11.5 28 4.5';
 
 const state = {
-  page:1, section:'create', ref:null, clips:[], key:'60:chromatic', keyFrom:null, voice:null, blend:true, monitor:false,
+  page:0, workPage:1, section:'create', ref:null, clips:[], key:'60:chromatic', keyFrom:null, voice:null, blend:true, monitor:false,
   markers:[], selMarker:null, playhead2:0, pps:40, result:null, busy:false, variation:0
 };
 let nextId = 1, takeCount = 0;
@@ -2809,7 +2868,7 @@ function saveLib(){ clearTimeout(libTimer); libTimer = setTimeout(() => store.se
 async function loadLib(){
   const v = await store.get('lib');
   if (v && typeof v === 'object'){
-    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media']) if (Array.isArray(v[k])) lib[k] = v[k]; }
+    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media']) if (Array.isArray(v[k])) lib[k] = v[k]; }
 }
 const uid = (p) => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -2951,9 +3010,9 @@ $('#saveSong').addEventListener('click', async () => {
   const id = uid('song'), title = $('#vibe').value.trim() || 'Song ' + (lib.songs.length + 1);
   if (!r.wav) r.wav = bufferToWav(r.mix);
   await store.set('blob:' + id, r.wav);
-  lib.songs.unshift({ id, title, dur:r.mix.duration, created:Date.now(), isPublic:lib.profile.postSongs, allowSave:lib.profile.allowSaves });
+  lib.songs.unshift({ id, title, dur:r.mix.duration, created:Date.now(), isPublic:lib.profile.postSongs, allowSave:lib.profile.allowSaves, cover:r.cover || null });
   saveLib();
-  setStatus($('#status3'), 'Saved "' + title + '" to your songs. ' + (lib.profile.postSongs && lib.profile.isPublic ? 'It\'s public on Discover; change that in Profile.' : 'It\'s private; change that in Profile.'), 'ok');
+  setStatus($('#status3'), 'Saved "' + title + '" to your songs on the Create page. ' + (lib.profile.postSongs && lib.profile.isPublic ? 'It\'s public on Discover; change that in Profile.' : 'It\'s private; change that in Profile.'), 'ok');
   showAd();
 });
 
@@ -2978,7 +3037,7 @@ async function persistMix(r){
 function projectDoc(){
   const r = state.result;
   return {
-    v:1, saved:Date.now(), key:state.key, keyFrom:state.keyFrom, blend:state.blend, page:state.page,
+    v:1, saved:Date.now(), key:state.key, keyFrom:state.keyFrom, blend:state.blend, page:state.page || state.workPage || 1,
     layers:state.layers.map((l) => ({ id:l.id, segs:l.segs.map((s) => ({ id:s.id, src:s.src.id, start:s.start, end:s.end, at:s.at })) })),
     activeLayer:state.activeLayer, playhead1:state.playhead1,
     markers:state.markers.filter((m) => m.text.trim()).map((m) => ({ id:m.id, t:m.t, end:m.end, text:m.text })),
@@ -2999,7 +3058,7 @@ setInterval(autosave, 4000);
 document.addEventListener('visibilitychange', () => { if (document.hidden) autosave(); });
 window.addEventListener('pagehide', autosave);
 
-async function loadProject(doc, statusEl){
+async function loadProject(doc, statusEl, landHome){
   restoring = true;
   try {
     stopAllPlayback();
@@ -3033,8 +3092,9 @@ async function loadProject(doc, statusEl){
       }
     }
     invalidateJoined(); renderClips(); renderMarkerList(); refreshMood();
-    showPage(doc.page || 1);
-    if (state.page === 3 && state.result){ showPlan(''); if (state.result.sfx.length) await applySfx(); }
+    state.workPage = doc.page || 1;
+    if (!landHome) showPage(state.workPage);
+    if (state.result){ showPlan(''); if (state.result.sfx.length) await applySfx(); }
   } finally {
     restoring = false; lastSaved = '';
   }
@@ -3049,44 +3109,46 @@ async function gcMedia(){
   for (const id of lib.media){ if (used.has(id)) keep.push(id); else store.del((id.startsWith('mix') ? 'mix:' : 'src:') + id); }
   lib.media = keep; saveLib();
 }
-$('#saveDraft').addEventListener('click', async () => {
-  if (state.busy) return;
+async function saveCurrentAsDraft(){
   const r = state.result; if (r) await persistMix(r);
   const doc = projectDoc(), id = uid('draft');
   const name = $('#vibe').value.trim() || 'Draft ' + (lib.drafts.length + 1);
   await store.set('draft:' + id, doc);
   lib.drafts.unshift({ id, name, saved:doc.saved, dur:songDur() }); saveLib();
-  setStatus($('#status3'), 'Saved "' + name + '" to your drafts. Open it any time from Profile, then Drafts.', 'ok');
+  return name;
+}
+$('#saveDraft').addEventListener('click', async () => {
+  if (state.busy) return;
+  const name = await saveCurrentAsDraft();
+  setStatus($('#status3'), 'Saved "' + name + '" to Drafts. Find it on the Create page.', 'ok');
 });
 async function openDraft(d){
   const doc = await store.get('draft:' + d.id);
-  if (!doc){ $('#pDraftNote').textContent = 'That draft\'s data is missing on this device.'; return; }
+  if (!doc){ setStatus($('#homeStatus'), 'That draft\'s data is missing on this device.', 'error'); return; }
   try {
     state.section = 'create';
     await loadProject(doc, $('#status1'));
     const st = state.page === 3 ? $('#status3') : state.page === 2 ? $('#status2') : $('#status1');
     setStatus(st, 'Opened "' + d.name + '".', 'ok');
     autosave();
-  } catch (err){ $('#pDraftNote').textContent = 'Couldn\'t open "' + d.name + '": ' + (err.message || err) + '.'; }
+  } catch (err){ setStatus($('#homeStatus'), 'Couldn\'t open "' + d.name + '": ' + (err.message || err) + '.', 'error'); }
 }
 function renderDrafts(){
   const rows = lib.drafts.map((d) => {
     let armed = 0;
     const open = h('button', { type:'button', class:'btn small' }, 'Open');
     open.addEventListener('click', () => {
-      if (hasWork(projectDoc()) && !armed){ open.textContent = 'Replace current song?'; armed = setTimeout(() => { armed = 0; open.textContent = 'Open'; }, 3000); return; }
-      clearTimeout(armed); openDraft(d);
+      clearTimeout(armed);
+      (async () => { if (hasWork(projectDoc())) await saveCurrentAsDraft(); openDraft(d); })();
     });
     return h('div', { class:'item' },
       h('div', { class:'item-main' }, h('span', { class:'item-title', text:d.name }), h('span', { class:'item-meta', text:fmt(d.dur || 0) + ' · saved ' + new Date(d.saved).toLocaleString() })),
       open,
       deleteBtn(async () => { lib.drafts = lib.drafts.filter((x) => x !== d); await store.del('draft:' + d.id); saveLib(); renderDrafts(); gcMedia(); }));
   });
-  $('#pDrafts').replaceChildren(...(rows.length ? rows : [h('p', { class:'hint' }, 'No drafts yet. On the Listen & save step, press Save draft to keep a song to finish later.')]));
-  $('#openDrafts').hidden = !lib.drafts.length;
-  $('#openDrafts').textContent = 'Open a draft (' + lib.drafts.length + ')';
+  $('#homeDrafts').replaceChildren(...(rows.length ? rows : [h('p', { class:'hint' }, 'No drafts yet. On the last step, press Save draft to keep a song to finish later.')]));
+  $('#tileDraftsSub').textContent = lib.drafts.length ? lib.drafts.length + ' saved' : 'none yet';
 }
-$('#openDrafts').addEventListener('click', () => { showSection('profile'); const el = $('#pDraftsHead'); if (el) el.scrollIntoView({ block:'start' }); });
 
 /* =========================================================
    Discover: creators, songs and sound effects
@@ -3142,7 +3204,7 @@ function songRow(s, c){
   if (s.mine) action = h('span', { class:'tag' }, 'Yours');
   else if (!s.allowSave) action = h('span', { class:'tag muted' }, 'Listen only');
   else action = h('button', { type:'button', class:'btn small', disabled:saved, onclick:() => { lib.saved.unshift({ kind:'song', id:s.id, title:s.title, from:c.name, creator:c.id }); saveLib(); renderDiscover(); } }, saved ? 'Saved' : 'Save');
-  return h('div', { class:'item' }, play,
+  return h('div', { class:'item' }, s.cover ? h('img', { class:'cover cover-sm', src:s.cover, alt:'' }) : null, play,
     h('div', { class:'item-main' }, h('span', { class:'item-title', text:s.title }), h('span', { class:'item-meta', text:'Song · ' + c.name })), action);
 }
 function sfxRow(x, c){
@@ -3190,7 +3252,11 @@ function renderDiscover(){
     return;
   }
   let rows = [];
-  if (dState.view === 'creators') rows = all.filter((c) => match(c.name, c.handle, c.bio)).map(creatorCard);
+  if (dState.view === 'following'){
+    rows = EXAMPLES.filter((c) => (lib.follows.includes(c.id) || lib.requests.includes(c.id)) && match(c.name, c.handle, c.bio)).map(creatorCard);
+    if (!rows.length && !q) rows = [h('p', { class:'empty' }, 'You aren\'t following anyone yet. Tap Creators and follow the singers you like.')];
+  }
+  else if (dState.view === 'creators') rows = all.filter((c) => match(c.name, c.handle, c.bio)).map(creatorCard);
   else if (dState.view === 'songs') all.filter((c) => c.isPublic).forEach((c) => c.songs.forEach((s) => { if (match(s.title, c.name)) rows.push(songRow(s, c)); }));
   else all.filter((c) => c.isPublic).forEach((c) => c.sfx.forEach((x) => { if (match(x.name, c.name)) rows.push(sfxRow(x, c)); }));
   list.replaceChildren(...(rows.length ? rows : [h('p', { class:'empty' }, q ? 'Nothing matches "' + dState.q + '".' : 'Nothing here yet.')]));
@@ -3312,7 +3378,6 @@ function renderProfile(){
   const pr = lib.profile;
   $('#pName').value = pr.name; $('#pHandle').value = pr.handle; $('#pBio').value = pr.bio;
   paintMyAvatar();
-  renderFollowing();
   $('#pSwitches').replaceChildren(
     switchEl('swPublic', 'Public account', 'Anyone can find your profile on Discover. Off: only people you approve.', pr.isPublic, (v) => { pr.isPublic = v; saveLib(); }),
     switchEl('swPost', 'Post my new songs', 'New songs you save start out public.', pr.postSongs, (v) => { pr.postSongs = v; saveLib(); }),
@@ -3352,13 +3417,7 @@ function renderProfile(){
         x.forSale && pr.sellSfx && lib.premium ? keep : null));
   }) : [h('p', { class:'hint' }, 'No sound effects yet. Save a take as a sound effect in Create, or upload one below.')]));
 
-  const got = lib.sfx.filter((x) => x.source === 'bought' || x.source === 'saved').map((x) => h('div', { class:'item' },
-    h('div', { class:'item-main' }, h('span', { class:'item-title', text:x.name }), h('span', { class:'item-meta', text:sourceLabel(x) + (x.source === 'bought' ? ' · ' + money(x.price) : '') }))));
-  const savedSongs = lib.saved.map((s) => h('div', { class:'item' },
-    h('div', { class:'item-main' }, h('span', { class:'item-title', text:s.title }), h('span', { class:'item-meta', text:'Song saved from ' + s.from }))));
-  const all = got.concat(savedSongs);
-  renderDrafts();
-  $('#pSaved').replaceChildren(...(all.length ? all : [h('p', { class:'hint' }, 'Songs you save and sound effects you get on Discover show up here.')]));
+  renderAlbum();
 
   const spent = lib.purchases.reduce((a, p) => a + p.price, 0), fees = lib.purchases.reduce((a, p) => a + p.fee, 0);
   $('#pEarn').replaceChildren(
@@ -3388,23 +3447,6 @@ $('#pPhoto').addEventListener('change', async (e) => {
   } catch (err){ $('#pHandleNote').textContent = 'That file couldn\'t be used as a photo. Try a JPG or PNG.'; }
 });
 $('#pPhotoRemove').addEventListener('click', () => { lib.profile.photo = null; saveLib(); paintMyAvatar(); });
-// Following: the singers you follow (and requests to private accounts); tap one to see their profile and their stuff
-function renderFollowing(){
-  const list = EXAMPLES.filter((c) => lib.follows.includes(c.id) || lib.requests.includes(c.id));
-  $('#pFollowHead').textContent = 'Following (' + lib.follows.length + ')';
-  $('#pFollowing').replaceChildren(...(list.length ? list.map((c) => {
-    const open = () => { showSection('discover'); dState.creator = c.id; renderDiscover(); window.scrollTo(0, 0); };
-    const row = h('div', { class:'creator', role:'button', tabindex:'0', 'aria-label':'Open ' + c.name + '\'s profile' },
-      avatar(c),
-      h('div', { class:'item-main' },
-        h('span', { class:'item-title' }, c.name, c.verified ? badge() : null),
-        h('span', { class:'item-meta', text:'@' + c.handle + ' · ' + (lib.follows.includes(c.id) ? (c.songs.length + ' song' + (c.songs.length === 1 ? '' : 's') + ' · ' + c.sfx.length + ' sound' + (c.sfx.length === 1 ? '' : 's')) : 'request sent') })),
-      h('span', { class:'item-meta' }, 'View →'));
-    row.addEventListener('click', open);
-    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(); } });
-    return row;
-  }) : [h('p', { class:'hint' }, 'Follow singers on Discover and they show up here. Tap one to see their profile, songs and sounds.')]));
-}
 $('#pHandle').addEventListener('input', (e) => {
   const v = e.target.value.replace(/[^a-z0-9_.]/gi, '').slice(0, 30);
   if (EXAMPLES.some((c) => c.handle.toLowerCase() === v.toLowerCase())){ $('#pHandleNote').textContent = '@' + v + ' is taken. Pick another username.'; e.target.value = lib.profile.handle; return; }
@@ -3430,15 +3472,16 @@ function setTab(sec){
 }
 function showSection(sec){
   if (rec.state !== 'idle' || state.busy) return;
-  if (sec === 'create'){ showPage(state.page); return; }
+  if (sec === 'create'){ showPage(0); return; }
   stopAllPlayback(); if (state.page === 2) closeEditor();
   state.section = sec;
-  [1, 2, 3].forEach((i) => { $('#page' + i).hidden = true; });
+  [0, 1, 2, 3].forEach((i) => { $('#page' + i).hidden = true; });
   $('#stepsNav').hidden = true;
   $('#discover').hidden = sec !== 'discover'; $('#profile').hidden = sec !== 'profile';
   setTab(sec);
   if (sec === 'discover') renderDiscover(); else renderProfile();
   window.scrollTo(0, 0);
+  maybeTour();
 }
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showSection(t.dataset.sec)));
 
@@ -3446,12 +3489,13 @@ document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () 
    First visit: create your profile, then a quick tour.
    The tour can be replayed from "Need help?" at the bottom of Profile.
    ========================================================= */
-async function cropPhoto(file){
+async function cropPhoto(file, size){
+  size = size || 256;
   const url = URL.createObjectURL(file);
   try {
     const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
-    const side = Math.min(img.naturalWidth, img.naturalHeight), cv = document.createElement('canvas'); cv.width = cv.height = 256;
-    cv.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
+    const side = Math.min(img.naturalWidth, img.naturalHeight), cv = document.createElement('canvas'); cv.width = cv.height = size;
+    cv.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, size, size);
     return cv.toDataURL('image/jpeg', 0.85);
   } finally { URL.revokeObjectURL(url); }
 }
@@ -3481,39 +3525,94 @@ $('#obCreate').addEventListener('click', () => {
   Object.assign(lib.profile, { name, handle, isPublic:$('#obPublic').checked, photo:obPhoto });
   saveLib();
   $('#onboard').hidden = true; document.body.style.overflow = '';
-  startTour();
+  showPage(0);
 });
 
-const TOUR = [
-  { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
-  { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to move the playhead, drag across it to pick a part, then Split, Duplicate or Delete. Record again and it continues from the playhead. + Layer stacks up to 4 layers.' },
-  { sel:'#pads', title:'Voice effects', text:'Tap a pad to turn it on or off while you sing. Hold one and slide up for more, down for less.' },
-  { sel:'#presets', title:'Presets', text:'Tap an empty slot to save the pads you like. Tap it later to bring them back.' },
-  { sel:'#toStep2', title:'Next: notes and vibe', text:'Scroll your song and tap + to pin a note for the AI, like "beat drops here". Describe the vibe and artists you like. The key, tempo and chords come from your voice.' },
-  { sel:null, title:'Then: listen and save', text:'Generate your song, play it, regenerate for a new version, add sound effects, and save the audio, a video, or a draft to finish later. Your work saves itself as you go.' },
-  { sel:'.tab[data-sec=discover]', title:'Discover', text:'Find singers, play their songs and pick up sound effects.' },
-  { sel:'.tab[data-sec=profile]', title:'Profile', text:'Your photo, who you follow, drafts, Premium and privacy. Want this tour again? Tap Need help at the bottom of Profile.' }
-];
-let tourStep = 0;
-function startTour(){
-  if (rec.state !== 'idle' || state.busy) return;
-  showPage(1);
-  tourStep = 0; $('#tour').hidden = false; document.body.style.overflow = 'hidden';
+const TOURS = {
+  home:[
+    { sel:'#tileNew', title:'Create new', text:'Start a new song. If you were in the middle of one, it goes to Drafts first, so nothing is lost.' },
+    { sel:'#tileDrafts', title:'Drafts', text:'Songs you saved to finish later. Tap to see them and open one.' },
+    { sel:'#libHead', title:'Your songs', text:'Finished songs you saved live here. Tap play to listen, and add an album photo.' },
+    { sel:'.tabbar', title:'Menu', text:'Discover to find singers and sounds, Create for your songs, Profile for your account. Everything saves on this device as you go.' }
+  ],
+  p1:[
+    { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
+    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to move the playhead, drag across it to pick a part, then Split, Duplicate or Delete. Record again and it continues from the playhead. + Layer stacks up to 4 layers.' },
+    { sel:'#pads', title:'Voice effects', text:'Tap a pad to turn it on or off while you sing. Hold one and slide up for more, down for less. They change your voice only.' },
+    { sel:'#presets', title:'Presets', text:'Tap an empty slot to save the pads you like. Tap it later to bring them back; while it\'s selected, your changes save into it.' },
+    { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to notes and vibe.' }
+  ],
+  p2:[
+    { sel:'.tl-card', title:'Your song timeline', text:'Scroll through your song. Tap the wave, then + to pin a note for the AI, like "beat drops here". Add duration to make a note cover a whole part.' },
+    { sel:'#vibe', title:'Describe the vibe', text:'Words like slow, dance, acoustic, 80s synth or dark shape the music. The key comes from your voice, or write one here, like "in A minor".' },
+    { sel:'#artists', title:'Artists you like', text:'Artists are style hints only: tempo, sound and mood. The app never copies their songs, recordings or voice.' },
+    { sel:'.ref-box', title:'A song you like', text:'Upload a song and the app matches its tempo and energy. It can\'t open links.' },
+    { sel:'.blend-panel', title:'AI Blend', text:'Premium: polishes your voice and blends the music around it. Off: the AI only makes the music behind you.' },
+    { sel:'#genBtn', title:'Generate', text:'The music is built around your voice: its key, tempo and melody. The backing uses the app\'s own synths and drums, never real recordings.' }
+  ],
+  p3:[
+    { sel:'#viz', title:'Your song', text:'Play it and drag the slider to move around.' },
+    { sel:'#regenBtn', title:'Regenerate', text:'Not quite right? Get a new arrangement of the same singing.' },
+    { sel:'#sfxHead', title:'Sound effects', text:'Add sounds you made, uploaded, or got on Discover at any point in the song.' },
+    { sel:'#keepPanel', title:'Keep it', text:'Add an album photo, save it to your songs, or save a draft to finish later.' },
+    { sel:'#saveAudio', title:'Save to your phone', text:'On a phone this opens the share menu: Save Video puts it in your camera roll, Save to Files keeps the audio.' }
+  ],
+  discover:[
+    { sel:'label[for=dvF]', title:'Following', text:'The singers you follow. Tap one to see their profile, songs and sounds.' },
+    { sel:'#dFilters', title:'Discover', text:'Search creators, songs and sounds. Creators marked Example are made up to show how this works; your own public songs and sounds show up here too.' },
+    { sel:'#dList', title:'Follow and get sounds', text:'Follow singers, play their songs, and get sound effects. Paid sounds are test purchases for now, so no money moves. A purple check means the account is verified.' }
+  ],
+  profile:[
+    { sel:'#pMe', title:'Your profile', text:'Your photo, name and username. It\'s saved on this device.' },
+    { sel:'#pAlbumHead', title:'Your album', text:'Everything you made and saved: songs, sound effects, and what you picked up on Discover. Tap one to play it.' },
+    { sel:'#pPlanHead', title:'Premium', text:'Premium adds AI Blend, lets you sell your sound effects (you keep 85%), and removes ads. Upgrades are test upgrades for now.' },
+    { sel:'#pVerifyHead', title:'Verified badge', text:'Ask for a badge that shows this account is really you, so no one can pretend to be you.' },
+    { sel:'#pCtlHead', title:'Privacy and selling', text:'Choose whether people can find you, see your songs, and buy your sounds.' },
+    { sel:'#pEarnHead', title:'Earnings', text:'Your sales show here once real payments are connected.' },
+    { sel:'#helpBtn', title:'Need help?', text:'Tap here any time to see all the tutorials again.' }
+  ]
+};
+const TOUR_SUMMARY = {
+  p2:{ sel:null, title:'Notes and vibe', text:'After you record, pin notes on your song for the AI, describe the vibe, name artists you like, and generate. The music is built around your voice.' },
+  p3:{ sel:null, title:'Listen and save', text:'Play your song, regenerate for a new version, add sound effects, give it an album photo, and save it to your songs, your phone, or Drafts.' }
+};
+const pageKey = () => state.section === 'create' ? ['home', 'p1', 'p2', 'p3'][state.page] : state.section;
+function goToKey(k){ if (k === 'home') showPage(0); else if (k === 'p1') showPage(1); else if (k === 'p2') showPage(2); else if (k === 'p3') showPage(3); else showSection(k); }
+let tour = null;
+// The first time you open each page, its tutorial runs.
+function maybeTour(){
+  if (needsProfile() || !$('#onboard').hidden || tour) return;
+  const k = pageKey(); lib.toursSeen = lib.toursSeen || {};
+  if (!TOURS[k] || lib.toursSeen[k]) return;
+  setTimeout(() => { if (!tour && pageKey() === k && !lib.toursSeen[k]) runTour(TOURS[k].map((st) => Object.assign({ key:k }, st))); }, 400);
+}
+function runTour(steps){
+  if (rec.state !== 'idle' || state.busy || !steps.length) return;
+  tour = { steps, i:0 };
+  $('#tour').hidden = false; document.body.style.overflow = 'hidden';
   showTourStep();
 }
-function endTour(){ $('#tour').hidden = true; document.body.style.overflow = ''; lib.tourDone = true; saveLib(); }
+function endTour(){
+  if (!tour) return;
+  lib.toursSeen = lib.toursSeen || {};
+  tour.steps.forEach((st) => { lib.toursSeen[st.key] = true; });
+  saveLib(); tour = null;
+  $('#tour').hidden = true; document.body.style.overflow = '';
+}
 function showTourStep(){
-  const st = TOUR[tourStep], el = st.sel && document.querySelector(st.sel);
-  $('#tourCount').textContent = (tourStep + 1) + ' of ' + TOUR.length;
+  const st = tour.steps[tour.i];
+  if (st.key && st.sel && pageKey() !== st.key) goToKey(st.key);
+  const el = st.sel && document.querySelector(st.sel);
+  $('#tourCount').textContent = (tour.i + 1) + ' of ' + tour.steps.length;
   $('#tourTitle').textContent = st.title; $('#tourText').textContent = st.text;
-  $('#tourBack').disabled = tourStep === 0;
-  $('#tourNext').textContent = tourStep === TOUR.length - 1 ? 'Done' : 'Next';
+  $('#tourBack').disabled = tour.i === 0;
+  $('#tourNext').textContent = tour.i === tour.steps.length - 1 ? 'Done' : 'Next';
   const spot = $('#tourSpot'), card = $('#tourCard');
   if (el && !el.closest('.tabbar')) el.scrollIntoView({ block:'center' });
   requestAnimationFrame(() => {
     const vh = window.innerHeight;
     card.style.top = card.style.bottom = '';
-    if (el){
+    if (el && el.getClientRects().length){
       const r = el.getBoundingClientRect(), pad = 8;
       spot.classList.remove('none');
       Object.assign(spot.style, { left:(r.left - pad) + 'px', top:(r.top - pad) + 'px', width:(r.width + pad * 2) + 'px', height:(r.height + pad * 2) + 'px' });
@@ -3527,12 +3626,118 @@ function showTourStep(){
     $('#tourNext').focus({ preventScroll:true });
   });
 }
-$('#tourNext').addEventListener('click', () => { if (tourStep < TOUR.length - 1){ tourStep++; showTourStep(); } else endTour(); });
-$('#tourBack').addEventListener('click', () => { if (tourStep > 0){ tourStep--; showTourStep(); } });
+$('#tourNext').addEventListener('click', () => { if (!tour) return; if (tour.i < tour.steps.length - 1){ tour.i++; showTourStep(); } else endTour(); });
+$('#tourBack').addEventListener('click', () => { if (tour && tour.i > 0){ tour.i--; showTourStep(); } });
 $('#tourSkip').addEventListener('click', endTour);
-document.addEventListener('keydown', (e) => { if (!$('#tour').hidden && e.key === 'Escape') endTour(); });
-window.addEventListener('resize', () => { if (!$('#tour').hidden) showTourStep(); });
-$('#helpBtn').addEventListener('click', startTour);
+document.addEventListener('keydown', (e) => { if (tour && e.key === 'Escape') endTour(); });
+window.addEventListener('resize', () => { if (tour) showTourStep(); });
+// Need help: every page's tutorial, one after another (steps 2 and 3 are summarized until you've made a song)
+$('#helpBtn').addEventListener('click', () => {
+  const all = [];
+  for (const k of ['home', 'p1', 'p2', 'p3', 'discover', 'profile']){
+    const ok = k === 'p2' ? state.clips.length > 0 : k === 'p3' ? !!state.result : true;
+    if (ok) TOURS[k].forEach((st) => all.push(Object.assign({ key:k }, st)));
+    else all.push(Object.assign({ key:k }, TOUR_SUMMARY[k]));
+  }
+  runTour(all);
+});
+
+/* =========================================================
+   Create home: continue, drafts, create new, your songs
+   ========================================================= */
+const hue = (t) => { let h = 0; for (const ch of t || '') h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
+function coverEl(title, cover, extraClass){
+  const el = h('span', { class:'cover' + (extraClass ? ' ' + extraClass : ''), style:'--c1:hsl(' + hue(title) + ' 70% 45%);--c2:hsl(' + ((hue(title) + 60) % 360) + ' 75% 55%)' });
+  el.append(cover ? h('img', { src:cover, alt:'' }) : h('span', { class:'cover-mark', 'aria-hidden':'true' }, (title || '?')[0].toUpperCase()));
+  return el;
+}
+const PLAY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+const STOP_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>';
+function playBtn(key, label, getBuf){
+  const b = h('button', { type:'button', class:'cover-play', 'aria-label':'Play ' + label });
+  b.innerHTML = PLAY_ICON; b.dataset.label = '';
+  b.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const wasMe = pv.key === key;
+    await previewToggle(key, getBuf, b);
+    b.innerHTML = !wasMe && pv.key === key ? STOP_ICON : PLAY_ICON;
+  });
+  return b;
+}
+let coverTarget = null;
+function renderHome(){
+  const doc = projectDoc(), work = hasWork(doc);
+  $('#continueCard').hidden = !work;
+  if (work) $('#continueMeta').textContent = fmt(songDur()) + ' recorded · ' + ['', 'recording', 'notes and vibe', 'listen and save'][state.workPage || 1];
+  renderDrafts();
+  const songs = lib.songs;
+  $('#homeLibrary').replaceChildren(...(songs.length ? songs.map((s) => {
+    const cov = coverEl(s.title, s.cover);
+    cov.append(playBtn('lib:' + s.id, s.title, () => store.get('blob:' + s.id).then(decodeBlob)));
+    const pick = h('button', { type:'button', class:'linkish', onclick:() => { coverTarget = s; $('#coverPickLib').click(); } }, s.cover ? 'Change album photo' : 'Add album photo');
+    return h('div', { class:'song-card' }, cov, h('span', { class:'item-title', text:s.title }), h('span', { class:'item-meta', text:fmt(s.dur) }), pick);
+  }) : [h('p', { class:'hint', style:'grid-column:1/-1' }, 'Finished songs you save show up here. Tap Create new to make your first one.')]));
+}
+$('#coverPickLib').addEventListener('change', async (e) => {
+  const f = e.target.files && e.target.files[0]; e.target.value = '';
+  if (!f || !coverTarget) return;
+  try { coverTarget.cover = await cropPhoto(f, 512); saveLib(); renderHome(); if (state.section === 'profile') renderAlbum(); }
+  catch (err){ setStatus($('#homeStatus'), 'That file couldn\'t be used as a photo. Try a JPG or PNG.', 'error'); }
+  coverTarget = null;
+});
+$('#tileDrafts').addEventListener('click', () => {
+  const open = $('#draftsPanel').hidden;
+  $('#draftsPanel').hidden = !open; $('#tileDrafts').setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open) $('#draftsPanel').scrollIntoView({ block:'nearest', behavior:'smooth' });
+});
+$('#tileNew').addEventListener('click', async () => {
+  if (state.busy || rec.state !== 'idle') return;
+  let note = '';
+  if (hasWork(projectDoc())){ const name = await saveCurrentAsDraft(); note = 'Your last song, "' + name + '", is saved in Drafts.'; }
+  resetProject();
+  showPage(1);
+  if (note) setStatus($('#status1'), note, 'ok');
+});
+$('#continueBtn').addEventListener('click', () => showPage(state.workPage || 1));
+function resetProject(){
+  stopAllPlayback();
+  Object.assign(state, { layers:[{ id:nextId++, segs:[] }], activeLayer:0, playhead1:0, sel1:null, zoom1:0, markers:[], selMarker:null, playhead2:0, result:null, variation:0, workPage:1 });
+  takeCount = 0; $('#vibe').value = ''; $('#artists').value = ''; $('#refLink').value = ''; state.ref = null; $('#refInfo').textContent = ''; $('#refPlay').hidden = true; $('#refClear').hidden = true; $('#mkEditor').hidden = true;
+  resetPads(); state.keyFrom = null; setKey('60:chromatic'); rec.live = [];
+  ['#status1', '#status2', '#status3'].forEach((s) => setStatus($(s), ''));
+  renderClips(); renderMarkerList();
+  autosave(); gcMedia();
+}
+// Profile album: everything you made and saved
+function renderAlbum(){
+  const tiles = [];
+  lib.songs.forEach((s) => tiles.push({ key:'lib:' + s.id, title:s.title, cover:s.cover, cap:s.title, get:() => store.get('blob:' + s.id).then(decodeBlob) }));
+  lib.saved.forEach((s) => { const ex = EXAMPLES.flatMap((c) => c.songs).find((x) => x.id === s.id); if (ex) tiles.push({ key:'song:' + s.id, title:s.title, cap:s.title + ' · ' + s.from, get:() => exampleSongBuffer(ex) }); });
+  lib.sfx.forEach((x) => tiles.push({ key:'sfx:' + x.id, title:'♪ ' + x.name, cap:x.name, sound:true, get:() => getSfxBuffer(x) }));
+  $('#pAlbum').replaceChildren(...(tiles.length ? tiles.map((t) => {
+    const btn = h('button', { type:'button', class:'album-tile', 'aria-label':'Play ' + t.cap },
+      coverEl(t.sound ? '♪' : t.title, t.cover), h('span', { class:'cap', text:t.cap }));
+    btn.addEventListener('click', async () => {
+      const was = pv.key === t.key;
+      document.querySelectorAll('.album-tile.playing').forEach((x) => x.classList.remove('playing'));
+      const fake = h('span'); await previewToggle(t.key, t.get, fake);
+      if (!was && pv.key === t.key) btn.classList.add('playing');
+    });
+    return btn;
+  }) : [h('p', { class:'hint', style:'grid-column:1/-1' }, 'Songs and sound effects you make and save show up here.')]));
+}
+// step 3: album photo for this song
+function paintCoverThumb(){
+  const r = state.result;
+  $('#coverThumb').replaceChildren(r && r.cover ? h('img', { src:r.cover, alt:'' }) : h('span', { class:'cover-mark', 'aria-hidden':'true' }, '♪'));
+  $('#coverLabel').firstChild.textContent = r && r.cover ? 'Change' : 'Add';
+}
+$('#coverFile').addEventListener('change', async (e) => {
+  const f = e.target.files && e.target.files[0]; e.target.value = '';
+  if (!f || !state.result) return;
+  try { state.result.cover = await cropPhoto(f, 512); paintCoverThumb(); }
+  catch (err){ setStatus($('#status3'), 'That file couldn\'t be used as a photo. Try a JPG or PNG.', 'error'); }
+});
 
 /* =========================================================
    Pages, start over, boot
@@ -3544,23 +3749,27 @@ function updateTabs(){
   $('#tab3').disabled = state.busy || !state.result;
 }
 function showPage(p){
-  if (p === 2 && !state.clips.length) p = 1;
+  if (p === 0){ /* home */ }
+  else if (p === 2 && !state.clips.length) p = 1;
   if (p === 3 && !state.result) p = state.clips.length ? 2 : 1;
   if (rec.state !== 'idle') return;
   stopAllPlayback();
   if (state.page === 2 && p !== 2) closeEditor();
-  state.page = p; state.section = 'create';
-  $('#discover').hidden = true; $('#profile').hidden = true; $('#stepsNav').hidden = false; setTab('create');
+  state.page = p; state.section = 'create'; if (p > 0) state.workPage = p;
+  $('#discover').hidden = true; $('#profile').hidden = true; $('#stepsNav').hidden = p === 0; setTab('create');
+  $('#page0').hidden = p !== 0;
   [1, 2, 3].forEach((i) => {
     $('#page' + i).hidden = i !== p;
     const t = $('#tab' + i);
     if (i === p) t.setAttribute('aria-current', 'step'); else t.removeAttribute('aria-current');
   });
+  if (p === 0) renderHome();
   window.scrollTo(0, 0);
   if (p === 1) requestAnimationFrame(renderClips);
   if (p === 2) requestAnimationFrame(layoutTimeline);
-  if (p === 3){ paintIdle(); renderSfxPanel(); }
+  if (p === 3){ paintIdle(); renderSfxPanel(); paintCoverThumb(); }
   updateTabs();
+  maybeTour();
 }
 document.querySelectorAll('.step-tab').forEach((b) => b.addEventListener('click', () => showPage(+b.dataset.page)));
 document.querySelectorAll('.back-top').forEach((b) => b.addEventListener('click', () => { if (!state.busy) showPage(+b.dataset.to); }));
@@ -3574,13 +3783,7 @@ $('#restartBtn').addEventListener('click', () => {
     return;
   }
   clearTimeout(restartArmed); restartArmed = 0; b.textContent = 'Start over';
-  stopAllPlayback();
-  Object.assign(state, { layers:[{ id:nextId++, segs:[] }], activeLayer:0, playhead1:0, sel1:null, zoom1:0, markers:[], selMarker:null, playhead2:0, result:null, variation:0 });
-  takeCount = 0; $('#vibe').value = ''; $('#artists').value = ''; $('#refLink').value = ''; state.ref = null; $('#refInfo').textContent = ''; $('#refPlay').hidden = true; $('#refClear').hidden = true; $('#mkEditor').hidden = true;
-  resetPads(); state.keyFrom = null; setKey('60:chromatic'); rec.live = [];
-  ['#status1', '#status2', '#status3'].forEach((s) => setStatus($(s), ''));
-  renderClips(); renderMarkerList(); showPage(1);
-  autosave(); gcMedia();
+  resetProject(); showPage(0);
 });
 
 let resizeT = 0;
@@ -3600,18 +3803,18 @@ setKey(state.key);
 renderClips(); updateAiMode();
 renderPresets();
 loadLib().catch(() => {}).then(async () => {
-  renderPresets(); renderDrafts(); syncPremiumUI();
+  renderPresets(); renderDrafts(); syncPremiumUI(); renderHome();
   if (needsProfile()) showOnboarding();
   // pick up where you left off
   try {
     const cur = await store.get('project:current');
     if (hasWork(cur)){
-      await loadProject(cur, $('#status1'));
-      const st = state.page === 3 ? $('#status3') : state.page === 2 ? $('#status2') : $('#status1');
-      setStatus(st, 'Picked up where you left off.', 'ok');
+      await loadProject(cur, $('#status1'), true);
+      setStatus($('#status1'), '');
     }
   } catch (err){ setStatus($('#status1'), 'Your last song couldn\'t be restored: ' + (err.message || err) + '.', 'error'); }
   restoring = false;
+  if (!needsProfile()) showPage(0);
 });
 })();
 </script>
