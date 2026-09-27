@@ -162,7 +162,7 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .fx-row input[type=range]{width:100%;accent-color:var(--c);height:28px;margin:0}
 .fx-row.removed .fx-name{text-decoration:line-through;color:var(--faint)}
 .fx-row.removed input{opacity:.3}
-.d-subrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:-6px}
+.d-subrow{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:-6px}
 .d-subrow .subseg{margin-top:0}
 .icon-btn{display:grid;place-items:center;width:40px;height:40px;border-radius:99px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);cursor:pointer;flex:none}
 .icon-btn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -238,6 +238,14 @@ body:not(.recording) #recTime{display:none}
 .boot-cover svg{width:56px;height:56px}
 .prof-head{cursor:pointer}
 .pstat{appearance:none;border:0;font:inherit;cursor:pointer}
+.trophy-wrap{display:inline-flex;flex:none}
+.ic.trophy{width:18px;height:18px;stroke-width:2.2}
+.pub-name .ic.trophy{width:24px;height:24px}
+.rank{flex:none;width:26px;text-align:center;font-size:15px;font-weight:700;color:var(--muted)}
+.rank.top{color:#fbbf24}
+#dSub label[hidden]{display:none}
+#dSub.three label{padding:6px 8px;font-size:12.5px}
+#dSub.three{gap:2px}
 .title-row{display:flex;align-items:center;gap:8px;min-width:0}
 .title-row .item-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .like{appearance:none;border:0;background:none;padding:2px 4px;margin:-2px 0;display:inline-flex;align-items:center;gap:3px;color:var(--muted);font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex:none;border-radius:8px}
@@ -825,6 +833,7 @@ legend{padding:0}
       <div id="dSub" class="subseg" role="radiogroup" aria-label="Which to show">
         <input type="radio" name="dsub" id="dsT" value="trending" checked><label for="dsT">Trending</label>
         <input type="radio" name="dsub" id="dsF" value="mine"><label for="dsF" id="dsFLabel">Following</label>
+        <input type="radio" name="dsub" id="dsL" value="leader"><label for="dsL" id="dsLLabel">Leaderboard</label>
       </div>
       <button type="button" id="dRefresh" class="icon-btn" aria-label="Refresh"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></button>
     </div>
@@ -1223,6 +1232,7 @@ const ICONS = {
   x:'<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
   back:'<path d="M15 5l-7 7 7 7"/>',
   pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  trophy:'<path d="M8 4h8v6a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 14v3M9 20h6M10 17h4"/>',
   heart:'<path d="M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.7 3.8 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.8 1.2-1.7 2.8-2.8 4.8-2.8 3.4 0 5.6 3.2 4.4 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"/>',
   copy:'<rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'
 };
@@ -4834,6 +4844,24 @@ function sfxRow(x, c){
   return h('div', { class:'item' }, play,
     h('div', { class:'item-main' }, h('div', { class:'title-row' }, h('span', { class:'item-title', text:x.name }), likeBtn('sfx', x, c)), meta), action);
 }
+/* Leaderboard: everything a creator has earned so far (followers, likes, saves, buys, views), not just this week */
+function leaderScore(c){
+  let pts = followers(c) * 2;
+  const add = (kind, it) => {
+    if (/^ex-/.test(it.id)){ const st = seedStats(it.id); pts += st.views * 0.2 + st.likes + st.saves * 2 + st.buys * 4; }
+    lib.activity.forEach((a) => { if (a.k === kind + ':' + it.id) pts += TREND_W[a.type] || 1; });
+  };
+  c.songs.forEach((s) => add('song', s)); c.sfx.forEach((x) => add('sfx', x));
+  lib.activity.forEach((a) => { if (a.k === 'creator:' + c.id) pts += 0.5; });
+  return pts;
+}
+function leaderboard(){ return creators().filter((c) => c.isPublic).map((c) => [c, leaderScore(c)]).sort((a, b) => b[1] - a[1]).map((p) => p[0]); }
+const TROPHY = ['#fbbf24', '#cbd5e1', '#d97706'];
+function trophyFor(c){
+  const i = leaderboard().findIndex((x) => x.id === c.id); if (i < 0 || i > 2) return null;
+  const t = icon('trophy', 'trophy'); t.style.color = TROPHY[i];
+  const w = h('span', { class:'trophy-wrap', title:['1st', '2nd', '3rd'][i] + ' on the leaderboard', 'aria-label':['1st', '2nd', '3rd'][i] + ' on the leaderboard' }); w.append(t); return w;
+}
 function creatorCard(c){
   const following = lib.follows.includes(c.id), requested = lib.requests.includes(c.id);
   let follow = null;
@@ -4846,7 +4874,7 @@ function creatorCard(c){
   const card = h('div', { class:'creator', role:'button', tabindex:'0', 'aria-label':'Open ' + c.name },
     avatar(c),
     h('div', { class:'item-main' },
-      h('span', { class:'item-title' }, h('span', { class:'cname', text:c.name }), c.verified ? badge() : null, c.mine ? h('span', { class:'tag' }, 'You') : null),
+      h('span', { class:'item-title' }, h('span', { class:'cname', text:c.name }), c.verified ? badge() : null, trophyFor(c), c.mine ? h('span', { class:'tag' }, 'You') : null),
       h('span', { class:'item-meta', text:'@' + c.handle }),
       h('span', { class:'item-meta', text:counts + (c.mine ? '' : ' · Example') })),
     follow);
@@ -4895,7 +4923,9 @@ function renderDiscover(){
   $('#dBack').hidden = !dState.creator; $('#dFilters').hidden = !!dState.creator; $('#dSubRow').hidden = !!dState.creator;
   const sub = dState.subs[dState.view];
   $('#dsFLabel').textContent = dState.view === 'creators' ? 'Following' : 'Saved';
-  $('#dsT').checked = sub === 'trending'; $('#dsF').checked = sub !== 'trending';
+  const isC = dState.view === 'creators';
+  $('#dsL').hidden = $('#dsLLabel').hidden = !isC; $('#dSub').classList.toggle('three', isC);
+  $('#dsT').checked = sub === 'trending'; $('#dsF').checked = sub === 'mine' || (!isC && sub === 'leader'); $('#dsL').checked = isC && sub === 'leader';
   if (dState.creator){
     const c = all.find((x) => x.id === dState.creator) || EXAMPLES[0];
     const head = h('div', { class:'panel creator-head' }, creatorCard(c), c.bio ? h('p', { class:'hint', text:c.bio }) : null);
@@ -4912,7 +4942,11 @@ function renderDiscover(){
   }
   let rows = [];
   let empty = 'Nothing here yet.';
-  if (dState.view === 'creators' && sub !== 'trending'){
+  if (dState.view === 'creators' && sub === 'leader'){
+    const lb = leaderboard();
+    rows = lb.filter((c) => match(c.name, c.handle, c.bio)).map((c) => { const card = creatorCard(c), rank = lb.findIndex((x) => x.id === c.id) + 1; card.prepend(h('span', { class:'rank mono' + (rank <= 3 ? ' top' : ''), text:String(rank) })); return card; });
+  }
+  else if (dState.view === 'creators' && sub !== 'trending'){
     rows = EXAMPLES.filter((c) => (lib.follows.includes(c.id) || lib.requests.includes(c.id)) && match(c.name, c.handle, c.bio)).map(creatorCard);
     empty = 'You aren\'t following anyone yet. Switch to Trending and follow the singers you like.';
   }
@@ -5038,7 +5072,7 @@ function renderPublicView(){
   const hero = h('section', { class:'pub-hero' },
     h('div', { class:'pub-banner', style:'--bnr:' + bannerOf(m) }),
     avatar({ name:m.name, color:m.color, photo:m.photo }),
-    h('span', { class:'pub-name' }, h('span', { text:m.name }), m.verified ? badge() : null),
+    h('span', { class:'pub-name' }, h('span', { text:m.name }), m.verified ? badge() : null, trophyFor(m)),
     h('span', { class:'prof-handle', text:'@' + m.handle }),
     m.bio ? h('p', { class:'prof-bio', text:m.bio }) : null,
     followBtn,
@@ -5352,7 +5386,7 @@ const TOURS = {
   ],
   discover:[
     { sel:'#dFilters', title:'Discover', text:'Search creators, songs and sounds. Creators marked Example are made up to show how this works; your own public songs and sounds show up here too.' },
-    { sel:'#dSubRow', title:'Trending, Following and Saved', text:'Trending is what\'s new and getting attention fast: profile views, plays, likes, saves and buys all count, the most recent count the most, and newer posts get a boost. Following shows singers you follow; Saved shows songs and sounds you saved or bought. The arrow refreshes the list.' },
+    { sel:'#dSubRow', title:'Trending, Following and Saved', text:'Trending is what\'s new and getting attention fast: profile views, plays, likes, saves and buys all count, the most recent count the most, and newer posts get a boost. Leaderboard ranks creators by everything they\'ve earned (followers, likes, saves, buys); the top three get a trophy. Following shows singers you follow; Saved shows songs and sounds you saved or bought. The arrow refreshes the list.' },
     { sel:'#dList', title:'Follow and get sounds', text:'Follow singers, play their songs, and get sound effects. Paid sounds are test purchases for now, so no money moves. A purple check means the account is verified.' }
   ],
   profile:[
