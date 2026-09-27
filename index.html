@@ -122,6 +122,21 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 @media (prefers-reduced-motion: reduce){ .tour-spot{transition:none} }
 .share-box{display:flex;flex-direction:column;gap:10px;border:1px solid var(--accent-b);border-radius:14px;padding:14px;background:color-mix(in srgb,var(--accent-b) 10%,var(--surface))}
 .share-box .summary{margin:0}
+.icon-btn.sm{width:36px;height:36px}
+.icon-btn:disabled{opacity:.35;cursor:default}
+.countdown{position:fixed;inset:0;z-index:65;display:grid;place-items:center;background:rgba(8,5,16,.55);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);cursor:pointer}
+.countdown span{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:150px;line-height:1;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));-webkit-background-clip:text;background-clip:text;color:transparent;animation:cdpop 1s ease-out}
+.countdown small{position:absolute;bottom:calc(40px + env(safe-area-inset-bottom));left:0;right:0;text-align:center;color:var(--muted);font-size:14px}
+@keyframes cdpop{from{transform:scale(1.5);opacity:0}25%{opacity:1}to{transform:scale(.9);opacity:.9}}
+.fx-row{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
+.fx-row:last-child{border-bottom:0}
+.fx-top{display:flex;align-items:center;gap:10px}
+.fx-dot{width:12px;height:12px;border-radius:99px;background:var(--c);flex:none}
+.fx-name{flex:1;font-weight:700}
+.fx-val{font-size:13px;color:var(--muted);min-width:64px;text-align:right}
+.fx-row input[type=range]{width:100%;accent-color:var(--c);height:28px;margin:0}
+.fx-row.removed .fx-name{text-decoration:line-through;color:var(--faint)}
+.fx-row.removed input{opacity:.3}
 .d-subrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:-6px}
 .d-subrow .subseg{margin-top:0}
 .icon-btn{display:grid;place-items:center;width:40px;height:40px;border-radius:99px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);cursor:pointer;flex:none}
@@ -283,12 +298,16 @@ legend{padding:0}
 /* timeline */
 .tl-card{gap:12px}
 .tl-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.editor .tl-bar{flex-wrap:nowrap;gap:6px}
+.editor .tl-bar .tl-time{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.editor .tl-bar .btn.small{padding-inline:10px}
+.editor .tl-bar #edZoomOut,.editor .tl-bar #edZoomIn{min-width:34px!important;padding-inline:0}
 .tl-bar .spacer{flex:1}
 .tl-time{font-size:12px;color:var(--muted)}
 .tl-scroll{overflow-x:auto;overflow-y:hidden;border-radius:14px;background:var(--bg);border:1px solid var(--line);-webkit-overflow-scrolling:touch;scrollbar-width:thin}
 .tl-inner{position:relative;height:156px}
 .tl-inner canvas{position:sticky;left:0;display:block;height:156px}
-.tl-pin{position:absolute;top:30px;width:30px;height:30px;margin-left:-15px;border-radius:50%;border:2px solid #fff;background:var(--accent-b);color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:grid;place-items:center;padding:0;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.tl-pin{z-index:2;position:absolute;top:30px;width:30px;height:30px;margin-left:-15px;border-radius:50%;border:2px solid #fff;background:var(--accent-b);color:#fff;font-size:14px;font-weight:700;cursor:pointer;display:grid;place-items:center;padding:0;box-shadow:0 4px 12px rgba(0,0,0,.3)}
 .tl-pin::after{content:"";position:absolute;left:50%;top:28px;width:2px;height:92px;margin-left:-1px;background:var(--accent-b);opacity:.7;pointer-events:none}
 .tl-pin.sel{background:var(--accent-a);transform:scale(1.12)}
 .tl-add{position:absolute;top:30px;width:34px;height:34px;margin-left:-17px;border-radius:50%;border:2px dashed var(--accent-b);background:rgba(255,255,255,.92);color:var(--accent-b);font-size:22px;font-weight:700;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0;box-shadow:0 4px 12px rgba(0,0,0,.25)}
@@ -300,8 +319,10 @@ legend{padding:0}
 .ref-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .mk-dur{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .mk-dur > div{width:100%;display:flex;flex-direction:column;gap:4px}
-.tl-end{position:absolute;top:36px;width:22px;height:104px;margin-left:-11px;border:0;border-radius:8px;background:transparent;cursor:ew-resize;touch-action:none;padding:0}
-.tl-end::before{content:"";position:absolute;left:8px;top:0;bottom:0;width:6px;border-radius:3px;background:var(--accent-a);box-shadow:0 0 0 2px #fff}
+.tl-box{position:absolute;top:26px;height:124px;border:2.5px solid var(--accent-b);border-radius:12px;background:rgba(236,72,153,.1);cursor:grab;touch-action:none;box-shadow:0 0 18px rgba(236,72,153,.35);z-index:1}
+.tl-grip{position:absolute;top:50%;width:26px;height:56px;margin-top:-28px;cursor:ew-resize;touch-action:none}
+.tl-grip.l{left:-14px}.tl-grip.r{right:-14px}
+.tl-grip::before{content:"";position:absolute;left:8px;top:0;width:10px;height:100%;border-radius:5px;background:var(--accent-b);box-shadow:0 0 0 2px #fff}
 .mk-editor{display:flex;flex-direction:column;gap:8px;background:var(--surface-2);border-radius:12px;padding:12px}
 .point-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
 .point-list li{display:flex;align-items:center;gap:8px;background:var(--surface-2);border-radius:10px;padding:4px;font-size:14px}
@@ -403,7 +424,7 @@ legend{padding:0}
     <div class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="logoGrad" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><path d="M3.5 23 Q 6 20.5 8 23.5 Q 10 26.5 14 26.5 C 19 26.5 22 24 21.5 20.5 C 21 16.5 11 17.5 10.5 12 C 10 7.5 15 6 18.5 6.5 Q 21.5 7 22.8 9.2 Q 24.5 11.5 28 4.5" fill="none" stroke="url(#logoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Sing to Song</div>
     <nav class="steps-nav" id="stepsNav" aria-label="Creator steps">
       <button type="button" class="step-tab" id="tab1" data-page="1" aria-current="step"><span>Step 1</span>Record and cut</button>
-      <button type="button" class="step-tab" id="tab2" data-page="2" disabled><span>Step 2</span>Adjust and edit</button>
+      <button type="button" class="step-tab" id="tab2" data-page="2" disabled><span>Step 2</span>Prep and adjust</button>
       <button type="button" class="step-tab" id="tab3" data-page="3" disabled><span>Step 3</span>Generate and finish</button>
     </nav>
   </header>
@@ -452,10 +473,11 @@ legend{padding:0}
 
     <section class="editor" aria-label="Your song">
       <div class="tl-bar">
-        <button type="button" id="edPlay" class="btn small" style="min-width:76px">Play</button>
+        <button type="button" id="edUndo" class="icon-btn sm" aria-label="Undo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+        <button type="button" id="edRedo" class="icon-btn sm" aria-label="Redo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+        <button type="button" id="edPlay" class="btn small" style="min-width:64px">Play</button>
         <span id="edTime" class="tl-time mono">0:00.0 / 0:00.0</span>
         <span class="spacer"></span>
-        <span class="tl-time">Zoom</span>
         <button type="button" id="edZoomOut" class="btn small" style="min-width:36px" aria-label="Zoom out">−</button>
         <button type="button" id="edZoomIn" class="btn small" style="min-width:36px" aria-label="Zoom in">+</button>
       </div>
@@ -495,7 +517,7 @@ legend{padding:0}
   <main id="page2" class="page" hidden>
     <button type="button" class="back-top" data-to="1" aria-label="Back to Record and cut"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div>
-      <h1>Adjust and edit</h1>
+      <h1>Prep and adjust</h1>
       <p class="lede">Scroll through your song. Tap the wave, then tap + to pin a note for the AI. Give it a duration to cover a whole section.</p>
     </div>
     <div id="status2" class="status" role="status" aria-live="polite"></div>
@@ -514,7 +536,7 @@ legend{padding:0}
           <canvas id="tlCanvas" aria-hidden="true"></canvas>
           <div id="tlPins"></div>
           <button type="button" id="tlAdd" class="tl-add" aria-label="Add a note here" hidden>+</button>
-          <button type="button" id="tlEnd" class="tl-end" aria-label="Drag to set where this note ends" hidden></button>
+          <div id="tlBox" class="tl-box" hidden><span class="tl-grip l" data-edge="l" aria-label="Drag to change where it starts" role="slider"></span><span class="tl-grip r" data-edge="r" aria-label="Drag to change where it ends" role="slider"></span></div>
         </div>
       </div>
       <input type="range" id="tlPos" class="tl-pos" min="0" max="1" step="0.05" value="0" aria-label="Position in the song">
@@ -524,8 +546,7 @@ legend{padding:0}
         <div class="mk-dur">
           <button type="button" id="mkDurBtn" class="btn small">Add duration</button>
           <div id="mkDurCtl" hidden>
-            <label class="label" for="mkEnd" style="margin:0">Covers <span id="mkRange" class="mono"></span></label>
-            <input type="range" id="mkEnd" class="tl-pos" min="0" max="1" step="0.05" value="0">
+            <span class="label" style="margin:0">Covers <span id="mkRange" class="mono"></span>. Slide the box on the wave to move it, or drag its edges to change the length.</span>
             <button type="button" id="mkDurRemove" class="linkish">Make it a single moment again</button>
           </div>
         </div>
@@ -537,6 +558,20 @@ legend{padding:0}
         </div>
       </div>
       <ul id="mkList" class="point-list"></ul>
+    </section>
+
+    <section class="panel" aria-labelledby="sfxHead">
+      <div>
+        <h2 id="sfxHead">Sound effects</h2>
+        <p class="hint">Tap the wave to put the red line where you want a sound, then press Add. It drops in at <span id="sfxAt" class="mono">0:00.0</span>.</p>
+      </div>
+      <div id="sfxLib" class="d-list"></div>
+      <p id="sfxEmpty" class="hint">No sound effects yet. Save part of a recording as a sound effect on step 1, get some on Discover, or upload one.</p>
+      <label class="btn small file-pick" style="align-self:flex-start">Upload a sound effect<input id="sfxFile" class="sr-only" type="file" accept="audio/*"></label>
+      <div>
+        <span class="label">In your song</span>
+        <ul id="sfxPlaced" class="point-list"></ul>
+      </div>
     </section>
 
     <section class="panel" aria-labelledby="vibeHead">
@@ -590,7 +625,7 @@ legend{padding:0}
 
   <!-- STEP 3 -->
   <main id="page3" class="page" hidden>
-    <button type="button" class="back-top" data-to="2" aria-label="Back to Notes and vibe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button type="button" class="back-top" data-to="2" aria-label="Back to Prep and adjust"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div>
       <h1>Generate and finish</h1>
       <p class="lede">Play your song. Regenerate for a different arrangement, or save it.</p>
@@ -609,19 +644,6 @@ legend{padding:0}
     </section>
     <div id="status3" class="status" role="status" aria-live="polite"></div>
     <button type="button" id="regenBtn" class="btn primary big">Regenerate</button>
-    <section class="panel" aria-labelledby="sfxHead">
-      <div>
-        <h2 id="sfxHead">Add sound effects</h2>
-        <p class="hint">Optional. Move the song to where you want a sound, then press Add. It drops in at <span id="sfxAt" class="mono">0:00.0</span>.</p>
-      </div>
-      <div id="sfxLib" class="d-list"></div>
-      <p id="sfxEmpty" class="hint">No sound effects yet. Save a take as a sound effect on step 1, get some on Discover, or upload one.</p>
-      <label class="btn small file-pick" style="align-self:flex-start">Upload a sound effect<input id="sfxFile" class="sr-only" type="file" accept="audio/*"></label>
-      <div>
-        <span class="label">In your song</span>
-        <ul id="sfxPlaced" class="point-list"></ul>
-      </div>
-    </section>
     <section id="keepPanel" class="panel keep-panel" aria-labelledby="keepHead">
       <h2 id="keepHead">Keep it</h2>
       <div class="cover-pick">
@@ -788,6 +810,20 @@ legend{padding:0}
   </div>
 </nav>
 
+<div id="countdown" class="countdown" hidden role="status" aria-live="assertive"><span id="cdNum">3</span><small>Tap to cancel</small></div>
+
+<div id="fxSheet" class="sheet-backdrop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fxTitle">
+    <h2 id="fxTitle">Effects here</h2>
+    <p id="fxWhen" class="summary"></p>
+    <div id="fxRows"></div>
+    <div class="actions">
+      <button type="button" id="fxCancel" class="btn">Cancel</button>
+      <button type="button" id="fxSave" class="btn primary">Save</button>
+    </div>
+  </div>
+</div>
+
 <div id="clipSheet" class="sheet-backdrop" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="clipTitle">
     <h2 id="clipTitle">Delete this clip?</h2>
@@ -873,7 +909,7 @@ const LOGO_PATH = 'M3.5 23 Q 6 20.5 8 23.5 Q 10 26.5 14 26.5 C 19 26.5 22 24 21.
 
 const state = {
   page:0, workPage:1, section:'create', ref:null, clips:[], key:'60:chromatic', keyFrom:null, voice:null, blend:true, monitor:false,
-  markers:[], selMarker:null, playhead2:0, pps:40, result:null, busy:false, variation:0
+  markers:[], sfx2:[], selMarker:null, playhead2:0, pps:40, result:null, busy:false, variation:0
 };
 let nextId = 1, takeCount = 0;
 
@@ -1275,11 +1311,12 @@ function fxSegments(events, len, sr){
 const recBtn = $('#recBtn'), recTime = $('#recTime'), recHint = $('#recHint');
 const rec = { state:'idle', stream:null, src:null, node:null, sp:null, engine:null, monitor:null, chunks:[], events:[], live:[], count:0,
   t0:0, timer:0, pressAt:0, startedByPress:false, stopWanted:false, holdTimer:0, stopWait:null, raf:0, lastNote:0 };
-const DEFAULT_HINT = 'Tap to start, tap again to stop. Or hold, then release. Up to 10 minutes.';
+const DEFAULT_HINT = 'Tap to start. You get a 3-second countdown. Tap again to stop. Up to 10 minutes.';
+const cd = { on:false, timer:0 };
 
 function setRecUI(){
   const on = rec.state === 'recording';
-  const busy = rec.state !== 'idle';
+  const busy = rec.state !== 'idle' || cd.on;
   if (busy !== document.body.classList.contains('recording')){
     document.body.classList.toggle('recording', busy);
     if (busy) window.scrollTo(0, 0);
@@ -1427,16 +1464,30 @@ async function stopRecording(){
   setStatus($('#status1'), 'Added ' + fmt(raw.length / sr) + (state.layers.length > 1 ? ' to layer ' + layerNo : '') + '.' + (rec.hitLimit ? ' It reached the 10-minute limit, so recording stopped.' : ''), 'ok');
 }
 
+// 3, 2, 1, then recording starts
+function startCountdown(){
+  if (rec.state !== 'idle' || cd.on || (typeof paint !== 'undefined' && paint.busy)) return;
+  stopAllPlayback();
+  try { const c = ctx(); if (c.state !== 'running') c.resume(); } catch (_) {}
+  cd.on = true; setRecUI();
+  let n = 3;
+  const show = () => { const el = $('#cdNum'); el.textContent = n; el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; if (navigator.vibrate) navigator.vibrate(8); };
+  $('#countdown').hidden = false; show();
+  const tick = () => {
+    n--;
+    if (n > 0){ show(); cd.timer = setTimeout(tick, 1000); return; }
+    $('#countdown').hidden = true; cd.on = false;
+    startRecording();
+  };
+  cd.timer = setTimeout(tick, 1000);
+}
+function cancelCountdown(){ if (!cd.on) return; clearTimeout(cd.timer); cd.on = false; $('#countdown').hidden = true; setRecUI(); }
+$('#countdown').addEventListener('click', cancelCountdown);
 recBtn.addEventListener('pointerdown', (e) => {
   if (e.button !== undefined && e.button !== 0) return;
   e.preventDefault();
-  try { recBtn.setPointerCapture(e.pointerId); } catch (_) {}
-  if (rec.state === 'idle'){
-    rec.pressAt = performance.now(); rec.startedByPress = true;
-    clearTimeout(rec.holdTimer);
-    rec.holdTimer = setTimeout(() => { if (rec.startedByPress && rec.state === 'recording') recHint.textContent = 'Recording. Let go to stop.'; }, HOLD_MS);
-    startRecording();
-  } else rec.startedByPress = false;
+  rec.startedByPress = false;
+  if (rec.state === 'idle' && !cd.on) startCountdown();
 });
 function recRelease(cancelled){
   clearTimeout(rec.holdTimer);
@@ -1453,7 +1504,7 @@ recBtn.addEventListener('keydown', (e) => {
   if (e.key !== ' ' && e.key !== 'Enter') return;
   e.preventDefault(); if (e.repeat) return;
   rec.startedByPress = false;
-  if (rec.state === 'idle') startRecording(); else stopRecording();
+  if (cd.on) cancelCountdown(); else if (rec.state === 'idle') startCountdown(); else stopRecording();
 });
 
 /* =========================================================
@@ -1903,15 +1954,21 @@ function drawEditor(){
   const waveBg = cssVar('--wave-bg', '#1d1631'), tuned = cssVar('--tuned', '#fbbf24');
   const waveFill = g.createLinearGradient(0, 0, w, 0); waveFill.addColorStop(0, '#8b5cf6'); waveFill.addColorStop(0.55, '#c084fc'); waveFill.addColorStop(1, '#ec4899');
   // ruler
-  const stepS = span > 240 ? 30 : span > 90 ? 10 : span > 30 ? 5 : span > 12 ? 2 : 1;
+  const stepS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60].find((st) => span / st <= 7) || 120;
+  const lab = (t) => stepS >= 1 ? fmt(t) : stepS >= 0.1 ? fmtT(t) : t.toFixed(2) + 's';
   g.font = '500 10px "JetBrains Mono", ui-monospace, monospace'; g.textAlign = 'left';
-  for (let t = Math.ceil(vs / stepS) * stepS; t <= vs + span; t += stepS){ const x = X(t); g.fillStyle = muted; g.fillRect(x, 12, 1, 7); g.fillText(fmt(t), x + 3, 10); }
+  for (let k = Math.ceil(vs / stepS - 1e-9); k * stepS <= vs + span; k++){ const t = k * stepS, x = X(t); g.fillStyle = muted; g.fillRect(x, 12, 1, 7); g.fillText(lab(t), x + 3, 10); }
+  ed.fxHits = [];
   let gpk = 0; state.clips.forEach((s) => { if (s.src.buffer) gpk = Math.max(gpk, s.src.peak); }); gpk = gpk || 1;
   const box = laneBox(hh);
   state.layers.forEach((layer, li) => {
     const { y, h:lh } = box(li), mid = y + lh / 2, amp = lh / 2 - 6;
-    roundRectPath(g, 2, y, w - 4, lh, 10); g.fillStyle = waveBg; g.fill();
+    roundRectPath(g, 2, y, w - 4, lh, 10); g.fillStyle = 'rgba(255,255,255,.025)'; g.fill();
     if (li === state.activeLayer && state.layers.length > 1){ g.lineWidth = 2; g.strokeStyle = pink; g.stroke(); }
+    // each clip is its own rounded block with a gap between, so you can see where a new section starts
+    const blocks = layer.segs.map((s) => ({ s, x0:X(s.at) + 2, x1:X(segEnd(s)) - 2 })).filter((b) => b.x1 > -10 && b.x0 < w + 10);
+    blocks.forEach((b) => { roundRectPath(g, b.x0, y + 3, Math.max(2, b.x1 - b.x0), lh - 6, Math.min(9, (b.x1 - b.x0) / 2)); g.fillStyle = waveBg; g.fill(); g.lineWidth = 1; g.strokeStyle = 'rgba(167,139,250,.28)'; g.stroke(); });
+    g.save(); g.beginPath(); blocks.forEach((b) => g.rect(b.x0, y + 3, Math.max(0, b.x1 - b.x0), lh - 6)); g.clip();
     // wave, one column every 3 px
     const pts = [];
     for (let x = 8; x <= w - 8; x += 3){
@@ -1927,15 +1984,18 @@ function drawEditor(){
       pts.push([x, any ? Math.max(1, (pk / gpk) * amp) : 0]);
     }
     if (pts.length > 1){ blobPath(g, pts, mid); g.fillStyle = waveFill; g.fill(); }
-    // pieces: pink strips where pads were on, dashed lines where pieces meet
-    g.fillStyle = tuned;
-    layer.segs.forEach((s) => s.src.segs.forEach(([a, b]) => {
-      const a1 = Math.max(a, s.start), b1 = Math.min(b, s.end); if (b1 <= a1) return;
-      const xa = X(s.at + a1 - s.start), xb = X(s.at + b1 - s.start); g.fillRect(xa, y + lh - 6, Math.max(2, xb - xa), 3);
+    // gold strips where effects are on, with the effect's name; tap one to change or remove it
+    g.font = '700 10px "Figtree", system-ui, sans-serif';
+    layer.segs.forEach((s) => fxRegions(s.src).forEach((r) => {
+      const sr = s.src.sr, a1 = Math.max(r.a / sr, s.start), b1 = Math.min(r.b / sr, s.end); if (b1 <= a1) return;
+      const xa = X(s.at + a1 - s.start), xb = X(s.at + b1 - s.start); if (xb < 0 || xa > w) return;
+      const sy = y + lh - 10, sel = ed.fxSel && ed.fxSel.seg === s && ed.fxSel.r === r;
+      g.fillStyle = tuned; g.globalAlpha = sel ? 1 : 0.9; roundRectPath(g, xa, sy, Math.max(3, xb - xa), sel ? 7 : 5, 2.5); g.fill(); g.globalAlpha = 1;
+      const name = r.list.map((f) => fxName(f.key)).join(' + ');
+      if (xb - xa > g.measureText(name).width + 6 && lh > 40){ g.fillStyle = tuned; g.fillText(name, Math.max(xa, 4) + 2, sy - 4); }
+      ed.fxHits.push({ x0:xa - 4, x1:xb + 4, y0:sy - 16, y1:sy + 12, lane:li, seg:s, r });
     }));
-    g.setLineDash([3, 3]); g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1;
-    layer.segs.forEach((s) => { if (s.at > 0.01){ const x = X(s.at) + 0.5; g.beginPath(); g.moveTo(x, y + 4); g.lineTo(x, y + lh - 4); g.stroke(); } });
-    g.setLineDash([]);
+    g.restore();
     // live recording into this layer
     if (rec.state === 'recording' && rec.layer === li && rec.live.length > 1){
       const per = 1024 / (actx ? actx.sampleRate : 48000), lp = [], fx = [];
@@ -1990,6 +2050,7 @@ function edReadouts(){
   $('#edTime').textContent = fmtT(state.playhead1) + ' / ' + fmtT(dur) + (dur > MAX_SEC ? ' (over 10:00)' : '');
   const layer = state.layers[state.activeLayer], sel = state.sel1, has = dur > 0;
   $('#edSplit').disabled = !segAt(layer, state.playhead1);
+  $('#edZoomIn').disabled = state.span1 !== Infinity && edSpan() <= 0.051; $('#edZoomOut').disabled = state.span1 === Infinity || !has;
   $('#edDup').disabled = !(sel || segAt(layer, state.playhead1));
   $('#edDel').disabled = !sel;
   $('#edDel').textContent = sel ? 'Delete ' + fmtS(sel.b - sel.a) : 'Delete';
@@ -2004,7 +2065,7 @@ function edReadouts(){
   updateTabs();
 }
 function renderEditor(){ sizeEditor(); drawEditor(); edReadouts(); }
-function renderClips(){ invalidateJoined(); renderEditor(); scheduleAutosave(); }
+function renderClips(){ invalidateJoined(); renderEditor(); scheduleAutosave(); pushHist(); }
 function redrawClips(){ drawEditor(); }
 function setPlayhead1(t){
   state.playhead1 = clamp(t, 0, songDur());
@@ -2012,6 +2073,122 @@ function setPlayhead1(t){
   if (edPlayState.playing) edPlay();
   drawEditor(); edReadouts();
 }
+
+/* ---------- effects on a recording: find them, change their strength, remove them ---------- */
+const fxName = (key) => (PADS.find((p) => p.id === key) || { name:key }).name;
+const fxColor = (key) => (PADS.find((p) => p.id === key) || { color:'#fbbf24' }).color;
+function fxList(p){
+  const out = [];
+  if (+p.robot > 0) out.push({ key:'robot', v:+p.robot }); else if (p.tune) out.push({ key:'tune', v:clamp((p.strength - 0.35) / 0.65, 0.05, 1) });
+  if (p.harm) out.push({ key:'harm', v:Math.max(0, HARM_STEPS.indexOf(p.harm)) });
+  if (p.shift) out.push({ key:'pitch', v:p.shift });
+  ['echo', 'radio', 'reverb', 'double', 'vibrato', 'wobble', 'grit', 'crush'].forEach((k) => { if (+p[k] > 0) out.push({ key:k, v:+p[k] }); });
+  return out;
+}
+function fxRegions(src){
+  if (src._fxr && src._fxrEv === src.events) return src._fxr;
+  const ev = src.events.slice().sort((a, b) => a.at - b.at), out = [];
+  for (let i = 0; i < ev.length; i++){
+    const a = ev[i].at, b = i + 1 < ev.length ? ev[i + 1].at : src.raw.length; if (b <= a) continue;
+    const list = fxList(ev[i].params); if (!list.length) continue;
+    const sig = list.map((f) => f.key).join(','), last = out[out.length - 1];
+    if (last && last.sig === sig && last.b === a) last.b = b; else out.push({ a, b, sig, list });
+  }
+  src._fxr = out; src._fxrEv = src.events; return out;
+}
+function setFx(p, key, v){
+  const o = Object.assign({}, p);
+  if (key === 'tune'){ if (v == null){ if (!(+o.robot > 0)) o.tune = false; } else { o.tune = true; o.strength = 0.35 + 0.65 * v; } }
+  else if (key === 'robot'){ if (v == null){ o.robot = 0; o.tune = false; } else { o.robot = v; o.tune = true; o.strength = 0.7 + 0.3 * v; } }
+  else if (key === 'pitch') o.shift = v == null ? 0 : v;
+  else if (key === 'harm') o.harm = v == null ? 0 : HARM_STEPS[v];
+  else o[key] = v == null ? 0 : v;
+  return o;
+}
+function mapEvents(events, A, B, fn){
+  const ev = events.slice().sort((x, y) => x.at - y.at);
+  const at = (t) => { let q = NEUTRAL; for (const e of ev){ if (e.at <= t) q = e.params; else break; } return q; };
+  const endParams = at(B);
+  const out = ev.filter((e) => e.at < A);
+  out.push({ at:A, params:fn(Object.assign({}, NEUTRAL, at(A))) });
+  ev.forEach((e) => { if (e.at > A && e.at < B) out.push({ at:e.at, params:fn(Object.assign({}, NEUTRAL, e.params)) }); });
+  out.push({ at:B, params:Object.assign({}, endParams) });
+  ev.forEach((e) => { if (e.at > B) out.push(e); });
+  return out;
+}
+let fxEdit = null;
+function fxLabel(key, v){
+  if (key === 'pitch') return v === 0 ? 'normal' : (v > 0 ? '+' : '−') + Math.abs(v) + ' semitones';
+  if (key === 'harm') return HARM_SHORT[v];
+  return Math.round(v * 100) + '%';
+}
+function openFxSheet(hit){
+  const { seg, r, lane } = hit, sr = seg.src.sr;
+  const a = Math.max(r.a / sr, seg.start), b = Math.min(r.b / sr, seg.end);
+  fxEdit = { seg, lane, A:Math.floor(a * sr), B:Math.ceil(b * sr), rows:r.list.map((f) => ({ key:f.key, v:f.v, orig:f.v, removed:false })) };
+  ed.fxSel = { seg, r }; drawEditor();
+  $('#fxTitle').textContent = r.list.length > 1 ? 'Effects here' : fxName(r.list[0].key);
+  $('#fxWhen').textContent = 'From ' + fmtT(seg.at + a - seg.start) + ' to ' + fmtT(seg.at + b - seg.start) + '. Slide to change how strong it is.';
+  $('#fxRows').replaceChildren(...fxEdit.rows.map((row) => {
+    const isPitch = row.key === 'pitch', isHarm = row.key === 'harm';
+    const range = h('input', { type:'range', min:isPitch ? -12 : isHarm ? 0 : 5, max:isPitch ? 12 : isHarm ? HARM_STEPS.length - 1 : 100, step:1,
+      value:isPitch || isHarm ? row.v : Math.round(row.v * 100), 'aria-label':fxName(row.key) + ' strength' });
+    const val = h('span', { class:'fx-val', text:fxLabel(row.key, row.v) });
+    const del = h('button', { type:'button', class:'linkish danger-link' }, 'Remove');
+    const el = h('div', { class:'fx-row', style:'--c:' + fxColor(row.key) },
+      h('div', { class:'fx-top' }, h('span', { class:'fx-dot', 'aria-hidden':'true' }), h('span', { class:'fx-name', text:fxName(row.key) }), val, del), range);
+    range.addEventListener('input', () => { row.v = isPitch || isHarm ? +range.value : +range.value / 100; val.textContent = fxLabel(row.key, row.v); });
+    del.addEventListener('click', () => { row.removed = !row.removed; el.classList.toggle('removed', row.removed); del.textContent = row.removed ? 'Undo remove' : 'Remove'; range.disabled = row.removed; });
+    return el;
+  }));
+  $('#fxSheet').hidden = false;
+}
+function closeFxSheet(){ $('#fxSheet').hidden = true; fxEdit = null; ed.fxSel = null; drawEditor(); }
+$('#fxCancel').addEventListener('click', closeFxSheet);
+$('#fxSheet').addEventListener('click', (e) => { if (e.target === $('#fxSheet')) closeFxSheet(); });
+$('#fxSave').addEventListener('click', async () => {
+  if (!fxEdit) return;
+  const { seg, A, B, rows } = fxEdit, changed = rows.filter((x) => x.removed || x.v !== x.orig);
+  $('#fxSheet').hidden = true; ed.fxSel = null;
+  if (!changed.length){ fxEdit = null; drawEditor(); return; }
+  fxEdit = null;
+  const src = seg.src, events = mapEvents(src.events.length ? src.events : [{ at:0, params:Object.assign({}, NEUTRAL) }], A, B, (p) => changed.reduce((q, x) => setFx(q, x.key, x.removed ? null : x.v), p));
+  const ns = { id:uid('src'), raw:src.raw, sr:src.sr, events, hist:src.hist, segs:fxSegments(events, src.raw.length, src.sr), key:null, buffer:null };
+  paint.busy = true; document.body.classList.add('painting');
+  try {
+    storeRender(ns, await renderTake(ns.raw, ns.sr, events, state.key, (f) => setStatus($('#status1'), 'Updating the effect… ' + Math.round(f * 100) + '%')), state.key);
+    saveSrc(ns); seg.src = ns;
+  } finally { paint.busy = false; document.body.classList.remove('painting'); }
+  setStatus($('#status1'), changed.every((x) => x.removed) ? 'Effect removed.' : 'Effect updated.', 'ok');
+  renderClips();
+});
+
+/* ---------- undo and redo ---------- */
+const hist = { stack:[], idx:-1, muted:false };
+const snapLayers = () => state.layers.map((l) => ({ id:l.id, segs:l.segs.map((x) => Object.assign({}, x)) }));
+const snapKey = (sn) => sn.map((l) => l.id + ':' + l.segs.map((x) => [x.id, x.src.id, x.start.toFixed(4), x.end.toFixed(4), x.at.toFixed(4)].join('/')).join(',')).join('|');
+function resetHist(){ hist.stack = []; hist.idx = -1; updHistBtns(); }
+function pushHist(){
+  if (hist.muted) return;
+  const sn = snapLayers(), k = snapKey(sn), cur = hist.stack[hist.idx];
+  if (cur && cur.k === k) return;
+  hist.stack = hist.stack.slice(0, hist.idx + 1); hist.stack.push({ sn, k });
+  if (hist.stack.length > 80) hist.stack.shift();
+  hist.idx = hist.stack.length - 1; updHistBtns();
+}
+function updHistBtns(){ const u = $('#edUndo'), r = $('#edRedo'); if (!u) return; u.disabled = hist.idx <= 0; r.disabled = hist.idx >= hist.stack.length - 1; }
+function goHist(to){
+  if (to < 0 || to >= hist.stack.length || rec.state !== 'idle' || paint.busy) return;
+  stopAllPlayback();
+  hist.idx = to;
+  state.layers = hist.stack[to].sn.map((l) => ({ id:l.id, segs:l.segs.map((x) => Object.assign({}, x)) }));
+  state.activeLayer = Math.min(state.activeLayer, state.layers.length - 1); state.sel1 = null;
+  state.playhead1 = Math.min(state.playhead1, songDur());
+  hist.muted = true; try { renderClips(); } finally { hist.muted = false; }
+  updHistBtns();
+}
+$('#edUndo').addEventListener('click', () => { goHist(hist.idx - 1); setStatus($('#status1'), 'Undone.', ''); });
+$('#edRedo').addEventListener('click', () => { goHist(hist.idx + 1); setStatus($('#status1'), 'Redone.', ''); });
 
 /* ---------- touch: tap to move the playhead, drag to select, hold then drag to move a clip, double-tap a clip to delete it ---------- */
 function reorderSeg(seg, dropT){
@@ -2045,6 +2222,7 @@ $('#clipDelete').addEventListener('click', () => {
   let d = null, lastTap = null;
   const HOLD = 420;
   const tAt = (e) => { const r = edCanvas.getBoundingClientRect(); return clamp(ed.viewStart + ((e.clientX - r.left - 8) / (r.width - 16)) * edSpan(), 0, songDur()); };
+  document.addEventListener('keydown', (e) => { if (state.page !== 1 || state.section !== 'create' || /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return; if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ e.preventDefault(); goHist(hist.idx + (e.shiftKey ? 1 : -1)); } });
   const laneAt = (e) => { const r = edCanvas.getBoundingClientRect(), box = laneBox(r.height), y = e.clientY - r.top; for (let i = 0; i < state.layers.length; i++){ const b = box(i); if (y >= b.y - LANE_PAD && y <= b.y + b.h + LANE_PAD) return i; } return y < RULER ? 0 : state.layers.length - 1; };
   let glide = 0;
   edCanvas.addEventListener('pointerdown', (e) => {
@@ -2057,7 +2235,7 @@ $('#clipDelete').addEventListener('click', () => {
       return;
     }
     const t0 = tAt(e), lane = laneAt(e);
-    d = { t0, x:e.clientX, moved:false, lane, seg:segAt(state.layers[lane], t0), mode:null, timer:0, time:performance.now(), vs:ed.viewStart, lastX:e.clientX, lastT:performance.now(), vel:0 };
+    d = { t0, cx:e.clientX - r.left, cy:e.clientY - r.top, x:e.clientX, moved:false, lane, seg:segAt(state.layers[lane], t0), mode:null, timer:0, time:performance.now(), vs:ed.viewStart, lastX:e.clientX, lastT:performance.now(), vel:0 };
     state.activeLayer = lane;
     try { edCanvas.setPointerCapture(e.pointerId); } catch (_) {}
     if (d.seg) d.timer = setTimeout(() => {
@@ -2086,6 +2264,9 @@ $('#clipDelete').addEventListener('click', () => {
     // a quick swipe scrolls through the song; a slower drag selects a part
     if (performance.now() - d.time < 170 && edFull() > edSpan() * 0.85){ d.mode = 'pan'; d.lastX = e.clientX; d.lastT = performance.now(); return; }
     state.sel1 = { layer:d.lane, a:Math.min(d.t0, t), b:Math.max(d.t0, t) };
+    // the red line follows your finger
+    if (edPlayState.playing) edStop();
+    state.playhead1 = t; follow(t);
     drawEditor(); edReadouts();
   });
   const up = (e) => {
@@ -2113,6 +2294,8 @@ $('#clipDelete').addEventListener('click', () => {
     }
     if (!d.moved && e.type === 'pointerup'){
       const now = performance.now();
+      const fh = (ed.fxHits || []).find((q) => d.cx >= q.x0 && d.cx <= q.x1 && d.cy >= q.y0 && d.cy <= q.y1);
+      if (fh && !(lastTap && lastTap.seg === d.seg && now - lastTap.t < 350)){ lastTap = null; d = null; openFxSheet(fh); return; }
       if (lastTap && d.seg && lastTap.seg === d.seg && now - lastTap.t < 350){ lastTap = null; const x = d; d = null; askDeleteClip(x.lane, x.seg); drawEditor(); edReadouts(); return; }
       lastTap = { t:now, seg:d.seg };
       state.sel1 = null; setPlayhead1(d.t0);
@@ -2122,8 +2305,8 @@ $('#clipDelete').addEventListener('click', () => {
   edCanvas.addEventListener('pointerup', up); edCanvas.addEventListener('pointercancel', up);
   edCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
 }
-function zoomTo(span){ state.span1 = span; ed.viewStart = Math.max(0, state.playhead1 - edSpan() * 0.4); drawEditor(); }
-$('#edZoomIn').addEventListener('click', () => zoomTo(Math.max(1, edSpan() / 2)));
+function zoomTo(span){ state.span1 = span; ed.viewStart = Math.max(0, state.playhead1 - edSpan() * 0.5); drawEditor(); edReadouts(); }
+$('#edZoomIn').addEventListener('click', () => zoomTo(Math.max(0.05, edSpan() / 2)));
 $('#edZoomOut').addEventListener('click', () => { const n = edSpan() * 2; zoomTo(n >= edFull() * 1.12 ? Infinity : n); });
 
 /* ---------- tools ---------- */
@@ -2352,13 +2535,20 @@ function drawTimeline(){
   // where effect pads were on
   g.fillStyle = cssVar('--tuned', '#ec4899');
   j.fx.forEach(([a, b]) => { const xa = tlX(a) - sl, xb = tlX(b) - sl; if (xb > 0 && xa < w) g.fillRect(xa, top + wh - 7, Math.max(2, xb - xa), 4); });
-  // notes that cover a section
+  // notes that cover a section: outlined boxes (the selected one is the box you can slide)
   state.markers.forEach((m) => {
-    if (m.end == null) return;
+    if (m.end == null || state.selMarker === m.id) return;
     const xa = tlX(m.t) - sl, xb = tlX(m.end) - sl; if (xb < 0 || xa > w) return;
-    g.fillStyle = state.selMarker === m.id ? 'rgba(139,92,246,.32)' : 'rgba(236,72,153,.22)';
-    g.fillRect(xa, top, xb - xa, wh);
+    roundRectPath(g, xa, top + 1, xb - xa, wh - 2, 10); g.lineWidth = 2; g.strokeStyle = 'rgba(236,72,153,.7)'; g.stroke();
   });
+  // sound effects you placed
+  g.font = '700 12px "Figtree", system-ui, sans-serif'; g.textAlign = 'center';
+  state.sfx2.forEach((p) => {
+    const x = tlX(p.at) - sl; if (x < -10 || x > w + 10) return;
+    g.fillStyle = '#fbbf24'; g.beginPath(); g.arc(x, top + wh - 16, 9, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#1a1206'; g.fillText('♪', x, top + wh - 12);
+  });
+  g.textAlign = 'left';
   // take boundaries
   g.setLineDash([4, 4]); g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1;
   j.bounds.forEach((bt, i) => {
@@ -2377,9 +2567,9 @@ function renderPins(){
     type:'button', class:'tl-pin' + (state.selMarker === m.id ? ' sel' : ''), style:'left:' + tlX(m.t) + 'px',
     'aria-label':'Note ' + (i + 1) + ' at ' + fmtT(m.t) + (m.text ? ': ' + m.text : ''),
     onclick:(e) => { e.stopPropagation(); selectMarker(m.id); } }, String(i + 1))));
-  const sel = state.markers.find((m) => m.id === state.selMarker), endEl = $('#tlEnd');
-  endEl.hidden = !(sel && sel.end != null);
-  if (sel && sel.end != null) endEl.style.left = tlX(sel.end) + 'px';
+  const sel = state.markers.find((m) => m.id === state.selMarker), box = $('#tlBox');
+  box.hidden = !(sel && sel.end != null);
+  if (sel && sel.end != null){ box.style.left = tlX(sel.t) + 'px'; box.style.width = Math.max(12, tlX(sel.end) - tlX(sel.t)) + 'px'; }
   const add = $('#tlAdd');
   add.style.left = tlX(state.playhead2) + 'px';
   add.hidden = tl.playing || state.markers.some((m) => Math.abs(m.t - state.playhead2) < 0.05);
@@ -2398,6 +2588,7 @@ function updateTlReadouts(){
   $('#tlTime').textContent = fmtT(state.playhead2) + ' / ' + fmtT(j.dur);
   $('#tlPos').value = state.playhead2;
   $('#addNoteBtn').textContent = '+ Add a note at ' + fmtT(state.playhead2);
+  $('#sfxAt').textContent = fmtT(state.playhead2);
 }
 function setPlayhead2(t, scroll){
   state.playhead2 = clamp(t, 0, joined().dur);
@@ -2429,7 +2620,6 @@ function updateDurUI(m){
   $('#mkLabel').textContent = 'Note for the AI at ' + fmtT(m.t) + (has ? ' to ' + fmtT(m.end) : '');
   $('#mkDurBtn').hidden = has; $('#mkDurCtl').hidden = !has;
   if (has){
-    const e = $('#mkEnd'); e.min = Math.min(dur, m.t + 0.2).toFixed(2); e.max = dur.toFixed(2); e.value = m.end;
     $('#mkRange').textContent = fmtT(m.t) + ' → ' + fmtT(m.end) + ' (' + fmtS(m.end - m.t) + ')';
   }
 }
@@ -2441,15 +2631,26 @@ function setNoteEnd(m, end){
 const selNote = () => state.markers.find((x) => x.id === state.selMarker);
 $('#mkDurBtn').addEventListener('click', () => { const m = selNote(); if (m) setNoteEnd(m, m.t + 2); });
 $('#mkDurRemove').addEventListener('click', () => { const m = selNote(); if (m) setNoteEnd(m, null); });
-$('#mkEnd').addEventListener('input', (e) => { const m = selNote(); if (m) setNoteEnd(m, +e.target.value); });
 {
-  const endEl = $('#tlEnd'); let dragging = false;
+  const box = $('#tlBox'); let d = null;
   const tFrom = (e) => (e.clientX - tlScroll.getBoundingClientRect().left + tlScroll.scrollLeft - TL_PAD) / state.pps;
-  endEl.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); dragging = true; try { endEl.setPointerCapture(e.pointerId); } catch (_) {} });
-  endEl.addEventListener('pointermove', (e) => { if (dragging){ const m = selNote(); if (m) setNoteEnd(m, tFrom(e)); } });
-  const stop = () => { dragging = false; };
-  endEl.addEventListener('pointerup', stop); endEl.addEventListener('pointercancel', stop);
-  endEl.addEventListener('click', (e) => e.stopPropagation());
+  box.addEventListener('pointerdown', (e) => {
+    const m = selNote(); if (!m || m.end == null) return;
+    e.preventDefault(); e.stopPropagation();
+    d = { edge:e.target.dataset.edge || 'move', t0:tFrom(e), a:m.t, b:m.end };
+    try { box.setPointerCapture(e.pointerId); } catch (_) {}
+  });
+  box.addEventListener('pointermove', (e) => {
+    if (!d) return; const m = selNote(); if (!m) return;
+    const dur = joined().dur, dt = tFrom(e) - d.t0;
+    if (d.edge === 'l'){ m.t = clamp(d.a + dt, 0, m.end - 0.2); }
+    else if (d.edge === 'r'){ m.end = clamp(d.b + dt, m.t + 0.2, dur); }
+    else { const len = d.b - d.a, a = clamp(d.a + dt, 0, dur - len); m.t = a; m.end = a + len; }
+    updateDurUI(m); renderPins(); drawTimeline();
+  });
+  const stop = () => { if (d){ d = null; scheduleAutosave(); } };
+  box.addEventListener('pointerup', stop); box.addEventListener('pointercancel', stop);
+  box.addEventListener('click', (e) => e.stopPropagation());
 }
 function closeEditor(){
   const m = state.markers.find((x) => x.id === state.selMarker);
@@ -3085,7 +3286,7 @@ async function generate(regenerate){
     setProgress(3); await nextTick();
     const mix = await mixSong(voc, harmUp, harmDown, sr, plan);
     setProgress(4);
-    const keepSfx = state.result ? state.result.sfx : [];
+    const keepSfx = state.sfx2.map((p) => Object.assign({}, p, { at:p.at + introOf(plan) }));
     state.result = { base:mix, mix, plan, sfx:keepSfx, video:null, wav:null };
     persistMix(state.result);
     $('#progress').hidden = true;
@@ -3417,11 +3618,15 @@ async function addSfxToLib(fields, blob){
 }
 
 
-/* Step 3: sound effects layered on the finished song */
-function renderSfxPanel(){
+/* Step 2: sound effects placed on your song; they're layered into the finished mix */
+const introOf = (plan) => 4 * 60 / plan.tempo;
+function syncResultSfx(){
   const r = state.result; if (!r) return;
-  const t = pl.playing ? plPos() : pl.offset;
-  $('#sfxAt').textContent = fmtT(t);
+  r.sfx = state.sfx2.map((p) => Object.assign({}, p, { at:p.at + introOf(r.plan) }));
+  applySfx();
+}
+function renderSfxPanel(){
+  $('#sfxAt').textContent = fmtT(state.playhead2);
   const got = lib.sfx.filter((x) => x.source === 'bought' || x.source === 'saved'), made = lib.sfx.filter((x) => x.source === 'take' || x.source === 'file');
   $('#sfxEmpty').hidden = lib.sfx.length > 0;
   const row = (it) => {
@@ -3434,18 +3639,19 @@ function renderSfxPanel(){
   $('#sfxLib').replaceChildren(
     ...(got.length ? [h('span', { class:'label', style:'margin:4px 0 0' }, 'Bought and saved on Discover')].concat(got.map(row)) : []),
     ...(made.length ? [h('span', { class:'label', style:'margin:4px 0 0' }, 'Made by you')].concat(made.map(row)) : []));
-  $('#sfxPlaced').replaceChildren(...r.sfx.slice().sort((a, b) => a.at - b.at).map((p) => h('li', {},
-    h('button', { type:'button', class:'tstamp mono', onclick:() => { plPause(); pl.offset = p.at; scrub.value = p.at; $('#curT').textContent = fmt(p.at); paintIdle(); renderSfxPanel(); } }, fmtT(p.at)),
+  const placed = state.sfx2.slice().sort((a, b) => a.at - b.at);
+  $('#sfxPlaced').replaceChildren(...(placed.length ? placed.map((p) => h('li', {},
+    h('button', { type:'button', class:'tstamp mono', onclick:() => setPlayhead2(p.at, true) }, fmtT(p.at)),
     h('span', { text:p.name }),
-    h('button', { type:'button', class:'x', 'aria-label':'Remove ' + p.name, onclick:async () => { r.sfx = r.sfx.filter((x) => x !== p); await applySfx(); } }, '×'))));
+    h('button', { type:'button', class:'x', 'aria-label':'Remove ' + p.name, onclick:() => { state.sfx2 = state.sfx2.filter((x) => x !== p); renderSfxPanel(); drawTimeline(); syncResultSfx(); scheduleAutosave(); } }, '×'))) : [h('li', { class:'empty-note' }, h('span', {}, 'None yet'))]));
 }
 const sourceLabel = (it) => it.source === 'take' ? 'From your takes' : it.source === 'file' ? 'Uploaded' : it.source === 'bought' ? 'Bought from ' + it.from : 'Saved from ' + it.from;
-async function placeSfx(it){
-  const r = state.result; if (!r || state.busy) return;
-  const at = pl.playing ? plPos() : pl.offset;
-  r.sfx.push({ id:uid('p'), item:it, name:it.name, at });
-  await applySfx();
-  setStatus($('#status3'), 'Added "' + it.name + '" at ' + fmtT(at) + '.', 'ok');
+function placeSfx(it){
+  if (state.busy) return;
+  const at = state.playhead2;
+  state.sfx2.push({ id:uid('p'), item:it, name:it.name, at });
+  renderSfxPanel(); drawTimeline(); syncResultSfx(); scheduleAutosave();
+  setStatus($('#status2'), 'Added "' + it.name + '" at ' + fmtT(at) + '.', 'ok');
 }
 async function applySfx(){
   const r = state.result; if (!r) return;
@@ -3477,8 +3683,8 @@ $('#sfxFile').addEventListener('change', async (e) => {
     if (buf.duration > MAX_SEC) throw new Error('files can be up to 10 minutes');
     const it = await addSfxToLib({ name:f.name.replace(/\.[^.]+$/, '') || 'Sound', source:'file', dur:buf.duration }, f);
     bufCache.set(it.id, buf);
-    renderSfxPanel(); setStatus($('#status3'), 'Added "' + it.name + '" to your sound effects.', 'ok');
-  } catch (err){ setStatus($('#status3'), 'Couldn\'t use ' + f.name + ': ' + (err.message || 'unreadable audio') + '.', 'error'); }
+    renderSfxPanel(); setStatus($('#status2'), 'Added "' + it.name + '" to your sound effects. Press Add to put it in your song.', 'ok');
+  } catch (err){ setStatus($('#status2'), 'Couldn\'t use ' + f.name + ': ' + (err.message || 'unreadable audio') + '.', 'error'); }
 });
 $('#saveSong').addEventListener('click', async () => {
   const r = state.result; if (!r || state.busy) return;
@@ -3516,6 +3722,7 @@ function projectDoc(){
     layers:state.layers.map((l) => ({ id:l.id, segs:l.segs.map((s) => ({ id:s.id, src:s.src.id, start:s.start, end:s.end, at:s.at })) })),
     activeLayer:state.activeLayer, playhead1:state.playhead1,
     markers:state.markers.filter((m) => m.text.trim()).map((m) => ({ id:m.id, t:m.t, end:m.end, text:m.text })),
+    sfx2:state.sfx2.map((p) => ({ itemId:p.item.id, name:p.name, at:p.at })),
     vibe:$('#vibe').value, artists:$('#artists').value, refLink:$('#refLink').value, variation:state.variation,
     result:r && r.mixId ? { mixId:r.mixId, plan:r.plan, sfx:r.sfx.map((p) => ({ itemId:p.item.id, name:p.name, at:p.at })) } : null,
     pads:snapshot()
@@ -3534,6 +3741,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) autos
 window.addEventListener('pagehide', autosave);
 
 async function loadProject(doc, statusEl, landHome){
+  resetHist();
   restoring = true;
   try {
     stopAllPlayback();
@@ -3550,6 +3758,7 @@ async function loadProject(doc, statusEl, landHome){
     state.activeLayer = Math.min(doc.activeLayer || 0, state.layers.length - 1);
     state.playhead1 = doc.playhead1 || 0; state.sel1 = null;
     state.markers = (doc.markers || []).map((m) => Object.assign({ end:null }, m)); state.selMarker = null;
+    state.sfx2 = (doc.sfx2 || []).map((p) => { const item = lib.sfx.find((x) => x.id === p.itemId); return item ? { id:uid('p'), item, name:p.name, at:p.at } : null; }).filter(Boolean);
     $('#vibe').value = doc.vibe || ''; $('#artists').value = doc.artists || ''; $('#refLink').value = doc.refLink || '';
     state.variation = doc.variation || 0;
     const ids = [0, ...state.layers.map((l) => l.id), ...state.clips.map((s) => s.id), ...state.markers.map((m) => m.id)].filter(Number.isFinite);
@@ -4068,14 +4277,15 @@ const TOURS = {
   ],
   p1:[
     { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
-    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to move the red line. Swipe quickly to scroll through it, and zoom out to see the whole song. Drag slowly across it to pick a part, then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end to keep going from the end. Double-tap a clip to delete it. Hold a clip, then drag, to move it. + Layer stacks up to 4 layers; the other layers play while you record.' },
+    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to move the red line. Swipe quickly to scroll through it, and zoom out to see the whole song. Drag slowly across it to pick a part, then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end to keep going from the end. Double-tap a clip to delete it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Tap + to zoom in closer and closer; − zooms out to the whole song. + Layer stacks up to 4 layers; the other layers play while you record.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#presets', title:'Presets', text:'Tap an empty slot to save the pads you like. Tap it later to bring them back; while it\'s selected, your changes save into it. Hold one to give it a name.' },
-    { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to step 2, Adjust and edit.' }
+    { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to step 2, Prep and adjust.' }
   ],
   p2:[
-    { sel:'.tl-card', title:'Your song timeline', text:'Scroll through your song. Tap the wave, then + to pin a note for the AI, like "beat drops here". Add duration to make a note cover a whole part.' },
+    { sel:'.tl-card', title:'Your song timeline', text:'Scroll through your song. Tap the wave, then + to pin a note for the AI, like "beat drops here". Add duration to turn a note into a box you can slide and stretch over a whole part.' },
+    { sel:'#sfxHead', title:'Sound effects', text:'Add sounds you made, uploaded, bought or saved on Discover. Put the red line where you want one, then press Add. They go into the finished song.' },
     { sel:'#vibe', title:'Describe the vibe', text:'Words like slow, dance, acoustic, 80s synth or dark shape the music. The key comes from your voice, or write one here, like "in A minor".' },
     { sel:'#artists', title:'Artists you like', text:'Artists are style hints only: tempo, sound and mood. The app never copies their songs, recordings or voice.' },
     { sel:'.ref-box', title:'A song you like', text:'Upload a song and the app matches its tempo and energy. It can\'t open links.' },
@@ -4085,7 +4295,6 @@ const TOURS = {
   p3:[
     { sel:'#viz', title:'Your song', text:'Play it and drag the slider to move around.' },
     { sel:'#regenBtn', title:'Regenerate', text:'Not quite right? Get a new arrangement of the same singing.' },
-    { sel:'#sfxHead', title:'Sound effects', text:'Add sounds you made, uploaded, or got on Discover at any point in the song.' },
     { sel:'#keepPanel', title:'Keep it', text:'Add an album photo, save it to your songs, or save a draft to finish later.' },
     { sel:'#saveAudio', title:'Save to your phone', text:'On a phone this opens the share menu: Save Video puts it in your camera roll, Save to Files keeps the audio.' }
   ],
@@ -4106,7 +4315,7 @@ const TOURS = {
   ]
 };
 const TOUR_SUMMARY = {
-  p2:{ sel:null, title:'Adjust and edit', text:'After you record, pin notes on your song for the AI, describe the vibe, name artists you like, and generate. The music is built around your voice.' },
+  p2:{ sel:null, title:'Prep and adjust', text:'After you record, pin notes on your song for the AI, describe the vibe, name artists you like, and generate. The music is built around your voice.' },
   p3:{ sel:null, title:'Generate and finish', text:'Play your song, regenerate for a new version, add sound effects, give it an album photo, and save it to your songs, your phone, or Drafts.' }
 };
 const pageKey = () => state.section === 'create' ? ['home', 'p1', 'p2', 'p3'][state.page] : state.section;
@@ -4201,7 +4410,7 @@ let coverTarget = null;
 function renderHome(){
   const doc = projectDoc(), work = hasWork(doc);
   $('#continueCard').hidden = !work;
-  if (work) $('#continueMeta').textContent = fmt(songDur()) + ' recorded · ' + ['', 'record and cut', 'adjust and edit', 'generate and finish'][state.workPage || 1];
+  if (work) $('#continueMeta').textContent = fmt(songDur()) + ' recorded · ' + ['', 'record and cut', 'prep and adjust', 'generate and finish'][state.workPage || 1];
   renderDrafts();
   const songs = lib.songs;
   $('#homeLibrary').replaceChildren(...(songs.length ? songs.map((s) => {
@@ -4233,8 +4442,9 @@ $('#tileNew').addEventListener('click', async () => {
 });
 $('#continueBtn').addEventListener('click', () => showPage(state.workPage || 1));
 function resetProject(){
+  resetHist();
   stopAllPlayback();
-  Object.assign(state, { layers:[{ id:nextId++, segs:[] }], activeLayer:0, playhead1:0, sel1:null, zoom1:0, span1:6, markers:[], selMarker:null, playhead2:0, result:null, variation:0, workPage:1 });
+  Object.assign(state, { layers:[{ id:nextId++, segs:[] }], activeLayer:0, playhead1:0, sel1:null, zoom1:0, span1:6, markers:[], sfx2:[], selMarker:null, playhead2:0, result:null, variation:0, workPage:1 });
   takeCount = 0; $('#vibe').value = ''; $('#artists').value = ''; $('#refLink').value = ''; state.ref = null; $('#refInfo').textContent = ''; $('#refPlay').hidden = true; $('#refClear').hidden = true; $('#mkEditor').hidden = true;
   resetPads(); state.keyFrom = null; setKey('60:chromatic'); rec.live = [];
   ['#status1', '#status2', '#status3'].forEach((s) => setStatus($(s), ''));
@@ -4299,7 +4509,8 @@ function showPage(p){
   window.scrollTo(0, 0);
   if (p === 1) requestAnimationFrame(renderClips);
   if (p === 2) requestAnimationFrame(layoutTimeline);
-  if (p === 3){ paintIdle(); renderSfxPanel(); paintCoverThumb(); }
+  if (p === 3){ paintIdle(); paintCoverThumb(); }
+  if (p === 2) renderSfxPanel();
   updateTabs();
   maybeTour();
 }
