@@ -109,6 +109,7 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .editor .tl-bar[hidden]{display:none}
 .layer-vol{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
 .layer-vol[hidden]{display:none}
+.lv-ic{width:22px;height:22px;color:var(--accent-b)}
 .lv-label{font-weight:700;font-size:13px;white-space:nowrap}
 .layer-vol input{flex:1;accent-color:var(--accent-b);height:28px;margin:0;min-width:0}
 .lv-val{font-size:12px;color:var(--muted);min-width:40px;text-align:right}
@@ -224,9 +225,14 @@ body:not(.recording) #recTime{display:none}
 .recording.rec-live #status1{display:none}
 .rec-done{min-width:84px}
 .rec-hist{display:flex;gap:6px}
+#recPlay svg{fill:currentColor;stroke:none}
+#recPlay.on{background:var(--accent-b);border-color:transparent;color:#fff}
+.recording:not(.rec-live) .recorder{gap:8px}
+.recording:not(.rec-live) .rec-done{min-width:66px;padding-inline:12px}
+.recording:not(.rec-live) #recTime{font-size:16px}
 .rec-hist[hidden]{display:none}
 .recording:not(.rec-live) .recorder{gap:10px;flex-wrap:nowrap}
-.recording:not(.rec-live) .rec-hist .icon-btn{width:40px;height:40px}
+.recording:not(.rec-live) .rec-hist .icon-btn{width:38px;height:38px}
 .recording #status1.ok{display:none}
 .recording:not(.rec-live) #recTime{font-size:18px}
 .painting .editor,.painting .pads,.painting .ed-tools{pointer-events:none}
@@ -600,6 +606,7 @@ legend{padding:0}
       <button type="button" id="recBtn" class="rec" aria-label="Start recording" aria-pressed="false"><span class="rec-core"></span></button>
       <div id="recTime" class="rec-time mono">0:00</div>
       <div id="recHist" class="rec-hist" hidden>
+        <button type="button" id="recPlay" class="icon-btn" aria-label="Play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></button>
         <button type="button" id="recUndo" class="icon-btn" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
         <button type="button" id="recRedo" class="icon-btn" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
       </div>
@@ -632,6 +639,7 @@ legend{padding:0}
       </div>
       <p id="edHint" class="hint" hidden></p>
       <div id="layerVol" class="layer-vol" hidden>
+        <svg id="lvIcon" class="ic lv-ic" viewBox="0 0 24 24" aria-hidden="true"></svg>
         <span id="lvLabel" class="lv-label">Layer 1</span>
         <input type="range" id="lvRange" min="0" max="150" step="1" value="100" aria-label="Layer volume">
         <span id="lvVal" class="lv-val mono">100%</span>
@@ -2465,7 +2473,7 @@ function edReadouts(){
   $('#edFade').hidden = !fadeOk; $('.ed-tools').classList.toggle('five', fadeOk);
   $('#edDel').disabled = !sel && !emptyLayer;
   $('#layerVol').hidden = state.layers.length < 2 || !al || !al.segs.length;
-  if (al){ const v = Math.round((al.vol == null ? 1 : al.vol) * 100); $('#lvLabel').textContent = 'Layer ' + (state.activeLayer + 1); $('#lvRange').value = v; $('#lvVal').textContent = v + '%'; }
+  if (al){ const v = Math.round((al.vol == null ? 1 : al.vol) * 100); $('#lvLabel').textContent = 'Layer ' + (state.activeLayer + 1); $('#lvRange').value = v; $('#lvVal').textContent = v + '%'; paintVolIcon(v / 100); }
   $('#edDel').textContent = 'Delete'; $('#edDel').setAttribute('aria-label', sel ? 'Delete ' + fmtS(sel.b - sel.a) : 'Delete');
   $('#edLayer').disabled = state.layers.length >= MAX_LAYERS || !has;
   $('#edSaveSfx').hidden = !sel;
@@ -2580,7 +2588,7 @@ $('#fxSave').addEventListener('click', async () => {
 /* ---------- undo and redo ---------- */
 const hist = { stack:[], idx:-1, muted:false };
 const snapLayers = () => state.layers.map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((x) => Object.assign({}, x)) }));
-let histNext = null;   // what the next history entry is called ("Split", "Echo on"...)
+let histNext = null, histBefore = null;   // what the next history entry is called ("Split", "Echo on"...)
 const snapKey = (sn) => sn.map((l) => l.id + 'v' + (l.vol == null ? 1 : l.vol) + ':' + l.segs.map((x) => [x.id, x.src.id, x.start.toFixed(4), x.end.toFixed(4), x.at.toFixed(4), x.fadeIn || 0, x.fadeOut || 0].join('/')).join(',')).join('|');
 function resetHist(){ hist.stack = []; hist.idx = -1; updHistBtns(); }
 function pushHist(){
@@ -2588,7 +2596,8 @@ function pushHist(){
   const sn = snapLayers(), pads = snapshot(), k = snapKey(sn) + '#' + JSON.stringify(pads), cur = hist.stack[hist.idx];
   const label = histNext || 'Edit'; histNext = null;
   if (cur && cur.k === k) return;
-  hist.stack = hist.stack.slice(0, hist.idx + 1); hist.stack.push({ sn, k, pads, label });
+  const before = histBefore || (cur && cur.after) || null; histBefore = null;
+  hist.stack = hist.stack.slice(0, hist.idx + 1); hist.stack.push({ sn, k, pads, label, before, after:{ t:state.playhead1, layer:state.activeLayer } });
   if (hist.stack.length > 80) hist.stack.shift();
   hist.idx = hist.stack.length - 1; updHistBtns();
 }
@@ -2606,8 +2615,20 @@ function goHist(to){
   updHistBtns();
 }
 // undo and redo say what they changed
-function undo(){ if (hist.idx <= 0) return; const l = hist.stack[hist.idx].label; goHist(hist.idx - 1); setStatus($('#status1'), 'Undid: ' + l, ''); }
-function redo(){ if (hist.idx >= hist.stack.length - 1) return; const l = hist.stack[hist.idx + 1].label; goHist(hist.idx + 1); setStatus($('#status1'), 'Redid: ' + l, ''); }
+function undo(){ if (hist.idx <= 0) return; const e = hist.stack[hist.idx], l = e.label; goHist(hist.idx - 1); putBack(e.before); setStatus($('#status1'), 'Undid: ' + l, ''); }
+function redo(){ if (hist.idx >= hist.stack.length - 1) return; const e = hist.stack[hist.idx + 1], l = e.label; goHist(hist.idx + 1); putBack(e.after); setStatus($('#status1'), 'Redid: ' + l, ''); }
+function putBack(pos){
+  if (!pos) return;
+  state.activeLayer = Math.min(pos.layer, state.layers.length - 1); state.playhead1 = clamp(pos.t, 0, Math.max(pos.t, songDur()));
+  state.cursorOn = true; follow(state.playhead1); drawEditor(); edReadouts();
+}
+// play button on the recording screen (plays from the red line)
+function paintRecPlay(){
+  const b = $('#recPlay'); if (!b) return; const on = edPlayState.playing;
+  b.classList.toggle('on', on); b.setAttribute('aria-label', on ? 'Stop' : 'Play');
+  b.innerHTML = on ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>';
+}
+$('#recPlay').addEventListener('click', () => { if (edPlayState.playing) edStop(); else { stopAllPlayback(); if (state.playhead1 >= songDur() - 0.05) state.playhead1 = 0; edPlay(); } });
 $('#recUndo').addEventListener('click', undo);
 $('#recRedo').addEventListener('click', redo);
 $('#edUndo').addEventListener('click', undo);
@@ -2952,9 +2973,14 @@ $('#edDel').addEventListener('click', () => {
   histNext = 'Delete'; setStatus($('#status1'), 'Deleted ' + fmtT(sel.a) + '–' + fmtT(sel.b) + (sel.layer === 0 ? '. The rest moved up to close the gap.' : ' from layer ' + (sel.layer + 1) + '.'), 'ok');
   renderClips();
 });
+// speaker symbol: muted, low, or loud
+function paintVolIcon(v){
+  const spk = '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/>';
+  $('#lvIcon').innerHTML = spk + (v <= 0.001 ? '<path d="M16 9.5l5 5M21 9.5l-5 5"/>' : v < 0.6 ? '<path d="M15.5 9.5a3.5 3.5 0 0 1 0 5"/>' : '<path d="M15.5 9.5a3.5 3.5 0 0 1 0 5"/><path d="M18 7a7 7 0 0 1 0 10"/>');
+}
 $('#lvRange').addEventListener('input', (e) => {
   const l = state.layers[state.activeLayer]; if (!l) return;
-  l.vol = +e.target.value / 100; $('#lvVal').textContent = e.target.value + '%';
+  l.vol = +e.target.value / 100; $('#lvVal').textContent = e.target.value + '%'; paintVolIcon(l.vol);
   const g = edPlayState.gains && edPlayState.gains[state.activeLayer]; if (g) g.gain.value = l.vol;
   drawEditor();
 });
@@ -3030,7 +3056,7 @@ function edPlay(fxNode, fxLane){
     PADS && drawEditor();
     setStatus($('#status1'), 'Your phone paused the sound. Tap Play again.', 'error');
   }, 700);
-  $('#edPlay').textContent = 'Pause';
+  $('#edPlay').textContent = 'Pause'; paintRecPlay();
   const loop = () => {
     const t = from + Math.max(0, c.currentTime - t0);
     if (paint.on){ paint.b = Math.min(t, paint.limit); if (t >= paint.limit){ state.playhead1 = paint.limit; edStop(); drawEditor(); edReadouts(); return; } }
@@ -3047,6 +3073,7 @@ function edStop(keepLabel){
   if (edPlayState.fxNode){ try { edPlayState.fxNode.disconnect(); } catch (e) {} edPlayState.fxNode = null; }
   edPlayState.nodes = []; edPlayState.bus = null; cancelAnimationFrame(edPlayState.raf);
   edPlayState.playing = false; if (!keepLabel) $('#edPlay').textContent = 'Play';
+  paintRecPlay();
 }
 $('#edPlay').addEventListener('click', () => { if (edPlayState.playing) edStop(); else { stopAllPlayback(); edPlay(); } });
 
@@ -3061,7 +3088,7 @@ async function placeRecording(raw, sr, events){
   state.activeLayer = state.layers.indexOf(layer);
   state.playhead1 = segEnd(piece); state.sel1 = null; state.cursorOn = false;
   follow(state.playhead1);
-  histNext = 'Recording'; renderClips();
+  histNext = 'Recording'; histBefore = { t:rec.recordAt, layer:rec.layer }; renderClips();
   await refreshSongKey($('#status1'));
   renderClips();
 }
