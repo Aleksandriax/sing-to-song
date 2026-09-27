@@ -257,11 +257,21 @@ body:not(.recording) #recTime{display:none}
 #dSub label[hidden]{display:none}
 #dSub.three label{padding:6px 8px;font-size:12.5px}
 #dSub.three{gap:2px}
+.protected{display:inline-flex;align-items:center;gap:3px;margin-top:3px;font-size:11px;font-weight:700;color:#a78bfa}
+.protected .ic{width:13px;height:13px}
 .title-row{display:flex;align-items:center;gap:8px;min-width:0}
 .title-row .item-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-acts{display:flex;align-items:center;gap:6px;flex:none}
+.flag{appearance:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.08);color:#fbbf24;cursor:pointer;padding:0}
+.flag .ic{width:20px;height:20px;stroke-width:2}
+.flag.on{background:rgba(251,191,36,.18);border-color:rgba(251,191,36,.6)}
+.flag.on .ic{fill:#fbbf24}
+.flag:active{transform:scale(.94)}
+.row-acts .like{flex-direction:column;gap:0;padding:2px;font-size:11px;min-width:34px}
+.row-acts .like .ic{width:20px;height:20px}
 .like{appearance:none;border:0;background:none;padding:2px 4px;margin:-2px 0;display:inline-flex;align-items:center;gap:3px;color:var(--muted);font:inherit;font-size:12px;font-weight:700;cursor:pointer;flex:none;border-radius:8px}
 .like .ic{width:16px;height:16px;stroke-width:2}
-.like.on{color:#f472b6}
+.like.on{color:var(--accent-b)}
 .like.on .ic{fill:currentColor}
 .like:active{transform:scale(1.15)}
 .sheet-backdrop#confirmSheet,.sheet-backdrop#nameSheet{z-index:80}
@@ -278,6 +288,20 @@ body:not(.recording) #recTime{display:none}
 .crop-frame img{position:absolute;left:0;top:0;transform-origin:0 0;user-select:none;-webkit-user-drag:none;pointer-events:none;max-width:none}
 .crop-frame::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:inset 0 0 0 2px rgba(255,255,255,.7);pointer-events:none}
 #cropZoom{width:100%;accent-color:var(--accent-b);height:30px;margin:0}
+.earn-bal{display:flex;flex-direction:column;gap:2px}
+.earn-bal-label{font-size:13px;color:rgba(255,247,237,.8);font-weight:600}
+.earn-bal-num{font-size:34px;font-weight:700;color:#fff}
+.earn-panel .btn.earn-btn{background:#fff7ed;color:#7c2d12;border:0;font-weight:800}
+.earn-panel .btn.earn-btn:disabled{background:rgba(255,247,237,.25);color:rgba(255,247,237,.75)}
+.earn-note{margin:-4px 0 0;font-size:13px;color:rgba(255,247,237,.85)}
+.earn-note:empty{display:none}
+.earn-panel .linkish.earn-link{color:#fed7aa;align-self:flex-start;font-size:13px}
+.wd-list{display:flex;flex-direction:column;gap:6px}
+.wd-list:empty{display:none}
+.wd-item{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:12px;background:rgba(0,0,0,.18);font-size:13px}
+.wd-item span:last-child{font-weight:700}
+.btn.small.round.ic-play{width:42px;height:42px;min-width:42px;min-height:42px;padding:0;border-radius:50%;flex:none}
+.btn.ic-play svg{width:20px;height:20px;fill:currentColor}
 .pub-view{position:fixed;inset:0;z-index:60;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
 .pub-view[hidden]{display:none}
 .pub-top{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 10px;background:linear-gradient(var(--bg) 75%,transparent)}
@@ -931,7 +955,12 @@ legend{padding:0}
     </details>
     <section class="panel earn-panel" aria-labelledby="pEarnHead">
       <h2 id="pEarnHead">Earnings</h2>
+      <div class="earn-bal"><span class="earn-bal-label">Available to withdraw</span><span id="pBal" class="earn-bal-num mono">$0.00</span></div>
+      <button type="button" id="pWithdraw" class="btn big earn-btn">Withdraw</button>
+      <p id="pWithdrawNote" class="earn-note"></p>
       <div id="pEarn" class="stats"></div>
+      <div id="pWdList" class="wd-list"></div>
+      <button type="button" id="pTestSale" class="linkish earn-link">Add a test sale</button>
     </section>
     <button type="button" id="helpBtn" class="btn big help-btn">Need help?</button>
   </main>
@@ -995,6 +1024,28 @@ legend{padding:0}
     <span id="pubNote" class="pub-note">How others see you</span>
   </div>
   <div id="pubBody" class="pub-body"></div>
+</div>
+
+<div id="wdSheet" class="sheet-backdrop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="wdTitle">
+    <h2 id="wdTitle">Withdraw earnings</h2>
+    <div class="price-row"><span class="label" style="margin:0">Amount $</span><input id="wdAmount" class="text" type="number" min="5" step="0.01" inputmode="decimal" aria-label="Amount in dollars"><button type="button" id="wdAll" class="linkish">All</button></div>
+    <div class="seg" role="radiogroup" aria-label="Send to">
+      <input type="radio" name="wdTo" id="wdBank" value="Bank account" checked><label for="wdBank">Bank</label>
+      <input type="radio" name="wdTo" id="wdCard" value="Debit card"><label for="wdCard">Debit card</label>
+      <input type="radio" name="wdTo" id="wdPaypal" value="PayPal"><label for="wdPaypal">PayPal</label>
+    </div>
+    <dl class="receipt">
+      <div><dt>Withdraw</dt><dd id="wdAmt" class="mono"></dd></div>
+      <div><dt>Withdrawal fee ($0.50 + 1%)</dt><dd id="wdFee" class="mono"></dd></div>
+      <div><dt>You receive</dt><dd id="wdGet" class="mono"></dd></div>
+    </dl>
+    <p id="wdMsg" class="hint">Minimum withdrawal is $5.00. Test mode: no money moves until payments are connected.</p>
+    <div class="actions">
+      <button type="button" id="wdCancel" class="btn">Cancel</button>
+      <button type="button" id="wdGo" class="btn primary">Withdraw</button>
+    </div>
+  </div>
 </div>
 
 <div id="cropSheet" class="sheet-backdrop" hidden>
@@ -1270,6 +1321,8 @@ const ICONS = {
   back:'<path d="M15 5l-7 7 7 7"/>',
   pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   trophy:'<path d="M8 4h8v6a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 14v3M9 20h6M10 17h4"/>',
+  shield:'<path d="M12 3l7 3v5c0 4.6-3 8.3-7 10-4-1.7-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+  flag:'<path d="M6 21V4"/><path d="M6 4.5h11.5l-2.8 4.2 2.8 4.3H6z"/>',
   heart:'<path d="M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.7 3.8 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.8 1.2-1.7 2.8-2.8 4.8-2.8 3.4 0 5.6 3.2 4.4 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"/>',
   copy:'<rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'
 };
@@ -3035,6 +3088,8 @@ $('#edLayer').addEventListener('click', () => {
 $('#edSaveSfx').addEventListener('click', async () => {
   const sel = state.sel1; if (!sel) return;
   const sr = ctx().sampleRate, data = renderRange(state.layers[sel.layer], sel.a, sel.b, sr);
+  const cp = await findCopy(data, sr);
+  if (cp){ setStatus($('#status1'), copyMsg(cp), 'error'); return; }
   const it = await addSfxToLib({ name:'Clip ' + fmtT(sel.a), source:'take', dur:data.length / sr, isPublic:lib.profile.isPublic, forSale:false });
   await store.set('blob:' + it.id, encodeWav([data], sr));
   setStatus($('#status1'), 'Saved ' + fmtT(sel.a) + '–' + fmtT(sel.b) + ' as a sound effect. Add it to your song on step 2, or sell it from Profile.', 'ok');
@@ -4307,33 +4362,42 @@ const FEE = 0.15;
 const money = (v) => '$' + (Math.round(v * 100) / 100).toFixed(2);
 const lib = {
   profile:{ name:'', handle:'', bio:'', isPublic:true, postSongs:true, allowSaves:true, sellSfx:true, showLikes:true },
-  songs:[], sfx:[], saved:[], likes:[], activity:[], follows:[], requests:[], purchases:[], presets:[], drafts:[], media:[], premium:false, verify:{ status:'none', link:'' }
+  songs:[], sfx:[], saved:[], likes:[], activity:[], sales:[], withdrawals:[], follows:[], requests:[], purchases:[], presets:[], drafts:[], media:[], premium:false, verify:{ status:'none', link:'' }
 };
 let libTimer = 0;
 function saveLib(){ clearTimeout(libTimer); libTimer = setTimeout(() => store.set('lib', JSON.parse(JSON.stringify(lib))), 250); }
 async function loadLib(){
   const v = await store.get('lib');
   if (v && typeof v === 'object'){
-    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'likes', 'activity', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media']) if (Array.isArray(v[k])) lib[k] = v[k]; }
+    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'likes', 'activity', 'sales', 'withdrawals', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media']) if (Array.isArray(v[k])) lib[k] = v[k]; }
 }
 const uid = (p) => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 // one shared player for short previews (library, Discover, reference)
 const pv = { key:null, src:null, btn:null };
+// round play buttons use symbols: play, and pause while playing
+const PLAY_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>';
+const PAUSE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5.5" width="4" height="13" rx="1.2"/><rect x="13.5" y="5.5" width="4" height="13" rx="1.2"/></svg>';
+const WAIT_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="18" cy="12" r="1.8"/></svg>';
+function playIconBtn(label){ const b = h('button', { type:'button', class:'btn small round ic-play', 'aria-label':label }); b.innerHTML = PLAY_SVG; b.dataset.aria = label; return b; }
+function setBtnState(b, st){
+  if (b.classList.contains('ic-play')){ b.innerHTML = st === 'play' ? PAUSE_SVG : st === 'wait' ? WAIT_SVG : PLAY_SVG; b.setAttribute('aria-label', st === 'play' ? 'Pause' : b.dataset.aria); return; }
+  b.textContent = st === 'play' ? 'Stop' : st === 'wait' ? '…' : (b.dataset.label || 'Play');
+}
 function previewStop(){
   if (pv.src){ pv.src.onended = null; try { pv.src.stop(); } catch (e) {} pv.src = null; }
-  if (pv.btn){ pv.btn.textContent = pv.btn.dataset.label || 'Play'; pv.btn.setAttribute('aria-pressed', 'false'); }
+  if (pv.btn){ setBtnState(pv.btn, 'idle'); pv.btn.setAttribute('aria-pressed', 'false'); }
   pv.key = null; pv.btn = null;
 }
 async function previewToggle(key, getBuf, btn){
   if (pv.key === key){ previewStop(); return; }
   stopAllPlayback();
-  pv.key = key; pv.btn = btn; if (!btn.dataset.label) btn.dataset.label = btn.textContent;
-  btn.textContent = '…';
+  pv.key = key; pv.btn = btn; if (!btn.dataset.label && !btn.classList.contains('ic-play')) btn.dataset.label = btn.textContent;
+  setBtnState(btn, 'wait');
   try {
     const buf = await getBuf(); if (pv.key !== key) return;
     const c = ctx(), s = c.createBufferSource(); s.buffer = buf; s.connect(c.destination); s.start();
-    pv.src = s; btn.textContent = 'Stop'; btn.setAttribute('aria-pressed', 'true');
+    pv.src = s; setBtnState(btn, 'play'); btn.setAttribute('aria-pressed', 'true');
     s.onended = () => { if (pv.src === s) previewStop(); };
   } catch (e){ previewStop(); }
 }
@@ -4460,6 +4524,8 @@ $('#srSheet').addEventListener('click', (e) => { if (e.target === $('#srSheet'))
 $('#sfxNew').addEventListener('click', () => { stopAllPlayback(); srReset(); $('#srSheet').hidden = false; });
 $('#srSave').addEventListener('click', async () => {
   if (!sr2.data) return;
+  const cp = await findCopy(sr2.data, sr2.sr);
+  if (cp){ $('#srNote').textContent = copyMsg(cp); $('#srSave').disabled = true; return; }
   const sell = $('#srSell').checked && lib.premium, price = clamp(Math.round((+$('#srPrice').value || 0.99) * 100) / 100, 0.49, 49.99);
   const it = await addSfxToLib({ name:$('#srName').value.trim() || 'My sound', source:'take', dur:sr2.data.length / sr2.sr, isPublic:lib.profile.isPublic || sell, forSale:sell, price }, encodeWav([sr2.data], sr2.sr));
   const b = ctx().createBuffer(1, sr2.data.length, sr2.sr); b.getChannelData(0).set(sr2.data); bufCache.set(it.id, b);
@@ -4548,7 +4614,7 @@ function renderSfxPanel(){
   const got = lib.sfx.filter((x) => x.source === 'bought' || x.source === 'saved'), made = lib.sfx.filter((x) => x.source === 'take' || x.source === 'file');
   $('#sfxEmpty').hidden = lib.sfx.length > 0;
   const row = (it) => {
-    const play = h('button', { type:'button', class:'btn small round', 'aria-label':'Play ' + it.name }, 'Play');
+    const play = playIconBtn('Play ' + it.name);
     play.addEventListener('click', () => previewToggle('sfx:' + it.id, () => getSfxBuffer(it), play));
     const row = h('div', { class:'item', title:'Hold to delete' }, play,
       h('div', { class:'item-main' }, h('span', { class:'item-title', text:it.name }), h('span', { class:'item-meta', text:sourceLabel(it) + (it.forSale && (it.source === 'take' || it.source === 'file') ? ' · for sale ' + money(it.price) : '') })),
@@ -4842,6 +4908,64 @@ function sfxLen(x, el, prefix){
   if (x.dur) { put(x.dur); return; }
   getSfxBuffer(x).then((b) => put(b.duration)).catch(() => {});
 }
+/* Copy protection: sounds posted or sold by verified creators get a fingerprint (the shape of their
+   loudness and brightness over time). A new sound that matches one can't be saved as someone else's. */
+const fpCache = new Map();
+const FP_BANDS = [120, 250, 500, 1000, 2000, 4000, 8000];
+function fingerprint(data, sr){
+  // 50 frames a second: loudness plus how the sound's energy spreads across 7 pitch bands (Goertzel filters)
+  const hop = Math.max(64, Math.round(sr / 50)), n = Math.floor(data.length / hop), env = new Float32Array(n), spec = [];
+  const co = FP_BANDS.map((f) => 2 * Math.cos(2 * Math.PI * f / sr));
+  const avg = new Float32Array(FP_BANDS.length);
+  for (let fr = 0; fr < n; fr++){
+    const o = fr * hop, bands = new Float32Array(FP_BANDS.length); let e = 0;
+    for (let i = o; i < o + hop; i++) e += data[i] * data[i];
+    for (let k = 0; k < co.length; k++){
+      let s1 = 0, s2 = 0; const c = co[k];
+      for (let i = o; i < o + hop; i += 2){ const s0 = data[i] + c * s1 - s2; s2 = s1; s1 = s0; }
+      bands[k] = Math.log(1e-9 + s1 * s1 + s2 * s2 - c * s1 * s2);
+    }
+    const m = bands.reduce((a, v) => a + v, 0) / bands.length; for (let k = 0; k < bands.length; k++){ bands[k] -= m; avg[k] += bands[k] * e; }
+    env[fr] = Math.log(1e-9 + e / hop); spec.push(bands);
+  }
+  // ignore near-silence (more than ~40 dB below the loudest part), where background hiss would dominate
+  let top = -Infinity; for (const v of env) top = Math.max(top, v);
+  const floor = top - 9.2, live = Array.from(env, (v) => v > floor);
+  for (let fr = 0; fr < n; fr++) env[fr] = Math.max(env[fr], floor);
+  const smooth = (a, w) => a.map((_, i) => { let t = 0, c = 0; for (let j = Math.max(0, i - w); j <= Math.min(a.length - 1, i + w); j++){ t += a[j]; c++; } return t / c; });
+  const norm = (a) => { let m = 0; for (const v of a) m += v; m /= a.length || 1; let sd = 0; for (const v of a) sd += (v - m) * (v - m); sd = Math.sqrt(sd / (a.length || 1)) || 1; return a.map((v) => (v - m) / sd); };
+  return { env:norm(smooth(env, 2)), slow:norm(smooth(env, 12)), spec, live, avg, dur:data.length / sr };
+}
+const cosv = (a, b) => { let d = 0, na = 0, nb = 0; for (let i = 0; i < a.length; i++){ d += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i]; } return na && nb ? d / Math.sqrt(na * nb) : 0; };
+function fpMatch(a, b){
+  if (Math.min(a.dur, b.dur) < 0.25 || Math.abs(a.dur - b.dur) / Math.max(a.dur, b.dur) > 0.25) return 0;
+  const avgCos = cosv(a.avg, b.avg);
+  let best = 0, bestSlow = 0; const maxLag = Math.round(Math.min(a.env.length, b.env.length) * 0.2);
+  for (let lag = -maxLag; lag <= maxLag; lag++){
+    let se = 0, ss = 0, sc = 0, n = 0, nl = 0;
+    for (let i = 0; i < a.env.length; i++){ const j = i + lag; if (j < 0 || j >= b.env.length) continue; se += a.env[i] * b.env[j]; ss += a.slow[i] * b.slow[j]; n++; if (a.live[i] && b.live[j]){ sc += cosv(a.spec[i], b.spec[j]); nl++; } }
+    if (n < 10 || nl < 3) continue;
+    best = Math.max(best, (se / n) * 0.45 + (sc / nl) * 0.55); bestSlow = Math.max(bestSlow, ss / n);
+  }
+  // the same sound: loudness and pitch spread line up frame by frame; or the same texture (noise-like sounds): same overall shape and pitch spread
+  return Math.max(best * Math.min(1, avgCos / 0.9), avgCos > 0.97 && bestSlow > 0.8 ? 0.9 : 0);
+}
+async function protectedSounds(){
+  const out = [];
+  for (const c of EXAMPLES.filter((x) => x.verified && x.isPublic)) for (const x of c.sfx){
+    let fp = fpCache.get(x.id);
+    if (!fp){ try { const b = await getSfxBuffer(x); fp = fingerprint(b.getChannelData(0), b.sampleRate); fpCache.set(x.id, fp); } catch (_) { continue; } }
+    out.push({ c, x, fp });
+  }
+  return out;
+}
+// resolves to the protected sound it copies, or null
+async function findCopy(data, sr){
+  const fp = fingerprint(data, sr);
+  for (const p of await protectedSounds()) if (fpMatch(fp, p.fp) > 0.85) return p;
+  return null;
+}
+const copyMsg = (p) => 'This sound belongs to @' + p.c.handle + ' ("' + p.x.name + '"), a verified creator, so it can\'t be saved as yours. You can get it on Discover and use it in your songs.';
 function me(){
   const pr = lib.profile;
   return { id:'me', mine:true, photo:pr.photo || null, banner:pr.banner || null, name:pr.name.trim() || 'Your profile', handle:pr.handle.trim() || 'you', isPublic:pr.isPublic, verified:lib.verify.status === 'verified', color:'#8b5cf6', bio:pr.bio,
@@ -4878,20 +5002,34 @@ function likeBtn(kind, item, c){
   });
   return b;
 }
-function songRow(s, c){
-  const play = h('button', { type:'button', class:'btn small round', 'aria-label':'Play ' + s.title }, 'Play');
-  play.addEventListener('click', () => { if (pv.key !== 'song:' + s.id) track('play', 'song:' + s.id); previewToggle('song:' + s.id, () => s.mine ? store.get('blob:' + s.id).then(decodeBlob) : exampleSongBuffer(s), play); });
+// gold flag: tap to save a song, tap again to unsave it
+function saveFlag(s, c){
   const saved = lib.saved.some((x) => x.id === s.id);
+  const b = h('button', { type:'button', class:'flag' + (saved ? ' on' : ''), 'aria-pressed':saved ? 'true' : 'false', 'aria-label':(saved ? 'Unsave ' : 'Save ') + s.title, title:saved ? 'Saved (tap to unsave)' : 'Save' }, icon('flag'));
+  b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (lib.saved.some((x) => x.id === s.id)) lib.saved = lib.saved.filter((x) => x.id !== s.id);
+    else { lib.saved.unshift({ kind:'song', id:s.id, title:s.title, from:c.name, creator:c.id }); track('save', 'song:' + s.id); }
+    saveLib(); b.replaceWith(saveFlag(s, c));
+    if (state.section === 'discover' && dState.view === 'songs' && dState.subs.songs !== 'trending') renderDiscover();
+  });
+  return b;
+}
+function songRow(s, c){
+  const play = playIconBtn('Play ' + s.title);
+  play.addEventListener('click', () => { if (pv.key !== 'song:' + s.id) track('play', 'song:' + s.id); previewToggle('song:' + s.id, () => s.mine ? store.get('blob:' + s.id).then(decodeBlob) : exampleSongBuffer(s), play); });
   let action;
   if (s.mine) action = h('span', { class:'tag' }, 'Yours');
   else if (!s.allowSave) action = h('span', { class:'tag muted' }, 'Listen only');
-  else action = h('button', { type:'button', class:'btn small', disabled:saved, onclick:() => { lib.saved.unshift({ kind:'song', id:s.id, title:s.title, from:c.name, creator:c.id }); track('save', 'song:' + s.id); renderDiscover(); } }, saved ? 'Saved' : 'Save');
+  else action = saveFlag(s, c);
   return h('div', { class:'item' }, s.cover ? h('img', { class:'cover cover-sm', src:s.cover, alt:'' }) : null, play,
-    h('div', { class:'item-main' }, h('div', { class:'title-row' }, h('span', { class:'item-title', text:s.title }), likeBtn('song', s, c)), h('span', { class:'item-meta', text:'Song · ' + c.name + ' · ' + lenTxt(s.mine ? (s.dur || 0) : exampleDur(s)) })), action);
+    h('div', { class:'item-main' }, h('span', { class:'item-title', text:s.title }), h('span', { class:'item-meta', text:'Song · ' + c.name + ' · ' + lenTxt(s.mine ? (s.dur || 0) : exampleDur(s)) })),
+    h('div', { class:'row-acts' }, likeBtn('song', s, c), action));
 }
 function sfxRow(x, c){
   const meta = h('span', { class:'item-meta', text:'Sound effect · ' + c.name }); sfxLen(x, meta, 'Sound effect · ' + c.name);
-  const play = h('button', { type:'button', class:'btn small round', 'aria-label':'Play ' + x.name }, 'Play');
+  const guard = c.verified ? h('span', { class:'protected', title:'Protected: copies of this sound can\'t be posted or sold by anyone else' }, icon('shield'), 'Protected') : null;
+  const play = playIconBtn('Play ' + x.name);
   play.addEventListener('click', () => { if (pv.key !== 'sfx:' + x.id) track('play', 'sfx:' + x.id); previewToggle('sfx:' + x.id, () => getSfxBuffer(x), play); });
   let action;
   if (x.mine) action = h('span', { class:'tag' }, x.forSale ? money(x.price) + ' · yours' : 'Yours');
@@ -4899,7 +5037,8 @@ function sfxRow(x, c){
   else if (x.forSale) action = h('button', { type:'button', class:'btn small primary', onclick:() => openCheckout(x, c) }, 'Buy ' + money(x.price));
   else action = h('button', { type:'button', class:'btn small', onclick:async () => { await addSfxToLib({ name:x.name, recipe:x.recipe, source:'saved', from:c.name, origin:x.id }); track('save', 'sfx:' + x.id); renderDiscover(); showAd(); } }, 'Get free');
   return h('div', { class:'item' }, play,
-    h('div', { class:'item-main' }, h('div', { class:'title-row' }, h('span', { class:'item-title', text:x.name }), likeBtn('sfx', x, c)), meta), action);
+    h('div', { class:'item-main' }, h('span', { class:'item-title', text:x.name }), meta, guard),
+    h('div', { class:'row-acts' }, likeBtn('sfx', x, c), action));
 }
 /* Leaderboard: everything a creator has earned so far (followers, likes, saves, buys, views), not just this week */
 function leaderScore(c){
@@ -4980,7 +5119,7 @@ const creatorTrend = (c) => trendScore('creator:' + c.id, c.id, null) + c.songs.
 function trendOrder(items, score){ return items.map((x) => [x, score(x)]).sort((a, b) => b[1] - a[1]).map((p) => p[0]); }
 function savedSfxRow(x){
   const pre = 'Sound effect' + (x.from ? ' · ' + x.from : ''), meta = h('span', { class:'item-meta', text:pre }); sfxLen(x, meta, pre);
-  const play = h('button', { type:'button', class:'btn small round', 'aria-label':'Play ' + x.name }, 'Play');
+  const play = playIconBtn('Play ' + x.name);
   play.addEventListener('click', () => previewToggle('sfx:' + x.id, () => getSfxBuffer(x), play));
   return h('div', { class:'item' }, play,
     h('div', { class:'item-main' }, h('span', { class:'item-title', text:x.name }), meta),
@@ -5260,7 +5399,7 @@ function renderProfile(){
   renderPlan(); renderVerify();
 
   const songs = lib.songs.map((s) => {
-    const play = h('button', { type:'button', class:'btn small round', 'aria-label':'Play ' + s.title }, 'Play');
+    const play = playIconBtn('Play ' + s.title);
     play.addEventListener('click', () => previewToggle('my:' + s.id, () => store.get('blob:' + s.id).then(decodeBlob), play));
     return h('div', { class:'item wrap' }, play,
       h('div', { class:'item-main' }, h('span', { class:'item-title', text:s.title }), h('span', { class:'item-meta', text:fmt(s.dur) + ' · ' + new Date(s.created).toLocaleDateString() })),
@@ -5273,7 +5412,7 @@ function renderProfile(){
 
   const mine = lib.sfx.filter((x) => x.source === 'take' || x.source === 'file');
   $('#pSfx').replaceChildren(...(mine.length ? mine.map((x) => {
-    const play = h('button', { type:'button', class:'btn small round', 'aria-label':'Play ' + x.name }, 'Play');
+    const play = playIconBtn('Play ' + x.name);
     play.addEventListener('click', () => previewToggle('sfx:' + x.id, () => getSfxBuffer(x), play));
     const price = h('input', { type:'number', class:'text price', min:'0.49', max:'49.99', step:'0.01', value:(+x.price || 0.99).toFixed(2), 'aria-label':'Price for ' + x.name, disabled:!x.forSale || !pr.sellSfx || !lib.premium });
     price.addEventListener('change', () => { x.price = clamp(+price.value || 0.99, 0.49, 49.99); price.value = x.price.toFixed(2); saveLib(); keep.textContent = 'You keep ' + money(x.price * (1 - FEE)); });
@@ -5291,11 +5430,52 @@ function renderProfile(){
   renderAlbum();
 
   const spent = lib.purchases.reduce((a, p) => a + p.price, 0), fees = lib.purchases.reduce((a, p) => a + p.fee, 0);
+  const earned = lib.sales.reduce((a, x) => a + x.net, 0);
+  renderWithdraw();
   $('#pEarn').replaceChildren(
-    h('div', { class:'stat' }, h('span', { class:'stat-num mono' }, '0'), h('span', { class:'stat-label' }, 'Sounds sold')),
-    h('div', { class:'stat' }, h('span', { class:'stat-num mono' }, money(0)), h('span', { class:'stat-label' }, 'You earned')),
+    h('div', { class:'stat' }, h('span', { class:'stat-num mono' }, String(lib.sales.length)), h('span', { class:'stat-label' }, 'Sounds sold')),
+    h('div', { class:'stat' }, h('span', { class:'stat-num mono' }, money(earned)), h('span', { class:'stat-label' }, 'You earned')),
     h('div', { class:'stat' }, h('span', { class:'stat-num mono' }, money(spent)), h('span', { class:'stat-label' }, 'You spent (' + money(fees) + ' app fee)')));
 }
+/* Earnings: withdraw your balance (minimum $5; the app takes a withdrawal fee) */
+const WD_MIN = 5, wdFee = (amt) => Math.round((0.5 + amt * 0.01) * 100) / 100;
+const balance = () => Math.max(0, Math.round((lib.sales.reduce((a, x) => a + x.net, 0) - lib.withdrawals.reduce((a, w) => a + w.amount, 0)) * 100) / 100);
+function renderWithdraw(){
+  const bal = balance();
+  $('#pBal').textContent = money(bal);
+  $('#pWithdraw').disabled = bal < WD_MIN;
+  $('#pWithdrawNote').textContent = bal < WD_MIN ? 'You can withdraw once you have ' + money(WD_MIN) + (bal > 0 ? ' (' + money(WD_MIN - bal) + ' to go).' : '.') : '';
+  $('#pWdList').replaceChildren(...lib.withdrawals.slice(0, 5).map((w) => h('div', { class:'wd-item' },
+    h('span', { text:new Date(w.at).toLocaleDateString() + ' · ' + w.to + ' · test' }), h('span', { text:'-' + money(w.amount) }))));
+}
+function wdUpdate(){
+  const bal = balance(), amt = Math.round((+$('#wdAmount').value || 0) * 100) / 100, fee = wdFee(amt);
+  $('#wdAmt').textContent = money(amt); $('#wdFee').textContent = '-' + money(fee); $('#wdGet').textContent = money(Math.max(0, amt - fee));
+  let msg = 'Minimum withdrawal is ' + money(WD_MIN) + '. Test mode: no money moves until payments are connected.', ok = true;
+  if (amt < WD_MIN){ msg = 'The minimum withdrawal is ' + money(WD_MIN) + '.'; ok = false; }
+  else if (amt > bal + 0.001){ msg = 'You have ' + money(bal) + ' available.'; ok = false; }
+  $('#wdMsg').textContent = msg; $('#wdMsg').className = ok ? 'hint' : 'status error';
+  $('#wdGo').disabled = !ok; $('#wdGo').textContent = ok ? 'Withdraw ' + money(amt) : 'Withdraw';
+}
+$('#pWithdraw').addEventListener('click', () => { const bal = balance(); if (bal < WD_MIN) return; $('#wdAmount').value = bal.toFixed(2); wdUpdate(); $('#wdSheet').hidden = false; });
+$('#wdAmount').addEventListener('input', wdUpdate);
+$('#wdAll').addEventListener('click', () => { $('#wdAmount').value = balance().toFixed(2); wdUpdate(); });
+$('#wdCancel').addEventListener('click', () => { $('#wdSheet').hidden = true; });
+$('#wdGo').addEventListener('click', () => {
+  const amt = Math.round((+$('#wdAmount').value || 0) * 100) / 100;
+  if (amt < WD_MIN || amt > balance() + 0.001) return;
+  const to = (document.querySelector('input[name=wdTo]:checked') || {}).value || 'Bank account', fee = wdFee(amt);
+  lib.withdrawals.unshift({ amount:amt, fee, received:Math.round((amt - fee) * 100) / 100, to, at:Date.now(), test:true });
+  saveLib(); $('#wdSheet').hidden = true; renderProfile();
+  $('#pWithdrawNote').textContent = 'Withdrew ' + money(amt) + ' to your ' + (to === 'PayPal' ? to : to.toLowerCase()) + '. You receive ' + money(amt - fee) + '. (Test: no money moved.)';
+});
+// try it before payments are connected: a pretend sale of one of your sounds
+$('#pTestSale').addEventListener('click', () => {
+  const mine = lib.sfx.find((x) => x.forSale && (x.source === 'take' || x.source === 'file'));
+  const price = mine ? mine.price : 1.99, fee = Math.round(price * FEE * 100) / 100;
+  lib.sales.unshift({ name:mine ? mine.name : 'Test sound', price, fee, net:Math.round((price - fee) * 100) / 100, at:Date.now(), test:true });
+  saveLib(); renderProfile();
+});
 $('#pName').addEventListener('input', (e) => { lib.profile.name = e.target.value; paintMyAvatar(); saveLib(); });
 function paintMyAvatar(){
   const pr = lib.profile;
@@ -5404,6 +5584,8 @@ $('#pSfxFile').addEventListener('change', async (e) => {
   try {
     const buf = await decodeBlob(f);
     if (buf.duration > MAX_SEC) throw new Error('files can be up to 10 minutes');
+    const cp = await findCopy(buf.getChannelData(0), buf.sampleRate);
+    if (cp){ $('#pSfxNote').textContent = copyMsg(cp); return; }
     const it = await addSfxToLib({ name:f.name.replace(/\.[^.]+$/, '') || 'Sound', source:'file', dur:buf.duration, isPublic:lib.profile.isPublic }, f);
     bufCache.set(it.id, buf); renderProfile();
   } catch (err){ $('#pSfxNote').textContent = 'Couldn\'t use ' + f.name + ': ' + (err.message || 'unreadable audio') + '.'; }
@@ -5514,10 +5696,10 @@ const TOURS = {
     { sel:'#pMe', title:'Your profile', text:'Tap this card to see your profile full screen the way others see it: your published songs, sounds and who you follow. Tap Edit to change your photo, name and bio.' },
     { sel:'#pAlbumHead', title:'Your album', text:'The songs and sound effects you made. Tap one to play it. Things you save or buy from others are in Discover, under Saved.' },
     { sel:'#pPlanRow', title:'Premium', text:'Premium adds AI Blend, lets you sell your sound effects (you keep 85%, the app keeps 15%), and removes ads. Upgrades are test upgrades for now.' },
-    { sel:'#pVerifyRow', title:'Verified badge', text:'Ask for a purple check that shows this account is really you, so no one can pretend to be you. Usernames are one per person.' },
+    { sel:'#pVerifyRow', title:'Verified badge', text:'Ask for a purple check that shows this account is really you, so no one can pretend to be you. Verified creators\' sounds are protected: copies of them can\'t be posted or sold by anyone else.' },
     { sel:'#pSwitches', title:'Privacy and selling', text:'Public account: people can find you on Discover. Post my new songs: songs you save start out public. Let people save my songs: others can keep a copy. Sell my sounds: your sound effects can be bought (Premium).' },
     { sel:'.manage', title:'Manage songs and sounds', text:'Make each song or sound public or private, set prices, upload sound effects, or delete them.' },
-    { sel:'#pEarnHead', title:'Earnings', text:'Your sales show here once real payments are connected.' },
+    { sel:'#pEarnHead', title:'Earnings', text:'What you earn from selling sounds (after the 15% app fee) adds up here. Withdraw once you have at least $5; each withdrawal has a fee of $0.50 + 1%. It\'s test mode until real payments are connected.' },
     { sel:'#helpBtn', title:'Need help?', text:'Tap here any time to see all the tutorials again.' }
   ]
 };
