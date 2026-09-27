@@ -245,6 +245,7 @@ body:not(.recording) #recTime{display:none}
 .like.on{color:#f472b6}
 .like.on .ic{fill:currentColor}
 .like:active{transform:scale(1.15)}
+.sheet-backdrop#confirmSheet,.sheet-backdrop#nameSheet{z-index:80}
 .pub-view{position:fixed;inset:0;z-index:60;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
 .pub-view[hidden]{display:none}
 .pub-top{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 10px;background:linear-gradient(var(--bg) 75%,transparent)}
@@ -4824,7 +4825,7 @@ function creatorCard(c){
   let follow = null;
   if (!c.mine){
     follow = c.isPublic
-      ? h('button', { type:'button', class:'btn small' + (following ? '' : ' primary'), onclick:(e) => { e.stopPropagation(); lib.follows = following ? lib.follows.filter((x) => x !== c.id) : lib.follows.concat(c.id); saveLib(); renderDiscover(); } }, following ? 'Following' : 'Follow')
+      ? h('button', { type:'button', class:'btn small' + (following ? '' : ' primary'), onclick:async (e) => { e.stopPropagation(); if (following && !(await askConfirm('Unfollow ' + c.name + '?', 'Their songs and sounds stay on Discover. You can follow them again any time.', 'Unfollow'))) return; lib.follows = following ? lib.follows.filter((x) => x !== c.id) : lib.follows.concat(c.id); saveLib(); renderDiscover(); if (!$('#pubView').hidden) renderPublicView(); if (state.section === 'profile') renderProfileHead(); } }, following ? 'Following' : 'Follow')
       : h('button', { type:'button', class:'btn small', disabled:requested, onclick:(e) => { e.stopPropagation(); lib.requests.push(c.id); saveLib(); renderDiscover(); } }, requested ? 'Requested' : 'Request');
   }
   const counts = (c.mine ? '' : compact(followers(c)) + ' followers · ') + (c.isPublic ? c.songs.length + ' song' + (c.songs.length === 1 ? '' : 's') : 'private');
