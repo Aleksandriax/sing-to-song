@@ -120,6 +120,11 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .ed-tools .btn.small + .btn.small{border-left:1px solid var(--line)}
 .ed-tools .btn.small:active:not(:disabled){background:var(--surface-2)}
 .ed-tools .btn.small:disabled{opacity:.4}
+/* undo and redo sit at the left of the edit bar */
+.ed-tools .btn.small.ed-hist{flex:0 0 38px;padding:0;display:grid;place-items:center}
+.ed-tools .btn.small:not(.ed-hist){font-size:13px;padding:0 3px;flex:1 1 auto;min-width:max-content}
+.ed-tools.five .btn.small:not(.ed-hist){font-size:11.5px;padding:0 1px}
+.ed-tools .ed-hist svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .editor .tl-bar[hidden]{display:none}
 .layer-vol{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
 .layer-vol[hidden]{display:none}
@@ -775,8 +780,6 @@ legend{padding:0}
 
     <section class="editor" aria-label="Your song">
       <div class="tl-bar">
-        <button type="button" id="edUndo" class="icon-btn sm" aria-label="Undo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
-        <button type="button" id="edRedo" class="icon-btn sm" aria-label="Redo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
         <button type="button" id="edPlay" class="btn small" style="min-width:64px">Play</button>
         <span id="edTime" class="tl-time mono">0:00.0 / 0:00.0</span>
         <span class="spacer"></span>
@@ -804,6 +807,8 @@ legend{padding:0}
         <div id="noteRead" class="note-read mono" hidden></div>
       </div>
       <div class="ed-tools" hidden>
+        <button type="button" id="edUndo" class="btn small ed-hist" aria-label="Undo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+        <button type="button" id="edRedo" class="btn small ed-hist" aria-label="Redo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
         <button type="button" id="edSplit" class="btn small">Split</button>
         <button type="button" id="edDup" class="btn small">Duplicate</button>
         <button type="button" id="edDel" class="btn small danger">Delete</button>
@@ -1019,6 +1024,7 @@ legend{padding:0}
         <button type="button" id="saveAudio" class="btn">Save audio (.wav)</button>
         <button type="button" id="saveVideo" class="btn">Save video</button>
       </div>
+      <button type="button" id="saveMusic" class="btn">Save the added music only (.wav)</button>
       <div id="shareBox" class="share-box" hidden>
         <p id="shareText" class="summary"></p>
         <button type="button" id="shareBtn" class="btn primary">Save to my phone</button>
@@ -2973,7 +2979,7 @@ function edReadouts(){
   $('#edTime').textContent = fmtT(state.playhead1) + ' / ' + fmtT(dur) + (dur > MAX_SEC ? ' (over 10:00)' : '');
   const layer = state.layers[state.activeLayer], sel = state.sel1, has = dur > 0;
   if (state.recView && rec.state === 'idle' && !cd.on) recTime.textContent = fmt(dur);
-  $('.ed-tools').hidden = !has; $('.editor .tl-bar').hidden = !has && hist.stack.length <= 1;
+  $('.ed-tools').hidden = !has && hist.stack.length <= 1; $('.editor .tl-bar').hidden = !has && hist.stack.length <= 1;
   $('#edSplit').disabled = !segAt(layer, state.playhead1);
   $('#edZoomIn').disabled = state.span1 !== Infinity && edSpan() <= 0.051; $('#edZoomOut').disabled = state.span1 === Infinity || !has;
   $('#edDup').disabled = !(sel || segAt(layer, state.playhead1));
@@ -4511,7 +4517,8 @@ function arrange(oc, music, verb, plan, o){
     }
   }
 }
-async function mixSong(voc, harmUp, harmDown, sr, plan){
+async function mixSong(voc, harmUp, harmDown, sr, plan, opts){
+  const inst = !!(opts && opts.instrumental);   // the music only: no voice, no sung harmonies
   const beat = 60 / plan.tempo, bar = beat * 4, intro = bar;
   const songEnd = Math.ceil((intro + voc.length / sr) / bar) * bar + bar;
   const oc = offline(2, Math.ceil((songEnd + plan.reverbSec + 0.3) * sr), sr);
@@ -4555,23 +4562,24 @@ async function mixSong(voc, harmUp, harmDown, sr, plan){
     let n = inp; for (const x of chain){ n.connect(x); n = x; } n.connect(cp); cp.connect(mk);
     return mk;
   };
-  if (plan.blend) addVoice(voc, 1, 0, 0.8, false, polish); else addVoice(voc, 1, 0, 0.35, false);
+  if (!inst){ if (plan.blend) addVoice(voc, 1, 0, 0.8, false, polish); else addVoice(voc, 1, 0, 0.35, false); }
   // everything that isn't the voice goes through `music`, which dips under the singer when Blend is on
   const music = oc.createGain(); music.connect(master);
-  if (plan.blend){
+  if (plan.blend && !inst){
     const win = Math.floor(sr * 0.05), env = [];
     for (let p = 0; p < voc.length; p += win){ let e = 0; for (let i = p; i < Math.min(voc.length, p + win); i += 4) e += voc[i] * voc[i]; env.push(Math.sqrt(e / (win / 4))); }
     const emax = Math.max(...env, 1e-6); let lastG = 1;
     env.forEach((e, i) => { const gv = 1 - 0.35 * Math.min(1, (e / emax) * 1.6); if (Math.abs(gv - lastG) > 0.03){ music.gain.setTargetAtTime(gv, intro + i * 0.05, 0.08); lastG = gv; } });
   }
-  if (harmUp) addVoice(harmUp, 0.3 * plan.harmony, -0.5, 1, true);
-  if (harmDown) addVoice(harmDown, 0.26 * plan.harmony, 0.5, 1, true);
+  if (harmUp && !inst) addVoice(harmUp, 0.3 * plan.harmony, -0.5, 1, true);
+  if (harmDown && !inst) addVoice(harmDown, 0.26 * plan.harmony, 0.5, 1, true);
 
   arrange(oc, music, verb, plan, { songEnd, bar, beat, intro, at });
 
   const out = await renderOffline(oc);
   let peak = 0;
   for (let c = 0; c < out.numberOfChannels; c++){ const d = out.getChannelData(c); for (let i = 0; i < d.length; i++){ const v = Math.abs(d[i]); if (v > peak) peak = v; } }
+  if (inst && opts.gain){ const g = opts.gain; for (let c = 0; c < out.numberOfChannels; c++){ const d = out.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] *= g; } return out; }
   if (peak > 0){ const g = 0.95 / peak; out.normGain = g; for (let c = 0; c < out.numberOfChannels; c++){ const d = out.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] *= g; } }
   return out;
 }
@@ -4587,7 +4595,7 @@ function setProgress(step, frac, label){
 }
 function setBusy(b){
   state.busy = b;
-  ['#genBtn', '#regenBtn', '#saveAudio', '#saveVideo', '#restartBtn'].forEach((s) => { $(s).disabled = b; });
+  ['#genBtn', '#regenBtn', '#saveAudio', '#saveVideo', '#saveMusic', '#restartBtn'].forEach((s) => { $(s).disabled = b; });
   if (!b && !videoMime()) $('#saveVideo').disabled = true;
   $('#genBtn').textContent = b ? 'Generating…' : 'Generate song';
   $('#regenBtn').textContent = b ? 'Working…' : 'Regenerate the whole song';
@@ -4742,7 +4750,7 @@ window.addEventListener('resize', () => { if (state.page === 3) renderFix(); });
 $('#fixUndo').addEventListener('click', async () => {
   const r = state.result; if (!r || !r.prevBase || state.busy) return;
   fixStopPart(); stopAllPlayback();
-  r.base = r.prevBase; r.plan.normGain = r.prevGain; r.redos = r.prevRedos; r.prevBase = null; r.mixId = null;
+  r.base = r.prevBase; r.plan.normGain = r.prevGain; r.redos = r.prevRedos; r.prevBase = null; r.mixId = null; r.redoLog = (r.redoLog || []).slice(0, -1); r.music = null;
   await applySfx(); persistMix(r); renderFix();
   setStatus($('#status3'), 'Put that part back the way it was.', 'ok'); toast('Undid: redo of a part');
 });
@@ -4790,6 +4798,7 @@ $('#fixGo').addEventListener('click', async () => {
     if (peak > 0.99) r.prevGain = r.prevGain / (0.97 / peak);
     r.base = out; r.mixId = null;
     if (used){ used.n++; used.a = Math.min(used.a, fix.a); used.b = Math.max(used.b, fix.b); } else r.redos.push({ a:fix.a, b:fix.b, n:1 });
+    r.redoLog = (r.redoLog || []).concat({ a, b, plan:alt }); r.music = null;
     await applySfx(); persistMix(r);
     const left = FIX_MAX - (used ? used.n : 1);
     setStatus($('#status3'), 'Redid ' + fmtT(fix.a) + ' – ' + fmtT(fix.b) + ' with ' + instruments.map((x) => INSTR_NAMES[x]).join(', ').toLowerCase() + '. ' + (left > 0 ? left + ' redo' + (left === 1 ? '' : 's') + ' left for this part.' : 'That was the last redo for this part.'), 'ok');
@@ -4881,7 +4890,7 @@ function showPlan(note){
   const r = state.result, p = r.plan;
   pl.offset = 0; scrub.max = r.mix.duration.toFixed(2); scrub.value = 0;
   $('#curT').textContent = '0:00'; $('#durT').textContent = fmt(r.mix.duration);
-  $('#fixPanel').hidden = !!p.plain; $('#regenBtn').hidden = !!p.plain;
+  $('#fixPanel').hidden = !!p.plain; $('#regenBtn').hidden = !!p.plain; $('#saveMusic').hidden = !!p.plain;
   $('#madeHead').textContent = p.plain ? 'Voice only' : 'How it was made';
   $('#p3Title').textContent = p.plain ? 'Finish and publish' : 'Generate and finish';
   $('#p3Lede').textContent = p.plain ? 'Your voice with its effects, no music. Name it, publish it or keep it private, and save it to your phone.' : 'Play your song, redo any part you don\'t like, then name it and publish it.';
@@ -5021,6 +5030,34 @@ $('#savePlain').addEventListener('click', async () => {
     if (state.result.sfx.length) await applySfx(); else renderSfxPanel();
   } catch (err){ setStatus($('#status2'), 'It couldn\'t be made: ' + (err.message || err), 'error'); }
   finally { btn.disabled = false; btn.textContent = 'Save without music'; }
+});
+// the music the app made for your song, without your voice (and with any parts you redid)
+async function musicOnly(){
+  const r = state.result;
+  if (r.music) return r.music;
+  const v = await voiceParts(), g = r.plan.normGain || 1;
+  const base = await mixSong(v.voc, null, null, v.sr, r.plan, { instrumental:true, gain:g });
+  for (const x of (r.redoLog || [])){
+    const part = await mixSong(v.voc, null, null, v.sr, x.plan, { instrumental:true, gain:g }), sr = base.sampleRate, xf = 0.09;
+    for (let ch = 0; ch < base.numberOfChannels; ch++){
+      const o = base.getChannelData(ch), nw = part.getChannelData(Math.min(ch, part.numberOfChannels - 1));
+      const i0 = Math.max(0, Math.floor((x.a - xf) * sr)), i1 = Math.min(o.length, Math.ceil((x.b + xf) * sr));
+      for (let i = i0; i < i1; i++){ const t = i / sr, w = t < x.a ? (t - (x.a - xf)) / xf : t > x.b ? ((x.b + xf) - t) / xf : 1; o[i] = o[i] * (1 - w) + (nw[i] || 0) * w; }
+    }
+  }
+  r.music = base; return base;
+}
+$('#saveMusic').addEventListener('click', async () => {
+  const r = state.result; if (!r || state.busy || r.plan.plain) return;
+  saveCtx = { status:'#status3', box:'#shareBox', text:'#shareText' };
+  plPause();
+  const btn = $('#saveMusic'); btn.disabled = true; btn.textContent = 'Getting the music ready…';
+  try {
+    const wav = bufferToWav(await musicOnly());
+    const res = dlCap ? await saveFile('sing-to-song-music.zip', await zipOne('sing-to-song-music.wav', wav)) : await saveFile('sing-to-song-music.wav', wav, true);
+    if (res === 'done') showAd();
+  } catch (err){ setStatus($('#status3'), 'The music couldn\'t be saved: ' + (err.message || err), 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Save the added music only (.wav)'; }
 });
 $('#saveAudio').addEventListener('click', async () => {
   if (!state.result) return;
@@ -5484,7 +5521,7 @@ function projectDoc(){
     markers:state.markers.filter((m) => m.text.trim()).map((m) => ({ id:m.id, t:m.t, end:m.end, text:m.text })),
     sfx2:state.sfx2.map((p) => ({ itemId:p.item.id, name:p.name, at:p.at })),
     vibe:$('#vibe').value, songName:$('#songName').value, songDesc:$('#songDesc').value, artists:$('#artists').value, refLink:$('#refLink').value, variation:state.variation,
-    result:r && r.mixId ? { mixId:r.mixId, plan:r.plan, redos:r.redos || [], sfx:r.sfx.map((p) => ({ itemId:p.item.id, name:p.name, at:p.at })) } : null,
+    result:r && r.mixId ? { mixId:r.mixId, plan:r.plan, redos:r.redos || [], redoLog:r.redoLog || [], sfx:r.sfx.map((p) => ({ itemId:p.item.id, name:p.name, at:p.at })) } : null,
     pads:snapshot()
   };
 }
@@ -5531,7 +5568,7 @@ async function loadProject(doc, statusEl, landHome){
       const blob = await store.get('mix:' + doc.result.mixId);
       if (blob){
         const base = await decodeBlob(blob);
-        state.result = { base, mix:base, plan:doc.result.plan, sfx:[], video:null, wav:null, mixId:doc.result.mixId, redos:doc.result.redos || [] };
+        state.result = { base, mix:base, plan:doc.result.plan, sfx:[], video:null, wav:null, mixId:doc.result.mixId, redos:doc.result.redos || [], redoLog:doc.result.redoLog || [] };
         state.result.sfx = doc.result.sfx.map((p) => { const item = lib.sfx.find((x) => x.id === p.itemId); return item ? { id:uid('p'), item, name:p.name, at:p.at } : null; }).filter(Boolean);
       }
     }
@@ -6573,7 +6610,7 @@ const TOURS = {
     { sel:'#fixPanel', title:'Redo a part', text:'Tap the wave to highlight a part you don\'t like, drag the round knobs to fit it exactly, and press Redo this part. Only that part changes, and it keeps your key, tempo and chords so it blends in. Up to 5 redos per part; Undo last redo puts it back.' },
     { sel:'#regenBtn', title:'Regenerate the whole song', text:'Not quite right anywhere? Get a whole new arrangement of the same singing.' },
     { sel:'#keepPanel', title:'Publish', text:'Name your song, write a description, add an album photo, and pick Public (on Discover) or Private (just you). Choose whether people can save it, or sell it (Premium). Then save it to your songs, or save a draft to finish later.' },
-    { sel:'#saveAudio', title:'Download', text:'Save the audio or a video. On a phone this opens the share menu: Save Video puts it in your camera roll, Save to Files keeps the audio.' }
+    { sel:'#saveAudio', title:'Download', text:'Save the audio or a video, or just the music the app added (no voice) with Save the added music only. On a phone this opens the share menu: Save Video puts it in your camera roll, Save to Files keeps the audio.' }
   ],
   discover:[
     { sel:'#dFilters', title:'Discover', text:'Search creators, songs and sounds. Creators marked Example are made up to show how this works; your own public songs and sounds show up here too.' },
