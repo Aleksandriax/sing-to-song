@@ -67,10 +67,12 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .live-empty{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:var(--muted);pointer-events:none}
 
 /* effect pads */
-.pads{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.pad{--pad:#ec4899;position:relative;overflow:hidden;appearance:none;aspect-ratio:1/0.8;border-radius:14px;border:2px solid var(--line);border-color:color-mix(in srgb,var(--pad) 60%,transparent);background:var(--surface);color:var(--text);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;transition:transform .08s,box-shadow .15s,background-color .15s}
-.pad::before{content:"";position:absolute;inset:0;background:var(--pad);opacity:.1;pointer-events:none}
-.pad:active{transform:scale(.95)}
+.pads{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.pad{--pad:#ec4899;position:relative;overflow:hidden;appearance:none;aspect-ratio:1/0.8;border-radius:0;border:0;background:var(--surface);color:var(--text);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;transition:transform .08s,box-shadow .15s,background-color .15s}
+.pad::before{content:"";position:absolute;inset:0;background:var(--pad);opacity:.08;pointer-events:none}
+.pad::after{content:"";position:absolute;left:50%;top:10px;width:18px;height:3px;margin-left:-9px;border-radius:2px;background:var(--pad);pointer-events:none}
+.pad.on::after{background:#fff}
+.pad:active{filter:brightness(1.25)}
 .pad-name{position:relative;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:15px;letter-spacing:-.01em}
 .pad-sub{text-align:center;line-height:1.25}
 .pad-fill{position:absolute;left:0;right:0;bottom:0;height:var(--lvl,50%);background:rgba(255,255,255,.2);pointer-events:none;opacity:0;transition:opacity .15s}
@@ -89,8 +91,13 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .recording .rec-zoom{display:flex}
 .rec-zoom button{width:34px;height:26px;border-radius:99px;border:1px solid var(--line);background:rgba(20,14,36,.9);color:var(--text);font:inherit;font-size:17px;font-weight:700;line-height:1;cursor:pointer;padding:0}
 .ed-wrap canvas{display:block;width:100%;height:150px;touch-action:pan-y;cursor:pointer}
-.ed-tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
-.ed-tools .btn.small{padding:0 4px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ed-tools{display:flex;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.ed-tools[hidden]{display:none}
+.ed-tools .btn.small{flex:1;min-height:44px;padding:0 4px;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;border:0;border-radius:0;background:transparent}
+.ed-tools .btn.small + .btn.small{border-left:1px solid var(--line)}
+.ed-tools .btn.small:active:not(:disabled){background:var(--surface-2)}
+.ed-tools .btn.small:disabled{opacity:.4}
+.editor .tl-bar[hidden]{display:none}
 .ed-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .danger-link{color:var(--err)}
 .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
@@ -186,7 +193,7 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .earn-panel h2{color:#fff}
 .earn-panel .stat{background:rgba(255,255,255,.12);color:#fff}
 .earn-panel .stat-label{color:rgba(255,247,237,.82)}
-.recording .topbar,.recording .tabbar,.recording #page1 > .back-top,.recording #page1 > .p1-title,.recording .editor .tl-bar,.recording .ed-tools,.recording .ed-links,.recording .pads-head,.recording .pad-foot,.recording #toStep2{display:none!important}
+.recording .topbar,.recording .tabbar,.recording #page1 > .back-top,.recording #page1 > .p1-title,.recording .editor .tl-bar,.recording .ed-tools,.recording .ed-links,.recording .pads-head,.recording #tryBtn,.recording .pad-foot,.recording #toStep2{display:none!important}
 .recording .app{padding-block:calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-bottom));gap:10px}
 .recording #page1{gap:10px}
 .recording #page1 > .editor{order:-1}
@@ -236,9 +243,12 @@ body:not(.recording) #recTime{display:none}
 .back-top{appearance:none;align-self:flex-start;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);cursor:pointer;padding:0;margin-bottom:-6px}
 .back-top svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .pad-sub{position:relative;font-size:12px;color:var(--muted)}
-.pad.on{background:var(--pad);border-color:var(--pad);color:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--pad) 30%,transparent),0 10px 26px color-mix(in srgb,var(--pad) 45%,transparent)}
+.pad.on{background:var(--pad);color:#fff;box-shadow:inset 0 0 24px rgba(255,255,255,.25)}
 .pad.on .pad-sub{color:rgba(255,255,255,.9)}
-.pads-head{display:flex;flex-direction:column;gap:2px;margin-bottom:-8px}
+.pads-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:-8px}
+.try-btn{display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 14px 0 10px;border-radius:99px;border:1px solid color-mix(in srgb,var(--accent-b) 50%,transparent);background:color-mix(in srgb,var(--accent-b) 14%,transparent);color:var(--text);font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.try-btn svg{width:18px;height:18px;fill:currentColor}
+.try-btn[aria-pressed="true"]{background:linear-gradient(135deg,var(--accent-a),var(--accent-b));border-color:transparent;color:#fff}
 .harm-ticks{position:absolute;right:7px;top:10px;bottom:10px;width:10px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end}
 .harm-ticks i{display:block;width:6px;height:3px;border-radius:2px;background:color-mix(in srgb,var(--pad) 55%,transparent)}
 .harm-ticks i:nth-child(4){margin-bottom:3px}
@@ -496,7 +506,7 @@ legend{padding:0}
         <div id="edEmpty" class="live-empty">Your wave draws here as you sing</div>
         <div id="noteRead" class="note-read mono" hidden></div>
       </div>
-      <div class="ed-tools">
+      <div class="ed-tools" hidden>
         <button type="button" id="edSplit" class="btn small">Split</button>
         <button type="button" id="edDup" class="btn small">Duplicate</button>
         <button type="button" id="edDel" class="btn small danger">Delete</button>
@@ -511,6 +521,7 @@ legend{padding:0}
 
     <div class="pads-head">
       <h2>Voice effects</h2>
+      <button type="button" id="tryBtn" class="try-btn" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg><span>Try a sample</span></button>
     </div>
     <div id="presets" class="presets" aria-label="Presets"></div>
     <section id="pads" class="pads" aria-label="Voice effects"></section>
@@ -1544,6 +1555,7 @@ function padParams(){
 }
 function pushPads(){
   const p = padParams();
+  if (trySt.on) trySend(p);
   if (rec.node) rec.node.port.postMessage({ type:'params', params:p });
   if (rec.engine){ rec.engine.set(p); if (rec.state === 'recording') rec.events.push({ at:rec.count, params:p }); }
 }
@@ -1613,10 +1625,52 @@ PADS.forEach((p) => {
 });
 function resetPads(){ activePreset = null; PADS.forEach((p) => { fx[p.id].on = false; paintPad(p); }); pushPads(); }
 
+/* Try a sample: a sung phrase loops through the pads so you can hear what each one does before you record */
+const trySt = { on:false, src:null, node:null, sp:null, eng:null, buf:null };
+function trySend(p){ if (trySt.node) trySt.node.port.postMessage({ type:'params', params:p }); if (trySt.eng) trySt.eng.set(p); }
+async function tryStart(){
+  if (trySt.on || rec.state !== 'idle') return;
+  stopAllPlayback();
+  trySt.on = true; paintTry();
+  const c = ctx(); try { if (c.state !== 'running') await c.resume(); } catch (_) {}
+  try {
+    if (!trySt.buf){ const { raw, sr } = await synthHum(DEMO_SONG[1].melody.concat(DEMO_SONG[0].melody)); const b = c.createBuffer(1, raw.length, sr); b.getChannelData(0).set(raw); trySt.buf = b; }
+    if (!trySt.on) return;
+    const key = { root:60, scale:'major' };
+    const s = c.createBufferSource(); s.buffer = trySt.buf; s.loop = true;
+    const out = c.createGain(); out.gain.value = 0.9; out.connect(c.destination);
+    if (await ensureWorklet(c)){
+      const node = new AudioWorkletNode(c, 's2s-voice', { numberOfInputs:1, numberOfOutputs:1, outputChannelCount:[1], channelCount:1, channelCountMode:'explicit' });
+      node.port.postMessage({ type:'key', params:key }); node.port.postMessage({ type:'params', params:padParams() });
+      s.connect(node); node.connect(out); trySt.node = node;
+    } else {
+      const eng = new Engine(c.sampleRate); eng.set(key); eng.set(padParams());
+      const sp = c.createScriptProcessor(1024, 1, 1); sp.onaudioprocess = (e) => eng.process(e.inputBuffer.getChannelData(0), e.outputBuffer.getChannelData(0));
+      s.connect(sp); sp.connect(out); trySt.sp = sp; trySt.eng = eng;
+    }
+    if (!trySt.on){ try { s.disconnect(); out.disconnect(); } catch (_) {} return; }
+    s.start(); trySt.src = s; trySt.out = out;
+  } catch (err){ tryStop(); setStatus($('#status1'), 'The sample couldn\'t play: ' + (err.message || err), 'error'); }
+}
+function tryStop(){
+  trySt.on = false;
+  if (trySt.src){ try { trySt.src.stop(); } catch (_) {} }
+  [trySt.node, trySt.sp, trySt.out].forEach((n) => { if (n){ try { n.disconnect(); } catch (_) {} } });
+  if (trySt.node) trySt.node.port.onmessage = null;
+  Object.assign(trySt, { src:null, node:null, sp:null, eng:null, out:null });
+  paintTry();
+}
+function paintTry(){
+  const b = $('#tryBtn'); b.setAttribute('aria-pressed', trySt.on ? 'true' : 'false');
+  b.querySelector('span').textContent = trySt.on ? 'Stop sample' : 'Try a sample';
+  b.querySelector('svg').innerHTML = trySt.on ? '<rect x="6.5" y="6.5" width="11" height="11" rx="2"/>' : '<path d="M8 5.5v13l11-6.5z"/>';
+}
+$('#tryBtn').addEventListener('click', () => { if (trySt.on) tryStop(); else tryStart(); });
+
 /* Painting: once there's a recording, hold a pad while your song plays.
    The effect starts where the red line was and ends where you let go. */
 const paint = { on:false, pad:null, lane:0, a:0, b:0, limit:0, node:null };
-const paintMode = () => !paint.busy && rec.state === 'idle' && state.section === 'create' && state.page === 1 && songDur() > 0.05;
+const paintMode = () => !trySt.on && !paint.busy && rec.state === 'idle' && state.section === 'create' && state.page === 1 && songDur() > 0.05;
 function onlyPad(p){
   // the settings of just this pad, as it's set now
   const saved = {}; PADS.forEach((q) => { saved[q.id] = fx[q.id].on; fx[q.id].on = q.id === p.id; });
@@ -1839,7 +1893,7 @@ Object.defineProperty(state, 'clips', { get(){ return state.layers.flatMap((l) =
 
 let playing = null;
 function stopClipPlayback(){ edStop(); }
-function stopAllPlayback(){ edStop(); tlStop(); plPause(); previewStop(); }
+function stopAllPlayback(){ if (typeof trySt !== 'undefined' && trySt.on) tryStop(); edStop(); tlStop(); plPause(); previewStop(); }
 
 function storeRender(src, y, key){
   const buf = ctx().createBuffer(1, y.length, src.sr); buf.getChannelData(0).set(y);
@@ -2053,12 +2107,13 @@ function drawEditor(){
   g.fillStyle = pink; g.fillRect(px - 1, RULER - 4, 2, hh - RULER + 4);
   if (rec.state !== 'recording'){ g.beginPath(); g.arc(px, RULER - 2, 8, 0, Math.PI * 2); g.fillStyle = pink; g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke(); }
   ed.px = px;
-  $('#edEmpty').hidden = dur > 0 || rec.state === 'recording';
+  $('#edEmpty').hidden = true;
 }
 function edReadouts(){
   const dur = songDur();
   $('#edTime').textContent = fmtT(state.playhead1) + ' / ' + fmtT(dur) + (dur > MAX_SEC ? ' (over 10:00)' : '');
   const layer = state.layers[state.activeLayer], sel = state.sel1, has = dur > 0;
+  $('.ed-tools').hidden = !has; $('.editor .tl-bar').hidden = !has && hist.idx <= 0;
   $('#edSplit').disabled = !segAt(layer, state.playhead1);
   $('#edZoomIn').disabled = state.span1 !== Infinity && edSpan() <= 0.051; $('#edZoomOut').disabled = state.span1 === Infinity || !has;
   $('#edDup').disabled = !(sel || segAt(layer, state.playhead1));
@@ -4313,6 +4368,7 @@ const TOURS = {
     { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to move the red line, or grab the round handle on the red line and drag it. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it, then drag its pink edges to pick exactly the part you want, then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end to keep going from the end. Double-tap a clip to delete it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Tap + to zoom in closer and closer; − zooms out to the whole song. + Layer stacks up to 4 layers; the other layers play while you record.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
+    { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does, and slide up or down to hear it get stronger or weaker.' },
     { sel:'#presets', title:'Presets', text:'Tap an empty slot to save the pads you like. Tap it later to bring them back; while it\'s selected, your changes save into it. Hold one to give it a name.' },
     { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to step 2, Prep and adjust.' }
   ],
