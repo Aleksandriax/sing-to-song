@@ -236,6 +236,23 @@ body:not(.recording) #recTime{display:none}
 .danger-fill{border-color:transparent;background:var(--err);color:#fff}
 .boot-cover{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);font-size:14px}
 .boot-cover svg{width:56px;height:56px}
+.prof-head{cursor:pointer}
+.pstat{appearance:none;border:0;font:inherit;cursor:pointer}
+.pub-view{position:fixed;inset:0;z-index:60;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.pub-view[hidden]{display:none}
+.pub-top{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 10px;background:linear-gradient(var(--bg) 75%,transparent)}
+.pub-top .back-top{margin:0}
+.pub-note{font-size:13px;color:var(--muted);font-weight:600}
+.pub-body{max-width:560px;margin:0 auto;padding:0 16px calc(32px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:16px}
+.pub-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:22px 16px;border-radius:22px;background:linear-gradient(160deg,#2a1150 0%,#3b0f3d 55%,var(--surface) 100%);border:1px solid var(--line)}
+.pub-hero .avatar{width:104px;height:104px;font-size:44px;box-shadow:0 0 0 4px rgba(255,255,255,.12)}
+.pub-name{display:flex;align-items:center;gap:6px;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:26px;line-height:1.1}
+.pub-name .vbadge{width:22px;height:22px}
+.pub-hero .prof-stats{width:100%;margin-top:6px}
+.pub-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+.pub-tabs button{appearance:none;border:0;background:none;color:var(--muted);font:inherit;font-weight:700;font-size:14px;padding:10px 4px;border-radius:10px;cursor:pointer}
+.pub-tabs button[aria-selected="true"]{background:var(--surface-2);color:var(--text)}
+.pub-private{padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line);color:var(--muted);font-size:14px}
 .prof-head{display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:20px;background:linear-gradient(160deg,#2a1150 0%,#3b0f3d 55%,var(--surface) 100%);border:1px solid var(--line)}
 .prof-top{display:flex;align-items:center;gap:14px}
 .prof-avatar .avatar{width:72px;height:72px;font-size:30px;box-shadow:0 0 0 3px rgba(255,255,255,.12)}
@@ -810,9 +827,9 @@ legend{padding:0}
       </div>
       <p id="pHeadBio" class="prof-bio" hidden></p>
       <div class="prof-stats">
-        <div class="pstat" style="--st:#f472b6"><span id="pStatSongs" class="mono">0</span><span>songs</span></div>
-        <div class="pstat" style="--st:#2dd4bf"><span id="pStatSounds" class="mono">0</span><span>sounds</span></div>
-        <div class="pstat" style="--st:#fbbf24"><span id="pStatFollowing" class="mono">0</span><span>following</span></div>
+        <button type="button" class="pstat" data-tab="songs" style="--st:#f472b6"><span id="pStatSongs" class="mono">0</span><span>songs</span></button>
+        <button type="button" class="pstat" data-tab="sounds" style="--st:#2dd4bf"><span id="pStatSounds" class="mono">0</span><span>sounds</span></button>
+        <button type="button" class="pstat" data-tab="following" style="--st:#fbbf24"><span id="pStatFollowing" class="mono">0</span><span>following</span></button>
       </div>
     </section>
     <section id="pEdit" class="panel" hidden aria-label="Edit profile">
@@ -913,6 +930,14 @@ legend{padding:0}
     <button type="button" class="tab" data-sec="profile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</button>
   </div>
 </nav>
+
+<div id="pubView" class="pub-view" hidden role="dialog" aria-modal="true" aria-label="Your profile as others see it">
+  <div class="pub-top">
+    <button type="button" id="pubClose" class="back-top" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <span class="pub-note">How others see you</span>
+  </div>
+  <div id="pubBody" class="pub-body"></div>
+</div>
 
 <div id="countdown" class="countdown" hidden role="status" aria-live="assertive"><span id="cdNum">3</span><small>Tap to cancel</small></div>
 
@@ -4716,6 +4741,14 @@ async function exampleSongBuffer(song){
   const buf = await mixSong(voc, null, null, sr, p);
   bufCache.set(key, buf); return buf;
 }
+// how long a song or sound is, shown before you play or buy it
+const lenTxt = (sec) => sec < 10 ? fmtS(sec) : sec >= 60 ? fmt(sec) : '0:' + String(Math.round(sec)).padStart(2, '0');
+function exampleDur(song){ const p = song.plan, bar = 240 / p.tempo, voc = song.melody.reduce((a, m) => a + m[1], 0) + 0.5; return Math.ceil((bar + voc) / bar) * bar + bar + p.reverbSec + 0.3; }
+function sfxLen(x, el, prefix){
+  const put = (sec) => { el.textContent = prefix + ' · ' + lenTxt(sec); };
+  if (x.dur) { put(x.dur); return; }
+  getSfxBuffer(x).then((b) => put(b.duration)).catch(() => {});
+}
 function me(){
   const pr = lib.profile;
   return { id:'me', mine:true, photo:pr.photo || null, name:pr.name.trim() || 'Your profile', handle:pr.handle.trim() || 'you', isPublic:pr.isPublic, verified:lib.verify.status === 'verified', color:'#8b5cf6', bio:pr.bio,
@@ -4745,9 +4778,10 @@ function songRow(s, c){
   else if (!s.allowSave) action = h('span', { class:'tag muted' }, 'Listen only');
   else action = h('button', { type:'button', class:'btn small', disabled:saved, onclick:() => { lib.saved.unshift({ kind:'song', id:s.id, title:s.title, from:c.name, creator:c.id }); saveLib(); renderDiscover(); } }, saved ? 'Saved' : 'Save');
   return h('div', { class:'item' }, s.cover ? h('img', { class:'cover cover-sm', src:s.cover, alt:'' }) : null, play,
-    h('div', { class:'item-main' }, h('span', { class:'item-title', text:s.title }), h('span', { class:'item-meta', text:'Song · ' + c.name })), action);
+    h('div', { class:'item-main' }, h('span', { class:'item-title', text:s.title }), h('span', { class:'item-meta', text:'Song · ' + c.name + ' · ' + lenTxt(s.mine ? (s.dur || 0) : exampleDur(s)) })), action);
 }
 function sfxRow(x, c){
+  const meta = h('span', { class:'item-meta', text:'Sound effect · ' + c.name }); sfxLen(x, meta, 'Sound effect · ' + c.name);
   const play = h('button', { type:'button', class:'btn small round', 'aria-label':'Play ' + x.name }, 'Play');
   play.addEventListener('click', () => previewToggle('sfx:' + x.id, () => getSfxBuffer(x), play));
   let action;
@@ -4756,7 +4790,7 @@ function sfxRow(x, c){
   else if (x.forSale) action = h('button', { type:'button', class:'btn small primary', onclick:() => openCheckout(x, c) }, 'Buy ' + money(x.price));
   else action = h('button', { type:'button', class:'btn small', onclick:async () => { await addSfxToLib({ name:x.name, recipe:x.recipe, source:'saved', from:c.name, origin:x.id }); renderDiscover(); showAd(); } }, 'Get free');
   return h('div', { class:'item' }, play,
-    h('div', { class:'item-main' }, h('span', { class:'item-title', text:x.name }), h('span', { class:'item-meta', text:'Sound effect · ' + c.name })), action);
+    h('div', { class:'item-main' }, h('span', { class:'item-title', text:x.name }), meta), action);
 }
 function creatorCard(c){
   const following = lib.follows.includes(c.id), requested = lib.requests.includes(c.id);
@@ -4786,10 +4820,11 @@ function trendOrder(items, score, key){
   return items.slice().sort((a, b) => w.get(b) - w.get(a));
 }
 function savedSfxRow(x){
+  const pre = 'Sound effect' + (x.from ? ' · ' + x.from : ''), meta = h('span', { class:'item-meta', text:pre }); sfxLen(x, meta, pre);
   const play = h('button', { type:'button', class:'btn small round', 'aria-label':'Play ' + x.name }, 'Play');
   play.addEventListener('click', () => previewToggle('sfx:' + x.id, () => getSfxBuffer(x), play));
   return h('div', { class:'item' }, play,
-    h('div', { class:'item-main' }, h('span', { class:'item-title', text:x.name }), h('span', { class:'item-meta', text:'Sound effect' + (x.from ? ' · ' + x.from : '') })),
+    h('div', { class:'item-main' }, h('span', { class:'item-title', text:x.name }), meta),
     h('span', { class:'tag' }, x.source === 'bought' ? 'Bought' : 'Saved'));
 }
 function renderDiscover(){
@@ -4896,10 +4931,46 @@ function renderProfileHead(){
   $('#pHeadBadge').replaceChildren(...(lib.verify.status === 'verified' ? [badge()] : []));
   $('#pHeadHandle').textContent = '@' + (pr.handle || 'username');
   $('#pHeadBio').textContent = pr.bio || ''; $('#pHeadBio').hidden = !pr.bio;
-  $('#pStatSongs').textContent = lib.songs.length;
-  $('#pStatSounds').textContent = lib.sfx.filter((x) => x.source === 'take' || x.source === 'file').length;
+  const pm = me(); $('#pStatSongs').textContent = pm.songs.length;
+  $('#pStatSounds').textContent = pm.sfx.length;
   $('#pStatFollowing').textContent = lib.follows.length;
 }
+/* your profile, full screen, the way other people see it */
+let pubTab = 'songs';
+function openPublicView(tab){ if (tab) pubTab = tab; stopAllPlayback(); renderPublicView(); $('#pubView').hidden = false; $('#pubView').scrollTop = 0; }
+function closePublicView(){ previewStop(); $('#pubView').hidden = true; }
+function renderPublicView(){
+  const m = me(), follows = EXAMPLES.filter((c) => lib.follows.includes(c.id));
+  const stat = (tab, color, n, label) => { const b = h('button', { type:'button', class:'pstat', style:'--st:' + color }, h('span', { class:'mono', text:String(n) }), h('span', { text:label })); b.addEventListener('click', () => { pubTab = tab; renderPublicView(); }); return b; };
+  const hero = h('section', { class:'pub-hero' },
+    avatar({ name:m.name, color:m.color, photo:m.photo }),
+    h('span', { class:'pub-name' }, h('span', { text:m.name }), m.verified ? badge() : null),
+    h('span', { class:'prof-handle', text:'@' + m.handle }),
+    m.bio ? h('p', { class:'prof-bio', text:m.bio }) : null,
+    h('div', { class:'prof-stats' }, stat('songs', '#f472b6', m.songs.length, 'songs'), stat('sounds', '#2dd4bf', m.sfx.length, 'sounds'), stat('following', '#fbbf24', follows.length, 'following')));
+  const tabs = h('div', { class:'pub-tabs', role:'tablist' }, ...[['songs', 'Songs'], ['sounds', 'Sounds'], ['following', 'Following']].map(([k, l]) => {
+    const b = h('button', { type:'button', role:'tab', 'aria-selected':pubTab === k ? 'true' : 'false' }, l);
+    b.addEventListener('click', () => { pubTab = k; renderPublicView(); }); return b;
+  }));
+  let list;
+  if (pubTab === 'songs') list = m.songs.length ? m.songs.map((x) => songRow(x, m)) : [h('p', { class:'empty' }, 'No published songs yet. Songs you save and make public show up here.')];
+  else if (pubTab === 'sounds') list = m.sfx.length ? m.sfx.map((x) => sfxRow(x, m)) : [h('p', { class:'empty' }, 'No published sounds yet. Make a sound effect public in Manage songs and sounds.')];
+  else list = follows.length ? follows.map((c) => {
+    const card = creatorCard(c);
+    card.addEventListener('click', () => { closePublicView(); showSection('discover'); dState.creator = c.id; renderDiscover(); window.scrollTo(0, 0); });
+    return card;
+  }) : [h('p', { class:'empty' }, 'You aren\'t following anyone yet. Find singers on Discover.')];
+  $('#pubBody').replaceChildren(hero,
+    ...(m.isPublic ? [] : [h('p', { class:'pub-private' }, 'Your account is private, so only people you approve can see your songs and sounds.')]),
+    tabs, h('div', { class:'d-list' }, ...list));
+}
+$('#pubClose').addEventListener('click', closePublicView);
+$('#pMe').addEventListener('click', (e) => {
+  if (e.target.closest('#pEditBtn')) return;
+  const st = e.target.closest('.pstat');
+  openPublicView(st ? st.dataset.tab : 'songs');
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#pubView').hidden) closePublicView(); });
 function setEditOpen(open){ $('#pEdit').hidden = !open; $('#pEditBtn').setAttribute('aria-expanded', open ? 'true' : 'false'); $('#pEditBtn').textContent = open ? 'Close' : 'Edit'; if (!open) renderProfileHead(); }
 $('#pEditBtn').addEventListener('click', () => setEditOpen($('#pEdit').hidden));
 $('#pEditDone').addEventListener('click', () => { setEditOpen(false); window.scrollTo({ top:0, behavior:'smooth' }); });
@@ -5160,7 +5231,7 @@ const TOURS = {
     { sel:'#dList', title:'Follow and get sounds', text:'Follow singers, play their songs, and get sound effects. Paid sounds are test purchases for now, so no money moves. A purple check means the account is verified.' }
   ],
   profile:[
-    { sel:'#pMe', title:'Your profile', text:'Your photo, name, username and counts. Tap Edit to change them. It\'s saved on this device.' },
+    { sel:'#pMe', title:'Your profile', text:'Tap this card to see your profile full screen the way others see it: your published songs, sounds and who you follow. Tap Edit to change your photo, name and bio.' },
     { sel:'#pAlbumHead', title:'Your album', text:'The songs and sound effects you made. Tap one to play it. Things you save or buy from others are in Discover, under Saved.' },
     { sel:'#pPlanRow', title:'Premium', text:'Premium adds AI Blend, lets you sell your sound effects (you keep 85%, the app keeps 15%), and removes ads. Upgrades are test upgrades for now.' },
     { sel:'#pVerifyRow', title:'Verified badge', text:'Ask for a purple check that shows this account is really you, so no one can pretend to be you. Usernames are one per person.' },
@@ -5372,7 +5443,7 @@ function showPage(p){
   maybeTour();
 }
 document.querySelectorAll('.step-tab').forEach((b) => b.addEventListener('click', () => showPage(+b.dataset.page)));
-document.querySelectorAll('.back-top').forEach((b) => b.addEventListener('click', () => { if (!state.busy) showPage(+b.dataset.to); }));
+document.querySelectorAll('.back-top[data-to]').forEach((b) => b.addEventListener('click', () => { if (!state.busy) showPage(+b.dataset.to); }));
 
 let restartArmed = 0;
 $('#restartBtn').addEventListener('click', () => {
