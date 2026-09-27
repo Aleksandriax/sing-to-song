@@ -119,6 +119,8 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .tour-actions .spacer{flex:1}
 .help-btn{margin-top:4px}
 @media (prefers-reduced-motion: reduce){ .tour-spot{transition:none} }
+.share-box{display:flex;flex-direction:column;gap:10px;border:1px solid var(--accent-b);border-radius:14px;padding:14px;background:color-mix(in srgb,var(--accent-b) 10%,var(--surface))}
+.share-box .summary{margin:0}
 .back-top{appearance:none;align-self:flex-start;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);cursor:pointer;padding:0;margin-bottom:-6px}
 .back-top svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .pad-sub{position:relative;font-size:12px;color:var(--muted)}
@@ -516,9 +518,13 @@ legend{padding:0}
     </div>
     <div class="downloads">
       <button type="button" id="saveAudio" class="btn">Save audio (.wav)</button>
-      <button type="button" id="saveVideo" class="btn">Save video (.webm)</button>
+      <button type="button" id="saveVideo" class="btn">Save video</button>
     </div>
-    <p id="saveHint" class="hint">Saving a video plays the whole song once while it records. Some browsers, including some iOS Safari versions, can't record video.</p>
+    <div id="shareBox" class="share-box" hidden>
+      <p id="shareText" class="summary"></p>
+      <button type="button" id="shareBtn" class="btn primary">Save to my phone</button>
+    </div>
+    <p id="saveHint" class="hint">On a phone, saving opens the share menu: choose Save Video for your camera roll, or Save to Files for the audio. Saving a video plays the song once while it records.</p>
     <div class="actions">
       <button type="button" id="restartBtn" class="btn danger">Start over</button>
     </div>
@@ -2655,7 +2661,7 @@ function showPlan(note){
 
 function videoMime(){
   if (typeof MediaRecorder === 'undefined' || typeof MediaStream === 'undefined' || !viz.captureStream) return null;
-  for (const t of ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4;codecs=avc1,mp4a', 'video/mp4']){
+  for (const t of ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm']){
     try { if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) return t; } catch (e) {}
   }
   return null;
@@ -2702,7 +2708,42 @@ async function renderVideo(mime, onProgress){
 }
 
 let dlCap = null;
-async function saveFile(filename, blob){
+const isPhone = () => !!(window.matchMedia && matchMedia('(pointer: coarse)').matches);
+function shareable(file){ try { return !!(navigator.share && navigator.canShare && navigator.canShare({ files:[file] })); } catch (e){ return false; } }
+const shareTip = (name) => /\.(mp4|webm)$/.test(name) ? 'Choose Save Video to put it in your camera roll.' : 'Choose Save to Files to keep the audio.';
+let pendingShare = null;
+async function doShare(file){
+  try {
+    await navigator.share({ files:[file], title:'Sing to Song' });
+    $('#shareBox').hidden = true; pendingShare = null;
+    setStatus($('#status3'), 'Done. ' + (/\.(mp4|webm)$/.test(file.name) ? 'If you chose Save Video, it\'s in your camera roll.' : 'If you chose Save to Files, it\'s in the Files app.'), 'ok');
+    return 'done';
+  } catch (err){
+    if (err && err.name === 'AbortError') return 'cancelled';
+    throw err;
+  }
+}
+$('#shareBtn').addEventListener('click', async () => {
+  if (!pendingShare) return;
+  try { if (await doShare(pendingShare) === 'done') showAd(); }
+  catch (err){ setStatus($('#status3'), 'The share menu didn\'t open (' + ((err && err.name) || 'error') + '). Try again, or use a different browser.', 'error'); }
+});
+// Returns 'done', 'pending' (waiting for one more tap on phones) or 'cancelled'.
+async function saveFile(filename, blob, fresh){
+  if (!dlCap && isPhone()){
+    const type = blob.type || (/\.wav$/.test(filename) ? 'audio/wav' : 'video/mp4');
+    const file = new File([blob], filename, { type });
+    if (shareable(file)){
+      if (fresh){
+        try { return await doShare(file); } catch (e) { /* the tap no longer counts after a long wait: ask for one more */ }
+      }
+      pendingShare = file;
+      $('#shareText').textContent = (/\.(mp4|webm)$/.test(filename) ? 'Your video is ready. ' : 'Your audio is ready. ') + 'Tap below, then ' + shareTip(filename).charAt(0).toLowerCase() + shareTip(filename).slice(1);
+      $('#shareBox').hidden = false; setStatus($('#status3'), '');
+      $('#shareBox').scrollIntoView({ block:'center', behavior:'smooth' });
+      return 'pending';
+    }
+  }
   if (dlCap){
     try { await dlCap.save({ filename, data:blob }); setStatus($('#status3'), 'Saved ' + filename + '.', 'ok'); }
     catch (err){
@@ -2717,29 +2758,28 @@ async function saveFile(filename, blob){
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 60000);
   setStatus($('#status3'), 'Saving ' + filename + '. If nothing downloads, this page is inside a preview that blocks downloads; open the HTML file directly.', 'ok');
+  return 'done';
 }
 $('#saveAudio').addEventListener('click', async () => {
   if (!state.result) return;
   plPause();
   const r = state.result; if (!r.wav) r.wav = bufferToWav(r.mix);
-  if (dlCap) await saveFile('sing-to-song-audio.zip', await zipOne('sing-to-song.wav', r.wav));
-  else await saveFile('sing-to-song.wav', r.wav);
-  showAd();
+  const res = dlCap ? await saveFile('sing-to-song-audio.zip', await zipOne('sing-to-song.wav', r.wav)) : await saveFile('sing-to-song.wav', r.wav, true);
+  if (res === 'done') showAd();
 });
 $('#saveVideo').addEventListener('click', async () => {
   if (!state.result || state.busy) return;
   const mime = videoMime(); if (!mime) return;
   stopAllPlayback();
-  const r = state.result, ext = /mp4/.test(mime) ? 'mp4' : 'webm';
+  const r = state.result, ext = /mp4/.test(mime) ? 'mp4' : 'webm', cached = !!r.video;
   if (!r.video){
     setBusy(true);
     setStatus($('#status3'), 'Recording the video. The song plays once while it records; keep this tab open.');
     try { r.video = await renderVideo(mime, (f) => { $('#saveVideo').textContent = 'Recording ' + Math.min(100, Math.round(f * 100)) + '%'; }); }
     catch (err){ setStatus($('#status3'), 'The video couldn\'t be recorded (' + (err.message || err) + '). Save the audio instead.', 'error'); return; }
-    finally { setBusy(false); $('#saveVideo').textContent = 'Save video (.' + ext + ')'; pl.offset = 0; paintIdle(); }
+    finally { setBusy(false); $('#saveVideo').textContent = 'Save video'; pl.offset = 0; paintIdle(); }
   }
-  await saveFile('sing-to-song.' + ext, r.video);
-  showAd();
+  if (await saveFile('sing-to-song.' + ext, r.video, cached) === 'done') showAd();
 });
 
 /* =========================================================
@@ -3549,7 +3589,7 @@ const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)'
 if (mq && mq.addEventListener) mq.addEventListener('change', () => { drawEditor(); drawTimeline(); });
 
 if (!videoMime()){ $('#saveVideo').disabled = true; $('#saveHint').textContent = 'This browser can\'t record video from a page, so only the audio can be saved.'; }
-else if (/mp4/.test(videoMime())) $('#saveVideo').textContent = 'Save video (.mp4)';
+
 
 if (window.claude && typeof window.claude.use === 'function'){
   window.claude.use('downloads').then((d) => { if (d){ dlCap = d; $('#saveAudio').textContent = 'Save audio (.wav in .zip)'; } }).catch(() => {});
