@@ -49,7 +49,7 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 
 /* record */
 .recorder{display:flex;flex-direction:column;align-items:center;gap:8px;padding-block:14px 0}
-body:not(.recording) #page1 .recorder{padding-block:2px 0}
+body:not(.recording) #page1 .recorder{padding-block:0 10px}
 body:not(.recording) #page1 .rec{width:84px;height:84px}
 body:not(.recording) #page1 .rec::before{inset:-4px;border-width:3px}
 body:not(.recording) #page1 .rec-core{width:32px;height:32px}
@@ -226,7 +226,7 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .earn-panel h2{color:#fff}
 .earn-panel .stat{background:rgba(255,255,255,.12);color:#fff}
 .earn-panel .stat-label{color:rgba(255,247,237,.82)}
-.recording .topbar,.recording .tabbar,.recording #page1 > .back-top,.recording #page1 > .p1-title,.recording .editor .tl-bar,.recording .ed-tools,.recording .ed-links,.recording .pads-head,.recording #tryBtn,.recording #toStep2{display:none!important}
+.recording .topbar,.recording .tabbar,.recording #page1 > .back-top,.recording #page1 > .p1-title,.recording .editor .tl-bar,.recording .ed-tools,.recording .ed-links,.recording .pads-head,.recording #tryBtn,.recording #toStep2,.recording #aiMake{display:none!important}
 .recording .app{padding-block:calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-bottom));gap:10px}
 .recording #page1{gap:10px}
 .recording #page1 > .editor{order:-1}
@@ -652,7 +652,20 @@ legend{padding:0}
 .tab-create{margin-top:-22px}
 .tab-orb{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:#fff;box-shadow:0 8px 22px var(--glow);border:4px solid var(--surface)}
 .tab-orb svg{width:24px;height:24px}
-.tab-create[aria-current="page"] .tab-orb{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent-b) 35%,transparent),0 8px 22px var(--glow)}
+.tab-create[aria-current="page"] .tab-orb{box-shadow:0 8px 22px var(--glow)}
+/* the ring that used to sit around the Studio tab now circles the record button */
+.rec{box-shadow:0 0 0 4px var(--bg),0 0 0 7px color-mix(in srgb,var(--accent-b) 35%,transparent),0 14px 44px var(--glow)}
+.ai-make{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:12px;min-height:64px;background:var(--surface-2);border:1.5px solid var(--line);color:var(--text);isolation:isolate;animation:aiBorder 5s ease-in-out infinite}
+.ai-make::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(110deg,transparent 30%,rgba(251,191,36,.10) 40%,rgba(251,191,36,.42) 50%,rgba(251,191,36,.10) 60%,transparent 70%);background-size:260% 100%;background-position:160% 0;animation:aiShine 5s ease-in-out infinite;pointer-events:none}
+.ai-make .ai-spark{width:26px;height:26px;flex:none;fill:currentColor;color:var(--muted);animation:aiStar 5s ease-in-out infinite}
+.ai-make-text{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:2px}
+.ai-make-title{font-size:16px;font-weight:800}
+.ai-make-sub{font-size:12px;font-weight:600;color:var(--muted)}
+@keyframes aiShine{0%,8%{background-position:160% 0}48%,100%{background-position:-60% 0}}
+@keyframes aiBorder{0%,6%,58%,100%{border-color:var(--line)}28%{border-color:rgba(251,191,36,.75)}}
+@keyframes aiStar{0%,8%,60%,100%{color:var(--muted)}30%{color:#fbbf24}}
+@media (prefers-reduced-motion: reduce){ .ai-make,.ai-make::after,.ai-make .ai-spark{animation:none} }
+.ai-make:disabled{opacity:.7}
 .d-list{display:flex;flex-direction:column;gap:8px}
 .d-list > h2{margin-top:8px}
 .item,.creator{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px}
@@ -774,11 +787,6 @@ legend{padding:0}
         <button type="button" id="recBack" class="back-top" aria-label="Back to editing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
         <div class="rec-zoom"><button type="button" id="rzOut" aria-label="Zoom out">−</button><button type="button" id="rzIn" aria-label="Zoom in">+</button></div>
       </div>
-      <div class="ed-wrap">
-        <canvas id="edCanvas" aria-label="Your song's wave. Tap to move the playhead, swipe quickly to scroll, drag slowly to select a part."></canvas>
-        <div id="edEmpty" class="live-empty">Your wave draws here as you sing</div>
-        <div id="noteRead" class="note-read mono" hidden></div>
-      </div>
       <div class="recorder">
         <button type="button" id="recBtn" class="rec" aria-label="Start recording" aria-pressed="false"><span class="rec-core"><svg class="rec-mic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span></button>
         <div id="recTime" class="rec-time mono">0:00</div>
@@ -789,6 +797,11 @@ legend{padding:0}
         </div>
         <button type="button" id="recDone" class="btn primary rec-done" hidden>Done</button>
         <div id="recHint" class="rec-hint sr-only">Tap to start, tap again to stop. Or hold, then release.</div>
+      </div>
+      <div class="ed-wrap">
+        <canvas id="edCanvas" aria-label="Your song's wave. Tap to move the playhead, swipe quickly to scroll, drag slowly to select a part."></canvas>
+        <div id="edEmpty" class="live-empty">Your wave draws here as you sing</div>
+        <div id="noteRead" class="note-read mono" hidden></div>
       </div>
       <div class="ed-tools" hidden>
         <button type="button" id="edSplit" class="btn small">Split</button>
@@ -827,6 +840,7 @@ legend{padding:0}
 
     <div id="status1" class="status" role="status" aria-live="polite"></div>
 
+    <button type="button" id="aiMake" class="btn big ai-make"><svg class="ai-spark" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/></svg><span class="ai-make-text"><span class="ai-make-title">Let AI make my song</span><span class="ai-make-sub">It edits, cuts, adds voice effects and makes the music</span></span></button>
     <button type="button" id="toStep2" class="btn primary big">Continue</button>
   </main>
 
@@ -3655,6 +3669,123 @@ $('#toStep2').addEventListener('click', async () => {
 });
 
 /* =========================================================
+   Let AI make my song: clean up the takes, balance the layers, add voice effects that
+   suit the vibe, sketch the song's shape with timeline notes, then generate the music.
+   ========================================================= */
+const peakCache = new Map();
+function takeFrames(src){
+  // loudness every 20 ms of a take (from the raw recording)
+  if (peakCache.has(src)) return peakCache.get(src);
+  const hop = Math.round(src.sr * 0.02), n = Math.floor(src.raw.length / hop), rms = new Float32Array(n); let top = 0;
+  for (let f = 0; f < n; f++){ let e = 0; for (let i = f * hop; i < (f + 1) * hop; i += 2) e += src.raw[i] * src.raw[i]; rms[f] = Math.sqrt(e / (hop / 2)); if (rms[f] > top) top = rms[f]; }
+  const o = { hop, rms, top }; peakCache.set(src, o); return o;
+}
+// the parts of a clip where you're actually singing (clip-local source times)
+function voicedParts(seg){
+  const src = seg.src, { hop, rms, top } = takeFrames(src), sr = src.sr, thr = Math.max(top * 0.08, 0.004);
+  const f0 = Math.floor(seg.start * sr / hop), f1 = Math.min(rms.length, Math.ceil(seg.end * sr / hop)), parts = [];
+  let a = -1;
+  for (let f = f0; f <= f1; f++){
+    const on = f < f1 && rms[f] > thr;
+    if (on && a < 0) a = f;
+    if (!on && a >= 0){ parts.push([a * hop / sr, f * hop / sr]); a = -1; }
+  }
+  const merged = [];
+  parts.forEach((p) => { const last = merged[merged.length - 1]; if (last && p[0] - last[1] < 0.55) last[1] = p[1]; else merged.push(p.slice()); });
+  return merged.filter((p) => p[1] - p[0] >= 0.18).map(([x, y]) => [Math.max(seg.start, x - 0.1), Math.min(seg.end, y + 0.25)]);
+}
+function aiStyle(text){
+  const t = text.toLowerCase(), st = { tune:0.55, reverb:0.25, double:0.2 };
+  if (/rap|hip ?hop|trap|drill/.test(t)) Object.assign(st, { tune:0.35, reverb:0.1, double:0.3 });
+  if (/ballad|slow|sad|dream|ambient|soft|love/.test(t)) Object.assign(st, { reverb:0.45, echo:0.2 });
+  if (/lo-?fi|chill|bedroom/.test(t)) Object.assign(st, { radio:0.3, reverb:0.3 });
+  if (/rock|punk|grunge/.test(t)) Object.assign(st, { grit:0.25, double:0.35, tune:0.3 });
+  if (/pop|dance|edm|club|party/.test(t)) Object.assign(st, { tune:0.8 });
+  return st;
+}
+const styleWords = (st) => [st.tune ? 'auto-tune' : '', st.reverb ? 'reverb' : '', st.double ? 'double' : '', st.echo ? 'echo' : '', st.radio ? 'lo-fi radio' : '', st.grit ? 'grit' : ''].filter(Boolean);
+async function aiMakeSong(){
+  if (state.busy || rec.state !== 'idle' || cd.on) return;
+  if (!state.clips.length){ setStatus($('#status1'), 'Record your singing first (or press Continue to try the demo song), then let AI make it into a song.', ''); return; }
+  stopAllPlayback();
+  const btn = $('#aiMake'), title = btn.querySelector('.ai-make-title'), done = [];
+  btn.disabled = true; title.textContent = 'AI is working on your song…';
+  hist.muted = true;
+  try {
+    await prepareAll($('#status1'));
+    // 1. cut the silence
+    const used = state.layers.filter((l) => l.segs.length), single = used.length === 1;
+    let cutSec = 0, cuts = 0;
+    state.layers.forEach((layer) => {
+      if (!layer.segs.length) return;
+      const segs = layer.segs.slice().sort((x, y) => x.at - y.at), out = [];
+      if (single){
+        // one layer: keep the singing, close up long gaps
+        let cursor = null, prevEnd = null;
+        segs.forEach((sg) => voicedParts(sg).forEach(([a, b]) => {
+          const origAt = sg.at + (a - sg.start);
+          if (cursor == null) cursor = 0; else { const gap = origAt - prevEnd; cursor += Math.min(Math.max(gap, 0), 0.35); }
+          out.push(Object.assign({}, sg, { id:nextId++, start:a, end:b, at:cursor, lo:sg.lo == null ? sg.start : sg.lo, hi:sg.hi == null ? sg.end : sg.hi, fadeIn:0.02, fadeOut:0.08 }));
+          cursor += b - a; prevEnd = origAt + (b - a);
+        }));
+      } else {
+        // several layers: only trim the silent ends so the layers stay lined up
+        segs.forEach((sg) => { const vp = voicedParts(sg); if (!vp.length) return; const a = vp[0][0], b = vp[vp.length - 1][1]; out.push(Object.assign({}, sg, { at:sg.at + (a - sg.start), start:a, end:b, lo:sg.lo == null ? sg.start : sg.lo, hi:sg.hi == null ? sg.end : sg.hi, fadeIn:0.02, fadeOut:0.08 })); });
+      }
+      const before = segs.reduce((t, x) => t + segLen(x), 0), after = out.reduce((t, x) => t + segLen(x), 0);
+      if (out.length){ cutSec += Math.max(0, before - after); cuts += Math.max(0, out.length - segs.length) + (before - after > 0.05 ? 1 : 0); layer.segs = out; }
+    });
+    invalidateJoined();
+    if (cutSec > 0.2) done.push('cut ' + fmtS(cutSec) + ' of silence' + (single ? ' and closed up the gaps' : ''));
+    // 2. balance the layers
+    if (used.length > 1){
+      const sr = ctx().sampleRate, dur = songDur(), loud = state.layers.map((l) => { if (!l.segs.length) return 0; const d = renderRange(l, 0, dur, sr); let e = 0, n = 0; for (let i = 0; i < d.length; i += 8){ if (Math.abs(d[i]) > 0.01){ e += d[i] * d[i]; n++; } } return n ? Math.sqrt(e / n) : 0; });
+      const lead = loud[0] || Math.max(...loud);
+      state.layers.forEach((l, i) => { if (!loud[i]) return; l.vol = i === 0 ? 1 : clamp((lead * 0.75) / loud[i], 0.35, 1.5); });
+      done.push('balanced your ' + used.length + ' layers so the lead sits on top');
+    }
+    // 3. voice effects that suit your vibe
+    const st = aiStyle($('#vibe').value + ' ' + $('#artists').value), total = songDur();
+    for (let li = 0; li < state.layers.length; li++){
+      if (!state.layers[li].segs.length) continue;
+      const c = li === 0 ? st : Object.assign({}, st, { reverb:Math.min(1, (st.reverb || 0) + 0.15), double:0.35 });
+      await applyPaint(li, 0, total, comboParams(c, 1), 'AI voice polish');
+    }
+    // an echo that trails off the last line
+    const lead = state.layers[0].segs.slice().sort((x, y) => x.at - y.at), lastSeg = lead[lead.length - 1];
+    if (lastSeg && segLen(lastSeg) > 1) await applyPaint(0, Math.max(lastSeg.at, segEnd(lastSeg) - 1.2), segEnd(lastSeg), comboParams({ echo:0.55 }, 1), 'AI echo');
+    done.push('added ' + styleWords(st).join(', ') + ' to your voice, with an echo on the last line');
+    // 4. the song's shape, as notes for the music
+    if (!state.markers.some((m) => m.text.trim())){
+      const d = songDur(), phrases = state.layers[0].segs.slice().sort((x, y) => x.at - y.at);
+      const loudOf = (sg) => { const { hop, rms } = takeFrames(sg.src), f0 = Math.floor(sg.start * sg.src.sr / hop), f1 = Math.ceil(sg.end * sg.src.sr / hop); let e = 0; for (let f = f0; f < f1 && f < rms.length; f++) e += rms[f]; return e / Math.max(1, f1 - f0); };
+      state.markers.push({ id:nextId++, t:0, end:null, text:'soft intro, no beat' });
+      const dropAt = phrases.length > 1 ? phrases[1].at : d * 0.25;
+      if (dropAt > 1) state.markers.push({ id:nextId++, t:dropAt, end:null, text:'beat comes in here, upbeat' });
+      const later = phrases.filter((x) => x.at > dropAt + 2);
+      if (later.length){ const big = later.reduce((a, b) => (loudOf(b) > loudOf(a) ? b : a)); state.markers.push({ id:nextId++, t:big.at, end:null, text:'chorus, full energy' }); }
+      const last = phrases[phrases.length - 1];
+      if (d > 12 && last && last.at > dropAt + 4 && !state.markers.some((m) => Math.abs(m.t - last.at) < 1)) state.markers.push({ id:nextId++, t:last.at, end:null, text:'softer, fade out' });
+      renderMarkerList();
+      done.push('planned the song: soft intro, beat drop at ' + fmtT(dropAt) + (later.length ? ', a big chorus' : '') + ' and an ending');
+    }
+    if (!$('#vibe').value.trim()){ $('#vibe').value = 'warm pop, upbeat, piano and strings'; done.push('picked a warm pop style (change it on step 2 any time)'); }
+  } catch (err){
+    hist.muted = false; btn.disabled = false; title.textContent = 'Let AI make my song';
+    setStatus($('#status1'), 'AI couldn\'t finish editing: ' + (err.message || err), 'error'); return;
+  }
+  hist.muted = false; histNext = 'AI edit'; renderClips(); scheduleAutosave();
+  btn.disabled = false; title.textContent = 'Let AI make my song';
+  // 5. the music
+  await generate(false);
+  if (state.page === 3 && state.result){
+    const msg = 'AI ' + done.join('; ') + '. Then it made the music around your voice. Undo on step 1 takes back its edits.';
+    setStatus($('#status3'), msg, 'ok'); toast('AI made your song');
+  }
+}
+$('#aiMake').addEventListener('click', aiMakeSong);
+
+/* =========================================================
    Step 2: timeline with notes
    ========================================================= */
 let joinedCache = null;
@@ -6424,6 +6555,7 @@ const TOURS = {
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does.' },
     { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on, then name it or skip. Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
+    { sel:'#aiMake', title:'Let AI make my song', text:'Want it done for you? AI trims the silence, balances your layers, adds voice effects that suit your vibe, plans a soft intro, a beat drop and a big chorus, then makes the music. It all lands on the last step, and Undo on step 1 takes its edits back.' },
     { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to step 2, Prep and adjust.' }
   ],
   p2:[
