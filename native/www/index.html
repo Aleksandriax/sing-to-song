@@ -350,7 +350,14 @@ body:not(.recording) #recTime{display:none}
 .item-meta .shield-mark{display:inline-flex;vertical-align:-2px;margin-right:4px;color:#a78bfa}
 .item-meta .shield-mark .ic{width:14px;height:14px}
 .sheet-backdrop#detSheet{z-index:70}
-.sheet-backdrop#fxLibSheet{z-index:66}
+.sheet-backdrop#fxLibSheet,.sheet-backdrop#fxAddSheet{z-index:66}
+.lib-fx .flag{width:32px;height:32px}
+.lib-fx{gap:6px;padding:8px}
+.lib-fx .item-title{white-space:normal;overflow-wrap:anywhere;line-height:1.2}
+.lib-fx .icon-btn{width:32px;height:32px}
+.lib-fx .fx-on{min-width:42px}
+.lib-fx .flag .ic{width:20px;height:20px}
+.lib-fx .by{color:#fbbf24}
 .sheet-backdrop#fxMakeSheet{z-index:67}
 .toast{position:fixed;left:50%;bottom:calc(104px + env(safe-area-inset-bottom));z-index:95;max-width:min(88vw,420px);padding:12px 18px;border-radius:14px;background:#2a2140;border:1px solid rgba(255,255,255,.14);color:#fff;font-size:15px;font-weight:700;text-align:center;box-shadow:0 12px 34px rgba(0,0,0,.45);pointer-events:none;transform:translate(-50%,calc(100% + 140px));transition:transform .25s ease}
 .toast.show{transform:translate(-50%,0)}
@@ -471,7 +478,7 @@ body:not(.recording) #recTime{display:none}
 .lib-fx{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line)}
 .lib-fx .dot{width:14px;height:14px;border-radius:50%;background:var(--c);flex:none}
 .lib-fx .item-main{flex:1;min-width:0}
-.lib-fx .icon-btn{width:34px;height:34px}
+.lib-fx .icon-btn{width:32px;height:32px}
 .lib-fx .icon-btn .ic{width:16px;height:16px}
 .lib-fx .icon-btn svg{width:16px;height:16px}
 .fx-on{appearance:none;min-width:48px;height:32px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:800;cursor:pointer}
@@ -1338,10 +1345,23 @@ legend{padding:0}
 
 <div id="fxLibSheet" class="sheet-backdrop" hidden>
   <div class="sheet fx-sheet" role="dialog" aria-modal="true" aria-labelledby="fxLibTitle">
-    <div class="fx-sheet-head"><h2 id="fxLibTitle">Effects library</h2><button type="button" id="fxNew" class="btn small primary">+ Create your own</button></div>
-    <p class="hint" style="margin:0">Tap On to use an effect right now, even while you record. Tap + to put it on your pads. Play hears it on a sample voice.</p>
+    <div class="fx-sheet-head"><h2 id="fxLibTitle">Your effects library</h2><button type="button" id="fxNew" class="btn small primary">+ Create</button></div>
+    <div class="seg seg-two" role="tablist" aria-label="Your effects">
+      <input type="radio" name="fxLibTab" id="fxTabMade" value="made" checked><label for="fxTabMade">Created</label>
+      <input type="radio" name="fxLibTab" id="fxTabSaved" value="saved"><label for="fxTabSaved">Saved</label>
+    </div>
+    <p class="hint" style="margin:0">On uses an effect right now, even while you record. + puts it on your pads.</p>
     <div id="fxLibList" class="fx-lib-list"></div>
     <div class="actions"><button type="button" id="fxLibClose" class="btn">Done</button></div>
+  </div>
+</div>
+
+<div id="fxAddSheet" class="sheet-backdrop" hidden>
+  <div class="sheet fx-sheet" role="dialog" aria-modal="true" aria-labelledby="fxAddTitle">
+    <h2 id="fxAddTitle" style="margin:0">Add effects</h2>
+    <p class="hint" style="margin:0">+ puts an effect on your pads. The flag saves it to your library. On uses it right now. Play hears it on a sample voice.</p>
+    <div id="fxAddList" class="fx-lib-list"></div>
+    <div class="actions"><button type="button" id="fxAddClose" class="btn">Done</button></div>
   </div>
 </div>
 
@@ -1454,6 +1474,7 @@ legend{padding:0}
    ========================================================= */
 const $ = (s) => document.querySelector(s);
 const HOLD_MS = 550;
+const REC_HOLD_MS = 350;   // holding the record button this long records right here instead of counting down
 const SCALES = { major:[0,2,4,5,7,9,11], minor:[0,2,3,5,7,8,10] };
 const NOTE_NAMES = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
 const LOGO_PATH = 'M3.5 23 Q 6 20.5 8 23.5 Q 10 26.5 14 26.5 C 19 26.5 22 24 21.5 20.5 C 21 16.5 11 17.5 10.5 12 C 10 7.5 15 6 18.5 6.5 Q 21.5 7 22.8 9.2 Q 24.5 11.5 28 4.5';
@@ -1940,6 +1961,27 @@ function onEngineMsg(d){
   }
   else if (d.type === 'stopped'){ if (rec.stopWait) rec.stopWait(); }
 }
+/* The microphone: the app asks for it as soon as you open Studio, so the question never
+   pops up in the middle of a countdown or while you're holding the record button. */
+let micAsking = null, micPrimed = false;
+async function getMic(constraints){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw Object.assign(new Error('no api'), { name:'NoApi' });
+  return navigator.mediaDevices.getUserMedia({ audio:constraints });
+}
+async function primeMic(){
+  if (micPrimed || micAsking || rec.state !== 'idle' || needsProfile()) return;
+  micPrimed = true;
+  try {
+    if (navigator.permissions && navigator.permissions.query){
+      try { const st = await navigator.permissions.query({ name:'microphone' }); if (st.state === 'granted') return; if (st.state === 'denied'){ setStatus($('#status1'), micError({ name:'NotAllowedError' }), 'error'); return; } } catch (_) {}
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+    micAsking = navigator.mediaDevices.getUserMedia({ audio:true });
+    const s = await micAsking;
+    s.getTracks().forEach((t) => t.stop());   // just asking: the mic isn't kept on
+  } catch (err){ micPrimed = false; if (err && err.name !== 'AbortError') setStatus($('#status1'), micError(err), 'error'); }
+  finally { micAsking = null; }
+}
 function cleanupRec(){
   cancelAnimationFrame(rec.raf); clearInterval(rec.timer);
   if (rec.node) rec.node.port.onmessage = null;
@@ -1959,7 +2001,8 @@ async function startRecording(){
     // with other layers playing through the phone speaker, echo cancellation keeps them out of the new recording
     const backingPlays = state.layers.length > 1 && state.layers.some((l, i) => i !== state.activeLayer && l.segs.length);
     audioSession('play-and-record');
-    const stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:backingPlays, noiseSuppression:false, autoGainControl:true } });
+    if (micAsking) await micAsking.catch(() => {});
+    const stream = await getMic({ echoCancellation:backingPlays, noiseSuppression:false, autoGainControl:true });
     rec.stream = stream;
     if (c.state !== 'running') await c.resume();
     rec.src = c.createMediaStreamSource(stream);
@@ -2055,7 +2098,7 @@ function startCountdown(){
   if (rec.state !== 'idle' || cd.on || (typeof paint !== 'undefined' && paint.busy)) return;
   stopAllPlayback();
   try { const c = ctx(); if (c.state !== 'running') c.resume(); } catch (_) {}
-  cd.on = true; setRecUI();
+  cd.on = true; cd.at = performance.now(); setRecUI();
   let n = 3;
   const show = () => { const el = $('#cdNum'); el.textContent = n; el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; if (navigator.vibrate) navigator.vibrate(8); };
   $('#countdown').hidden = false; show();
@@ -2068,7 +2111,8 @@ function startCountdown(){
   cd.timer = setTimeout(tick, 1000);
 }
 function cancelCountdown(){ if (!cd.on) return; clearTimeout(cd.timer); cd.on = false; $('#countdown').hidden = true; if (!songDur()) state.recView = false; setRecUI(); }
-$('#countdown').addEventListener('click', cancelCountdown);
+// ignore the click from the same tap that started it (phones send it right after the finger lifts)
+$('#countdown').addEventListener('click', () => { if (performance.now() - (cd.at || 0) > 450) cancelCountdown(); });
 // tap: 3-2-1 countdown on the recording screen. hold: record right away on this screen, let go to stop.
 recBtn.addEventListener('pointerdown', (e) => {
   if (e.button !== undefined && e.button !== 0) return;
@@ -2082,7 +2126,7 @@ recBtn.addEventListener('pointerdown', (e) => {
     if (rec.state !== 'idle' || cd.on) return;
     rec.startedByPress = true; if (navigator.vibrate) navigator.vibrate(12);
     startRecording();
-  }, HOLD_MS);
+  }, REC_HOLD_MS);
 });
 function recRelease(cancelled){
   clearTimeout(rec.holdTimer); recBtn.classList.remove('pressing');
@@ -2138,12 +2182,26 @@ const EXTRA_FX = [
   { id:'x-alien', name:'Alien', color:'#16a34a', desc:'wobbly robot', combo:{ shift:4, vibrato:0.8, robot:0.5 } },
   { id:'x-ghost', name:'Ghost', color:'#6366f1', desc:'far away', combo:{ reverb:1, echo:0.6, vibrato:0.3 } }
 ];
+// trending: effects other creators made, ranked by how much they're used (examples until accounts are connected)
+const TRENDING_FX = [
+  { id:'t-slowed', name:'Slowed + Reverb', color:'#7c3aed', desc:'dreamy and low', by:'Nova Reyes', uses:48200, combo:{ shift:-2, reverb:0.8, echo:0.2 } },
+  { id:'t-clubtune', name:'Club Tune', color:'#db2777', desc:'hard tune, stacked', by:'DJ Kilowatt', uses:39100, combo:{ tune:0.9, double:0.4, echo:0.2 } },
+  { id:'t-hyperpop', name:'Hyperpop', color:'#f0abfc', desc:'high, glitchy, tuned', by:'DJ Kilowatt', uses:27600, combo:{ shift:5, tune:1, crush:0.2 } },
+  { id:'t-lateradio', name:'Late Night Radio', color:'#b45309', desc:'warm and far away', by:'Nova Reyes', uses:21900, combo:{ radio:0.6, reverb:0.4, wobble:0.2 } },
+  { id:'t-porch', name:'Front Porch', color:'#d97706', desc:'small room, doubled', by:'Marisol Vega', uses:15300, combo:{ reverb:0.3, double:0.3 } },
+  { id:'t-walkie', name:'Walkie Talkie', color:'#4b5563', desc:'crunchy radio', by:'DJ Kilowatt', uses:11800, combo:{ radio:1, crush:0.5, grit:0.2 } },
+  { id:'t-cathedral', name:'Cathedral', color:'#0369a1', desc:'huge, with harmony', by:'Nova Reyes', uses:9400, combo:{ reverb:1, harm:4, double:0.3 } },
+  { id:'t-anime', name:'Cartoon', color:'#ec4899', desc:'bright and wobbly', by:'Marisol Vega', uses:6100, combo:{ shift:6, vibrato:0.3 } }
+];
 const customFx = [];   // effects you made (kept in lib.customFx)
-const allFx = () => PADS.concat(EXTRA_FX, customFx);
+const allFx = () => PADS.concat(EXTRA_FX, TRENDING_FX, customFx);
+// how much an effect is trending: everyone's uses plus yours (your recent uses count the most)
+const fxUses = (p) => (p.uses || 0) + ((boardReady && lib.fxUses && lib.fxUses[p.id]) || 0) * 50;
+const trendingFx = () => TRENDING_FX.slice().sort((a, b) => fxUses(b) - fxUses(a));
 const fxById = (id) => allFx().find((p) => p.id === id);
 const fx = {};
 PADS.forEach((p) => { fx[p.id] = { on:false, level:0.5, idx:3, semis:5 }; });
-EXTRA_FX.forEach((p) => { fx[p.id] = { on:false, level:0.5 }; });
+EXTRA_FX.concat(TRENDING_FX).forEach((p) => { fx[p.id] = { on:false, level:0.5 }; });
 fx.tune.level = 0.6; fx.echo.level = 0.4; fx.radio.level = 0.7;
 const DEFAULT_BOARD = PADS.map((p) => p.id);
 let fxPreview = null;   // an effect being tried on the sample voice (library or maker)
@@ -2157,7 +2215,7 @@ function padParams(){
     robot:L('robot'), echo:L('echo'), radio:L('radio'), reverb:L('reverb'), double:L('double'),
     vibrato:L('vibrato'), wobble:L('wobble'), grit:L('grit'), crush:L('crush')
   };
-  EXTRA_FX.concat(customFx).forEach((p) => { if (fx[p.id] && fx[p.id].on) addCombo(o, p.combo, fx[p.id].level * 2); });
+  EXTRA_FX.concat(TRENDING_FX, customFx).forEach((p) => { if (fx[p.id] && fx[p.id].on) addCombo(o, p.combo, fx[p.id].level * 2); });
   return o;
 }
 // layer one mixed effect on top of the others (k scales its amounts: 1 = as made)
@@ -2243,6 +2301,7 @@ function makePadEl(p){
       if (g.wasOn) s.on = false;                                   // tap an active pad: off
       else if (performance.now() - g.t >= HOLD_MS) s.on = false;   // held still: on only while held
     }
+    if (s.on && !g.wasOn) countFxUse(p.id);
     const lbl = g.moved && s.on ? p.name + ' ' + padText(p) : p.name + (s.on ? ' on' : ' off');
     g = null; paintPad(p); pushPads(); padEdited(true, lbl);
   };
@@ -2261,7 +2320,7 @@ const boardIds = () => ((boardReady && Array.isArray(lib.board)) ? lib.board : D
 function renderBoard(){
   Object.keys(padEls).forEach((k) => delete padEls[k]);
   const els = boardIds().map((id) => { const p = fxById(id), el = makePadEl(p); paintPad(p); return el; });
-  if (padEditing){ const add = h('button', { type:'button', class:'pad-add', onclick:() => openFxLib() }, h('span', { class:'plus' }, '+'), 'Add effects'); els.push(add); }
+  if (padEditing){ const add = h('button', { type:'button', class:'pad-add', onclick:() => openFxAdd() }, h('span', { class:'plus' }, '+'), 'Add effects'); els.push(add); }
   $('#pads').replaceChildren(...els);
   $('#pads').classList.toggle('editing', padEditing);
 }
@@ -2304,28 +2363,51 @@ function effectParamsOf(p){
   const saved = {}; allFx().forEach((q) => { saved[q.id] = fx[q.id].on; fx[q.id].on = q.id === p.id; });
   const o = padParams(); allFx().forEach((q) => { fx[q.id].on = saved[q.id]; }); return o;
 }
+function fxRow(p, opts){
+  const onBoard = boardIds(), inBoard = onBoard.includes(p.id), s = fx[p.id], rerender = opts.rerender;
+  const use = h('button', { type:'button', class:'fx-on', style:'--c:' + p.color, 'aria-pressed':s.on ? 'true' : 'false', 'aria-label':(s.on ? 'Turn off ' : 'Use ') + p.name }, s.on ? 'On' : 'Off');
+  use.addEventListener('click', () => { s.on = !s.on; if (s.on) countFxUse(p.id); paintPad(p); pushPads(); padEdited(true, p.name + (s.on ? ' on' : ' off')); rerender(); });
+  const play = h('button', { type:'button', class:'icon-btn', 'data-fxplay':p.id, 'data-name':p.name, 'aria-label':'Hear ' + p.name, disabled:rec.state !== 'idle' });
+  play.innerHTML = PLAY_SVG; play.addEventListener('click', () => playFxPreview(p.id, effectParamsOf(p)));
+  const board = h('button', { type:'button', class:'icon-btn', 'aria-label':inBoard ? 'Take ' + p.name + ' off your pads' : 'Put ' + p.name + ' on your pads', title:inBoard ? 'On your pads' : 'Add to your pads' }, icon(inBoard ? 'check' : 'plus'));
+  board.addEventListener('click', () => { if (inBoard) boardRemove(p.id); else { boardAdd(p.id); countFxUse(p.id); toast(p.name + ' added to your pads'); } rerender(); });
+  const saved = savedFxIds().includes(p.id);
+  const flag = opts.flag && !p.custom ? h('button', { type:'button', class:'flag' + (saved ? ' on' : ''), 'aria-pressed':saved ? 'true' : 'false', 'aria-label':(saved ? 'Unsave ' : 'Save ') + p.name, title:saved ? 'Saved (tap to unsave)' : 'Save to your library' }, icon('flag')) : null;
+  if (flag) flag.addEventListener('click', () => { lib.savedFx = saved ? savedFxIds().filter((x) => x !== p.id) : savedFxIds().concat(p.id); saveLib(); if (!saved) toast(p.name + ' saved to your library'); rerender(); });
+  const edit = p.custom ? h('button', { type:'button', class:'icon-btn', 'aria-label':'Edit ' + p.name, onclick:() => openFxMaker(p) }, icon('pencil')) : null;
+  const meta = p.by ? h('span', { class:'item-meta' }, h('span', { class:'by', text:p.by }), ' · ' + compact(fxUses(p)) + ' uses') : h('span', { class:'item-meta', text:p.desc });
+  return h('div', { class:'lib-fx', style:'--c:' + p.color }, h('span', { class:'dot', 'aria-hidden':'true' }),
+    h('div', { class:'item-main' }, h('span', { class:'item-title', text:p.name }), meta),
+    play, edit, flag, use, board);
+}
+const savedFxIds = () => ((boardReady && Array.isArray(lib.savedFx)) ? lib.savedFx : []).filter((id) => fxById(id));
+function countFxUse(id){ lib.fxUses = lib.fxUses || {}; lib.fxUses[id] = (lib.fxUses[id] || 0) + 1; saveLib(); }
+// Your effects library: what you created (left) and what you saved (right)
 function renderFxLib(){
-  const onBoard = boardIds();
-  const row = (p) => {
-    const inBoard = onBoard.includes(p.id), s = fx[p.id];
-    const use = h('button', { type:'button', class:'fx-on', style:'--c:' + p.color, 'aria-pressed':s.on ? 'true' : 'false', 'aria-label':(s.on ? 'Turn off ' : 'Use ') + p.name }, s.on ? 'On' : 'Off');
-    use.addEventListener('click', () => { s.on = !s.on; paintPad(p); pushPads(); padEdited(true, p.name + (s.on ? ' on' : ' off')); renderFxLib(); });
-    const play = h('button', { type:'button', class:'icon-btn', 'data-fxplay':p.id, 'data-name':p.name, 'aria-label':'Hear ' + p.name, disabled:rec.state !== 'idle' });
-    play.innerHTML = PLAY_SVG; play.addEventListener('click', () => playFxPreview(p.id, effectParamsOf(p)));
-    const board = h('button', { type:'button', class:'icon-btn', 'aria-label':inBoard ? 'Take ' + p.name + ' off your pads' : 'Put ' + p.name + ' on your pads', title:inBoard ? 'On your pads' : 'Add to your pads' }, icon(inBoard ? 'check' : 'plus'));
-    board.addEventListener('click', () => { if (inBoard) boardRemove(p.id); else { boardAdd(p.id); toast(p.name + ' added to your pads'); } renderFxLib(); });
-    const edit = p.custom ? h('button', { type:'button', class:'icon-btn', 'aria-label':'Edit ' + p.name, onclick:() => openFxMaker(p) }, icon('pencil')) : null;
-    return h('div', { class:'lib-fx', style:'--c:' + p.color }, h('span', { class:'dot', 'aria-hidden':'true' }),
-      h('div', { class:'item-main' }, h('span', { class:'item-title', text:p.name }), h('span', { class:'item-meta', text:p.desc })),
-      play, edit, use, board);
-  };
-  $('#fxLibList').replaceChildren(
-    h('h3', { text:'Yours' }),
-    ...(customFx.length ? customFx.map(row) : [h('p', { class:'hint', style:'margin:0' }, 'Nothing yet. Tap Create your own to mix your own effect.')]),
-    h('h3', { text:'More effects' }), ...EXTRA_FX.map(row),
-    h('h3', { text:'The basics' }), ...PADS.map(row));
+  const tab = $('#fxTabSaved').checked ? 'saved' : 'made', rer = renderFxLib;
+  if (tab === 'made') $('#fxLibList').replaceChildren(...(customFx.length ? customFx.map((p) => fxRow(p, { rerender:rer }))
+    : [h('p', { class:'hint', style:'margin:0' }, 'Nothing yet. Tap + Create to mix your own effect from auto-tune, echo, pitch and more.')]));
+  else {
+    const list = savedFxIds().map(fxById);
+    $('#fxLibList').replaceChildren(...(list.length ? list.map((p) => fxRow(p, { rerender:rer, flag:true }))
+      : [h('p', { class:'hint', style:'margin:0' }, 'Nothing saved yet. Tap the flag on an effect in Add effects (Edit, then Add effects) to keep it here.'), h('button', { type:'button', class:'btn small', onclick:() => { closeFxLib(); openFxAdd(); } }, 'Find effects')]));
+  }
   paintFxPlayBtns();
 }
+['#fxTabMade', '#fxTabSaved'].forEach((id) => $(id).addEventListener('change', () => { stopFxPreview(); renderFxLib(); }));
+// Add effects: what's trending, more effects, and the basics
+function renderFxAdd(){
+  const rer = renderFxAdd, o = { rerender:rer, flag:true };
+  $('#fxAddList').replaceChildren(
+    h('h3', { text:'Trending' }), ...trendingFx().map((p) => fxRow(p, o)),
+    h('h3', { text:'More effects' }), ...EXTRA_FX.map((p) => fxRow(p, o)),
+    h('h3', { text:'The basics' }), ...PADS.map((p) => fxRow(p, o)));
+  paintFxPlayBtns();
+}
+function openFxAdd(){ renderFxAdd(); $('#fxAddSheet').hidden = false; }
+function closeFxAdd(){ stopFxPreview(); $('#fxAddSheet').hidden = true; }
+$('#fxAddClose').addEventListener('click', closeFxAdd);
+$('#fxAddSheet').addEventListener('click', (e) => { if (e.target === $('#fxAddSheet')) closeFxAdd(); });
 function openFxLib(){ renderFxLib(); $('#fxLibSheet').hidden = false; }
 function closeFxLib(){ stopFxPreview(); $('#fxLibSheet').hidden = true; }
 $('#fxLibBtn').addEventListener('click', openFxLib);
@@ -2384,7 +2466,7 @@ $('#fxMakeSave').addEventListener('click', () => {
     lib.board = boardIds().concat(p.id);
   }
   lib.customFx = customFx.map((p) => ({ id:p.id, name:p.name, color:p.color, desc:p.desc, combo:p.combo }));
-  saveLib(); closeFxMaker(); renderBoard(); pushPads(); renderFxLib();
+  saveLib(); closeFxMaker(); renderBoard(); pushPads(); $('#fxTabMade').checked = true; renderFxLib(); if (!$('#fxAddSheet').hidden) renderFxAdd();
   toast((maker.edit ? 'Saved ' : 'Made ') + name + (maker.edit ? '' : '. It\'s on your pads.'));
 });
 $('#fxMakeDelete').addEventListener('click', async () => {
@@ -5316,14 +5398,14 @@ const FEE = 0.15;
 const money = (v) => '$' + (Math.round(v * 100) / 100).toFixed(2);
 const lib = {
   profile:{ name:'', handle:'', bio:'', isPublic:true, postSongs:true, allowSaves:true, sellSfx:true, showLikes:true, showFollows:true },
-  songs:[], sfx:[], saved:[], likes:[], activity:[], sales:[], withdrawals:[], follows:[], requests:[], purchases:[], presets:[], drafts:[], media:[], customFx:[], board:null, premium:false, verify:{ status:'none', link:'' }
+  songs:[], sfx:[], saved:[], likes:[], activity:[], sales:[], withdrawals:[], follows:[], requests:[], purchases:[], presets:[], drafts:[], media:[], customFx:[], board:null, savedFx:[], fxUses:{}, premium:false, verify:{ status:'none', link:'' }
 };
 let libTimer = 0;
 function saveLib(){ clearTimeout(libTimer); libTimer = setTimeout(() => store.set('lib', JSON.parse(JSON.stringify(lib))), 250); }
 async function loadLib(){
   const v = await store.get('lib');
   if (v && typeof v === 'object'){
-    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'likes', 'activity', 'sales', 'withdrawals', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media', 'customFx', 'board']) if (Array.isArray(v[k])) lib[k] = v[k]; }
+    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'likes', 'activity', 'sales', 'withdrawals', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media', 'customFx', 'board', 'savedFx']) if (Array.isArray(v[k])) lib[k] = v[k]; if (v.fxUses && typeof v.fxUses === 'object') lib.fxUses = v.fxUses; }
 }
 const uid = (p) => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -5424,7 +5506,8 @@ async function srStartRec(){
     const c = ctx();
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw Object.assign(new Error('no api'), { name:'NoApi' });
     audioSession('play-and-record');
-    const stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
+    if (micAsking) await micAsking.catch(() => {});
+    const stream = await getMic({ echoCancellation:false, noiseSuppression:false, autoGainControl:false });
     if (c.state !== 'running') await c.resume();
     const src = c.createMediaStreamSource(stream), sp = c.createScriptProcessor(2048, 1, 1), mute = c.createGain(); mute.gain.value = 0;
     sr2.chunks = []; sr2.sr = c.sampleRate;
@@ -6077,7 +6160,8 @@ function songAction(s, c){
 // tap anywhere on a song or sound (but its buttons) to see its details and who made it
 function tapRow(row, open){
   row.classList.add('tap');
-  row.addEventListener('click', (e) => { if (!e.target.closest('button,a,input,label')) open(); });
+  // buttons redraw their icon when tapped, so check the whole path the tap took, not just where it landed
+  row.addEventListener('click', (e) => { if (!e.composedPath().some((el) => el !== row && el.matches && el.matches('button,a,input,label'))) open(); });
   return row;
 }
 const shieldMark = () => h('span', { class:'shield-mark', title:'Protected: copies of this sound can\'t be posted or sold by anyone else', role:'img', 'aria-label':'Protected' }, icon('shield'));
@@ -6801,7 +6885,7 @@ const TOURS = {
     { sel:'.editor', title:'Layers', text:'+ Layer stacks up to 4 layers, and the new one records from the red line while the others play. Tap a layer to set its volume. Tap an empty layer and press Delete to remove it. The + at the end of your audio records more there or adds audio from a file or your camera roll.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where an effect should start (or select a part), then hold a pad. Tap a gold effect strip to change it or remove it.' },
     { sel:'#pads', title:'Add all your effects', text:'After you record, turn on the pads you want (or tap a preset), then hold the gold "Hold to add all your effects" button. Your song plays and every effect you have on goes in from the red line until you let go. If you selected a part, it stops at the end of the part.' },
-    { sel:'.fx-tools', title:'Edit and the library', text:'Edit lets you drag your pads into any order, or tap the red x to move one to the library. Effects library has more effects, like Chipmunk, Stadium and Choir. Tap On to use one now, even while you record, or + to put it on your pads. Create your own to mix an effect from any of them and name it.' },
+    { sel:'.fx-tools', title:'Edit, add and your library', text:'Edit lets you drag your pads into any order, or tap the red x to take one off. Add effects (in Edit) shows what\'s trending, more effects and the basics: + puts one on your pads, the flag saves it. Effects library is yours: Created (effects you mixed yourself) and Saved. On uses an effect right now, even while you record.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does.' },
     { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on, then name it or skip. Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
@@ -7036,6 +7120,7 @@ function updateTabs(){
   $('#tab3').disabled = state.busy || !state.result;
 }
 function showPage(p){
+  setTimeout(primeMic, 300);   // opening Studio asks for the microphone once, up front
   if (p === 0){ /* home */ }
   else if (p === 2 && !state.clips.length) p = 1;
   if (p === 3 && !state.result) p = state.clips.length ? 2 : 1;
