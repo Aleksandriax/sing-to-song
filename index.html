@@ -2589,12 +2589,13 @@ function drawEditor(){
     if (rec.state !== 'recording'){ g.beginPath(); g.arc(px, RULER - 2, 8, 0, Math.PI * 2); g.fillStyle = pink; g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke(); }
   }
   ed.px = showCur && px >= ED_L - 2 ? px : null;
-  // left gutter: a jump-to-start button for each layer
+  // left gutter: one jump-to-start button, next to the layer you tapped
   g.fillStyle = cssVar('--bg', '#0c0816'); g.fillRect(0, 0, ED_L - 5, hh);
-  ed.starts = [];
+  ed.starts = []; ed.lanes = state.layers.map((_, li) => box(li));
   state.layers.forEach((layer, li) => {
+    if (li !== state.activeLayer) return;
     const { y, h:lh } = box(li), cx = (ED_L - 5) / 2, cy = y + lh / 2, r = Math.min(15, lh / 2 - 3);
-    g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fillStyle = li === state.activeLayer ? 'rgba(236,72,153,.22)' : 'rgba(255,255,255,.07)'; g.fill();
+    g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fillStyle = 'rgba(236,72,153,.22)'; g.fill();
     g.lineWidth = 1; g.strokeStyle = 'rgba(255,255,255,.14)'; g.stroke();
     const k = r * 0.42; g.fillStyle = '#f3eefb';
     g.fillRect(cx - k - 1.5, cy - k, 2.2, k * 2);
@@ -2849,7 +2850,12 @@ $('#clipDelete').addEventListener('click', () => {
       state.activeLayer = st.lane; state.sel1 = null; state.cursorOn = true; ed.viewStart = Math.max(0, start - edSpan() * 0.05); setPlayhead1(start);
       return;
     }
-    if (e.clientX - r.left < ED_L - 4) return;
+    if (e.clientX - r.left < ED_L - 4){
+      // tapping beside another layer moves the button to that layer
+      const yy = e.clientY - r.top, li = (ed.lanes || []).findIndex((b) => yy >= b.y && yy <= b.y + b.h);
+      if (li >= 0 && li !== state.activeLayer){ state.activeLayer = li; state.sel1 = null; renderClips(); }
+      return;
+    }
     const hit = (ed.plus || []).find((q) => Math.hypot(e.clientX - r.left - q.x, e.clientY - r.top - q.y) <= q.r);
     if (hit){
       // if the red line is on this layer, new audio starts there; otherwise at the end of the layer
@@ -5841,7 +5847,7 @@ const TOURS = {
   ],
   p1:[
     { sel:'#recBtn', title:'Record', text:'Tap to start and tap again to stop, or hold it and let go. Your phone is enough, no headphones needed. While recording you can switch pads and presets. Press Done when you\'re finished; the arrows undo and redo (it says what it undid), and play listens back.' },
-    { sel:'.editor', title:'Your wave', text:'Tap the wave to place the red line, or drag its round handle. Slide to scroll. Spread two fingers to zoom in, pinch to zoom out, or use + and −. The round button left of each layer jumps the red line to that layer\'s start. Tap outside the wave to hide the red line.' },
+    { sel:'.editor', title:'Your wave', text:'Tap the wave to place the red line, or drag its round handle. Slide to scroll. Spread two fingers to zoom in, pinch to zoom out, or use + and −. The round button on the left, next to the layer you tapped, jumps the red line to that layer\'s start. Tap outside the wave to hide the red line.' },
     { sel:'.editor', title:'Edit a part', text:'Tap a part to select it. Drag its pink handles in to trim, or back out to bring trimmed audio back. Then Duplicate, Delete, Split at the red line, or Fade its start and end. Hold a part and drag to move it, even onto another layer. Double-tap a part to delete it.' },
     { sel:'.editor', title:'Layers', text:'+ Layer stacks up to 4 layers, and the new one records from the red line while the others play. Tap a layer to set its volume. Tap an empty layer and press Delete to remove it. The + at the end of your audio records more there or adds audio from a file or your camera roll.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where an effect should start (or select a part), then hold a pad. Tap a gold effect strip to change it or remove it.' },
