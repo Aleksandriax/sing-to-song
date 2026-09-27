@@ -49,7 +49,7 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 
 /* record */
 .recorder{display:flex;flex-direction:column;align-items:center;gap:8px;padding-block:14px 0}
-body:not(.recording) #page1 .recorder{margin-top:-52px;padding-block:0}
+body:not(.recording) #page1 .recorder{padding-block:2px 0}
 body:not(.recording) #page1 .rec{width:84px;height:84px}
 body:not(.recording) #page1 .rec::before{inset:5px}
 body:not(.recording) #page1 .rec-core{width:32px;height:32px}
@@ -89,9 +89,12 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .preset.active{box-shadow:inset 0 0 0 2px var(--accent-b);background:color-mix(in srgb,var(--accent-b) 12%,var(--surface-2))}
 .editor{display:flex;flex-direction:column;gap:10px}
 .ed-wrap{position:relative}
-.rec-zoom{display:none;position:absolute;right:6px;top:-2px;z-index:2;gap:6px}
-.recording .rec-zoom{display:flex}
-.rec-zoom button{width:34px;height:26px;border-radius:99px;border:1px solid var(--line);background:rgba(20,14,36,.9);color:var(--text);font:inherit;font-size:17px;font-weight:700;line-height:1;cursor:pointer;padding:0}
+.rec-top{display:none;align-items:center;justify-content:space-between;gap:8px}
+.recording .rec-top{display:flex}
+.rec-top .back-top{margin:0;width:38px;height:38px}
+.recording.rec-live #recBack{visibility:hidden}
+.rec-zoom{display:flex;gap:8px}
+.rec-zoom button{width:38px;height:38px;border-radius:99px;border:1px solid var(--line);background:rgba(20,14,36,.9);color:var(--text);font:inherit;font-size:17px;font-weight:700;line-height:1;cursor:pointer;padding:0}
 .ed-wrap canvas{display:block;width:100%;height:150px;touch-action:none;cursor:pointer}
 .ed-tools{display:flex;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
 .ed-tools[hidden]{display:none}
@@ -214,14 +217,14 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .recording #page1{gap:10px}
 .recording #page1 > .editor{order:-1}
 .recording .recorder{flex-direction:row;justify-content:center;gap:16px;padding-block:0}
-.recording .rec{width:76px;height:76px}
+.recording .rec{width:76px;height:76px;flex:none}
 .recording .rec::before{inset:5px}
 .recording .rec-core{width:30px;height:30px}
 .recording .rec.is-rec .rec-core{width:26px;height:26px;border-radius:7px}
 .recording .rec-hint{display:none}
 body:not(.recording) #recTime{display:none}
 .recording .presets .preset{min-height:44px}
-.recording .pad{aspect-ratio:auto;height:max(56px,calc((100dvh - 246px - var(--edh,84px) - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 4))}
+.recording .pad{aspect-ratio:auto;height:max(52px,calc((100dvh - 292px - var(--edh,84px) - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 4))}
 .recording.rec-live #status1{display:none}
 .rec-done{min-width:84px}
 .rec-hist{display:flex;gap:6px}
@@ -231,7 +234,9 @@ body:not(.recording) #recTime{display:none}
 .recording:not(.rec-live) .rec-done{min-width:66px;padding-inline:12px}
 .recording:not(.rec-live) #recTime{font-size:16px}
 .rec-hist[hidden]{display:none}
-.recording:not(.rec-live) .recorder{gap:10px;flex-wrap:nowrap}
+.recording:not(.rec-live) .recorder{gap:6px;flex-wrap:nowrap}
+.recording:not(.rec-live) .rec{width:66px;height:66px}
+.recording:not(.rec-live) .rec-core{width:26px;height:26px}
 .recording:not(.rec-live) .rec-hist .icon-btn{width:38px;height:38px}
 .recording #status1.ok{display:none}
 .recording:not(.rec-live) #recTime{font-size:18px}
@@ -602,17 +607,6 @@ legend{padding:0}
     <button type="button" class="back-top" data-to="0" aria-label="Back to Studio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <h1 class="sr-only">Record and edit</h1>
 
-    <div class="recorder">
-      <button type="button" id="recBtn" class="rec" aria-label="Start recording" aria-pressed="false"><span class="rec-core"></span></button>
-      <div id="recTime" class="rec-time mono">0:00</div>
-      <div id="recHist" class="rec-hist" hidden>
-        <button type="button" id="recPlay" class="icon-btn" aria-label="Play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></button>
-        <button type="button" id="recUndo" class="icon-btn" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
-        <button type="button" id="recRedo" class="icon-btn" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
-      </div>
-      <button type="button" id="recDone" class="btn primary rec-done" hidden>Done</button>
-      <div id="recHint" class="rec-hint sr-only">Tap to start, tap again to stop. Or hold, then release.</div>
-    </div>
 
     <section class="editor" aria-label="Your song">
       <div class="tl-bar">
@@ -624,11 +618,25 @@ legend{padding:0}
         <button type="button" id="edZoomOut" class="btn small" style="min-width:36px" aria-label="Zoom out">−</button>
         <button type="button" id="edZoomIn" class="btn small" style="min-width:36px" aria-label="Zoom in">+</button>
       </div>
-      <div class="ed-wrap">
+      <div class="rec-top">
+        <button type="button" id="recBack" class="back-top" aria-label="Back to editing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
         <div class="rec-zoom"><button type="button" id="rzOut" aria-label="Zoom out">−</button><button type="button" id="rzIn" aria-label="Zoom in">+</button></div>
+      </div>
+      <div class="ed-wrap">
         <canvas id="edCanvas" aria-label="Your song's wave. Tap to move the playhead, swipe quickly to scroll, drag slowly to select a part."></canvas>
         <div id="edEmpty" class="live-empty">Your wave draws here as you sing</div>
         <div id="noteRead" class="note-read mono" hidden></div>
+      </div>
+      <div class="recorder">
+        <button type="button" id="recBtn" class="rec" aria-label="Start recording" aria-pressed="false"><span class="rec-core"></span></button>
+        <div id="recTime" class="rec-time mono">0:00</div>
+        <div id="recHist" class="rec-hist" hidden>
+          <button type="button" id="recPlay" class="icon-btn" aria-label="Play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></button>
+          <button type="button" id="recUndo" class="icon-btn" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+          <button type="button" id="recRedo" class="icon-btn" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+        </div>
+        <button type="button" id="recDone" class="btn primary rec-done" hidden>Done</button>
+        <div id="recHint" class="rec-hint sr-only">Tap to start, tap again to stop. Or hold, then release.</div>
       </div>
       <div class="ed-tools" hidden>
         <button type="button" id="edSplit" class="btn small">Split</button>
@@ -2856,6 +2864,7 @@ $('#edZoomIn').addEventListener('click', () => zoomTo(Math.max(0.05, edSpan() / 
 $('#edZoomOut').addEventListener('click', () => { const n = edSpan() * 2; zoomTo(n >= edFull() * 1.12 ? Infinity : n); });
 
 /* ---------- Done: leave the recording screen and go back to editing ---------- */
+$('#recBack').addEventListener('click', () => { if (rec.state === 'idle' && !cd.on) $('#recDone').click(); });
 $('#recDone').addEventListener('click', () => {
   state.recView = false; setRecUI();
   window.scrollTo(0, 0);
