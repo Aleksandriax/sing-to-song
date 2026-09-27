@@ -209,6 +209,9 @@ body:not(.recording) #recTime{display:none}
 .recording #status1{display:none}
 .painting .editor,.painting .pads,.painting .ed-tools{pointer-events:none}
 .painting .pads{opacity:.6}
+.preset.preset-trash{background:#dc2626;border:0;color:#fff;box-shadow:0 6px 18px rgba(220,38,38,.45);animation:trashpop .18s ease-out}
+.preset-trash svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;display:block}
+@keyframes trashpop{from{transform:scale(.8)}to{transform:scale(1)}}
 .danger-fill{border-color:transparent;background:var(--err);color:#fff}
 .boot-cover{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);font-size:14px}
 .boot-cover svg{width:56px;height:56px}
@@ -1807,6 +1810,14 @@ async function applyPaint(lane, a, b, over, name){
 /* Presets: save the pads you like and bring them back with one tap */
 const PRESET_COUNT = 4;
 let activePreset = null;   // the preset that pad changes are saved into
+let presetTrash = null, lastPresetTap = { i:null, t:0 };
+function erasePreset(i){
+  lib.presets[i] = null; if (lib.presetNames) lib.presetNames[i] = '';
+  if (activePreset === i) activePreset = null;
+  presetTrash = null; saveLib(); renderPresets();
+  setStatus($('#status1'), 'Preset ' + (i + 1) + ' erased.', 'ok');
+}
+document.addEventListener('pointerdown', (e) => { if (presetTrash != null && !e.target.closest('.preset-trash')){ presetTrash = null; renderPresets(); } }, true);
 function padEdited(full){
   if (activePreset == null) return;
   lib.presets[activePreset] = snapshot(); saveLib();
@@ -1821,6 +1832,7 @@ function renderPresets(){
   const box = $('#presets');
   box.replaceChildren(...lib.presets.slice(0, PRESET_COUNT).map((pr, i) => {
     const active = activePreset === i, name = presetName(i), label = name || 'Preset ' + (i + 1);
+    if (pr && presetTrash === i){ const tb = h('button', { type:'button', class:'preset preset-trash', 'aria-label':'Erase ' + label, onclick:() => erasePreset(i) }); tb.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>'; return tb; }
     const b = h('button', { type:'button', class:'preset' + (pr ? ' filled' : '') + (active ? ' active' : ''), 'aria-pressed':active ? 'true' : 'false',
       'aria-label':pr ? label + ': ' + (presetNames(pr).join(', ') || 'all pads off') + (active ? '. Selected: pad changes are saved to it. Tap to stop.' : '. Tap to load it. Hold to rename it.') : 'Empty preset ' + (i + 1) + '. Tap to save the pads that are on.' },
       h('span', { class:'preset-num' }, String(i + 1)), name ? h('span', { class:'preset-sub', text:name }) : null);
@@ -1836,6 +1848,10 @@ function renderPresets(){
     b.addEventListener('contextmenu', (e) => e.preventDefault());
     b.addEventListener('click', () => {
       if (longDone){ longDone = false; return; }
+      // double-tap a saved preset: a trash can appears
+      const now = performance.now();
+      if (pr && lastPresetTap.i === i && now - lastPresetTap.t < 380){ lastPresetTap = { i:null, t:0 }; presetTrash = i; renderPresets(); return; }
+      lastPresetTap = pr ? { i, t:now } : { i:null, t:0 };
       if (pr && activePreset === i){ activePreset = null; renderPresets(); setStatus($('#status1'), 'Stopped saving to ' + label + '. Your pads stay as they are.', 'ok'); }
       else if (pr){ applyPreset(pr); activePreset = i; renderPresets(); setStatus($('#status1'), label + ' on. Changes you make to the pads save into it. Tap it again to stop.', 'ok'); }
       else save();
@@ -2117,6 +2133,12 @@ function drawEditor(){
     const sel = state.sel1;
     if (sel && sel.layer === li){
       const a = X(sel.a), b = X(sel.b);
+      if (ed.trim && sel.seg === ed.trim.seg){
+        const ca = X(ed.trim.at), cb = X(ed.trim.at + ed.trim.end - ed.trim.start);
+        g.fillStyle = 'rgba(8,5,16,.72)';
+        if (a > ca) g.fillRect(ca, y + 1, a - ca, lh - 2);
+        if (b < cb) g.fillRect(b, y + 1, cb - b, lh - 2);
+      }
       g.fillStyle = 'rgba(236,72,153,.16)'; roundRectPath(g, a, y + 1, Math.max(2, b - a), lh - 2, 8); g.fill();
       g.lineWidth = 2.5; g.strokeStyle = '#ec4899'; g.stroke();
       [a, b].forEach((gx) => { roundRectPath(g, gx - 5, y + lh / 2 - 16, 10, 32, 5); g.fillStyle = '#ec4899'; g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke(); });
@@ -2336,7 +2358,8 @@ $('#clipDelete').addEventListener('click', () => {
 {
   let d = null, lastTap = null;
   const HOLD = 420;
-  const tAt = (e) => { const r = edCanvas.getBoundingClientRect(); return clamp(ed.viewStart + ((e.clientX - r.left - 8) / (r.width - 16)) * edSpan(), 0, songDur()); };
+  const t0Raw = (e) => { const r = edCanvas.getBoundingClientRect(); return Math.max(0, ed.viewStart + ((e.clientX - r.left - 8) / (r.width - 16)) * edSpan()); };
+  const tAt = (e) => Math.min(t0Raw(e), songDur());
   document.addEventListener('keydown', (e) => { if (state.page !== 1 || state.section !== 'create' || /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return; if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ e.preventDefault(); goHist(hist.idx + (e.shiftKey ? 1 : -1)); } });
   const laneAt = (e) => { const r = edCanvas.getBoundingClientRect(), box = laneBox(r.height), y = e.clientY - r.top; for (let i = 0; i < state.layers.length; i++){ const b = box(i); if (y >= b.y - LANE_PAD && y <= b.y + b.h + LANE_PAD) return i; } return y < RULER ? 0 : state.layers.length - 1; };
   let glide = 0;
@@ -2357,7 +2380,13 @@ $('#clipDelete').addEventListener('click', () => {
     const sel = state.sel1;
     if (sel){
       const ea = Math.abs(cx - Xc(sel.a)), eb = Math.abs(cx - Xc(sel.b));
-      if (Math.min(ea, eb) <= 20){ d.mode = 'edge'; d.edge = ea <= eb ? 'a' : 'b'; if (edPlayState.playing) edStop(); return; }
+      if (Math.min(ea, eb) <= 20){
+        d.mode = 'edge'; d.edge = ea <= eb ? 'a' : 'b'; if (edPlayState.playing) edStop();
+        // the handles of a tapped section trim it (undo brings trimmed audio back)
+        const sg = sel.seg && state.layers[sel.layer].segs.includes(sel.seg) ? sel.seg : null;
+        if (sg){ d.trim = { seg:sg, at:sg.at, start:sg.start, end:sg.end, minA:sg.at, maxB:segEnd(sg) }; ed.trim = d.trim; }
+        return;
+      }
     }
     // grab the red line: it follows your finger
     if (ed.px != null && Math.abs(cx - ed.px) <= 22){ d.mode = 'scrub'; if (edPlayState.playing) edStop(); return; }
@@ -2380,7 +2409,9 @@ $('#clipDelete').addEventListener('click', () => {
     if (d.mode === 'scrub'){ state.playhead1 = t; follow(t); drawEditor(); edReadouts(); return; }
     if (d.mode === 'edge'){
       const sl = state.sel1; if (!sl) return;
-      if (d.edge === 'a') sl.a = Math.min(t, sl.b - 0.05); else sl.b = Math.max(t, sl.a + 0.05);
+      const tt = d.trim ? t0Raw(e) : t;
+      if (d.edge === 'a') sl.a = Math.min(tt, sl.b - 0.05); else sl.b = Math.max(tt, sl.a + 0.05);
+      if (d.trim){ sl.a = Math.max(sl.a, d.trim.minA, 0); sl.b = Math.min(sl.b, d.trim.maxB); }
       state.playhead1 = d.edge === 'a' ? sl.a : sl.b; follow(t); drawEditor(); edReadouts(); return;
     }
     if (d.mode === 'pan'){
@@ -2397,6 +2428,19 @@ $('#clipDelete').addEventListener('click', () => {
   const up = (e) => {
     if (!d) return;
     clearTimeout(d.timer);
+    if (d.mode === 'edge' && d.trim){
+      const tr = d.trim, sl = state.sel1; d = null; ed.trim = null;
+      if (sl && (Math.abs(sl.a - tr.at) > 0.005 || Math.abs(sl.b - (tr.at + tr.end - tr.start)) > 0.005)){
+        const sg = tr.seg, layer = state.layers[sl.layer];
+        sg.start = tr.start + (sl.a - tr.at); sg.end = tr.start + (sl.b - tr.at); sg.at = sl.a;
+        ripple(layer);
+        state.sel1 = { layer:sl.layer, a:sg.at, b:segEnd(sg), seg:sg };
+        state.playhead1 = Math.min(state.playhead1, songDur());
+        setStatus($('#status1'), 'Trimmed. Now ' + fmtS(segLen(sg)) + ' long. Undo brings it back.', 'ok');
+        renderClips(); return;
+      }
+      drawEditor(); edReadouts(); return;
+    }
     if (d.mode === 'scrub' || d.mode === 'edge'){ d = null; drawEditor(); edReadouts(); return; }
     if (d.mode === 'pan'){
       let v = d.vel; d = null; ed.panning = false; state.cursorOn = true; drawEditor(); edReadouts();
@@ -2425,7 +2469,7 @@ $('#clipDelete').addEventListener('click', () => {
       if (lastTap && d.seg && lastTap.seg === d.seg && now - lastTap.t < 350){ lastTap = null; const x = d; d = null; askDeleteClip(x.lane, x.seg); drawEditor(); edReadouts(); return; }
       lastTap = { t:now, seg:d.seg };
       state.activeLayer = d.lane; state.cursorOn = true;
-      state.sel1 = d.seg ? { layer:d.lane, a:d.seg.at, b:segEnd(d.seg) } : null;
+      state.sel1 = d.seg ? { layer:d.lane, a:d.seg.at, b:segEnd(d.seg), seg:d.seg } : null;
       setPlayhead1(d.t0);
     } else if (state.sel1 && state.sel1.b - state.sel1.a < 0.05) state.sel1 = null;
     d = null; drawEditor(); edReadouts();
@@ -4505,7 +4549,7 @@ const TOURS = {
   ],
   p1:[
     { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
-    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it, then drag its pink edges to pick exactly the part you want, then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end to keep going from the end. Double-tap a clip to delete it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Tap + to zoom in closer and closer; − zooms out to the whole song. + Layer stacks up to 4 layers; the other layers play while you record.' },
+    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it. Drag its pink handles inward to trim it: whatever you pull past is cut off when you let go (undo brings it back), then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end to keep going from the end. Double-tap a clip to delete it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Tap + to zoom in closer and closer; − zooms out to the whole song. + Layer stacks up to 4 layers; the other layers play while you record.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does, and slide up or down to hear it get stronger or weaker.' },
