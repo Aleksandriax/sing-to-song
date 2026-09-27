@@ -679,18 +679,12 @@ legend{padding:0}
 .tab-create{margin-top:-22px}
 .tab-orb{display:grid;place-items:center;width:56px;height:56px;border-radius:50%;border:3px solid transparent;background:radial-gradient(circle at 50% 45%,#2a1240,#120a1f 70%) padding-box,linear-gradient(135deg,#a855f7,#ec4899) border-box;color:#fff;box-shadow:0 0 0 3px var(--surface),0 8px 24px rgba(236,72,153,.45)}
 .tab-orb svg{width:24px;height:24px}
-/* Studio: a little mixing desk whose sliders move up and down */
+/* Studio: a little mixing desk (sliders at different heights) */
 .tab-orb svg.mixer{width:36px;height:36px;overflow:visible}
 .tab-orb svg.mixer rect{stroke:none;fill:url(#mixGrad)}
 .tab-orb svg.mixer .mix-lines path{fill:none;stroke:#fff}
 .tab-orb svg.mixer .knob circle{fill:#2a1240;stroke:#fff}
-.mixer .knob{animation:fader 2.4s ease-in-out infinite;transform-box:fill-box}
-.mixer .k1{animation-duration:2.2s}
-.mixer .k2{animation-duration:1.8s;animation-delay:-.6s}
-.mixer .k3{animation-duration:2.6s;animation-delay:-1.1s}
-.mixer .k4{animation-duration:2s;animation-delay:-.3s}
-@keyframes fader{0%,100%{transform:translateY(-2.2px)}50%{transform:translateY(2.2px)}}
-@media (prefers-reduced-motion: reduce){ .mixer .knob{animation:none} }
+
 .tab-create[aria-current="page"] .tab-orb{box-shadow:0 0 0 3px var(--surface),0 8px 28px rgba(236,72,153,.6)}
 /* the ring that used to sit around the Studio tab now circles the record button */
 .rec{box-shadow:0 0 0 4px var(--bg),0 0 0 7px color-mix(in srgb,var(--accent-b) 35%,transparent),0 14px 44px var(--glow)}
