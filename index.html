@@ -238,7 +238,9 @@ body:not(.recording) #recTime{display:none}
 .chip-state{font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
 .chip-state.good{background:color-mix(in srgb,#f59e0b 22%,transparent);color:#fbbf24}
 .manage summary{cursor:pointer;font-weight:700;list-style-position:inside}
-.manage[open]{gap:10px}
+.manage{display:block}
+.manage-body{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.manage-body .file-pick{margin-top:4px}
 .manage h3{margin:6px 0 0;font-size:14px;color:var(--muted);font-weight:600}
 .back-top{appearance:none;align-self:flex-start;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);cursor:pointer;padding:0;margin-bottom:-6px}
 .back-top svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
@@ -329,6 +331,19 @@ legend{padding:0}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .file-pick{position:relative}
 .file-pick:focus-within{outline:2px solid var(--focus);outline-offset:2px}
+.sfx-panel{background:linear-gradient(160deg,#4a3107 0%,#3a220c 55%,#221812 100%);border-color:rgba(251,191,36,.32)}
+.sfx-panel h2{color:#fcd34d}
+.sfx-panel .hint{color:#e7cf9f}
+.sfx-panel .item,.sfx-panel .point-list li{background:rgba(24,14,4,.5)}
+.sfx-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sfx-plus{flex:none;width:48px;height:48px;border-radius:99px;border:0;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#2a1a02;font:inherit;font-size:30px;font-weight:700;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(245,158,11,.4)}
+.sr-rec{display:flex;align-items:center;gap:14px}
+.sr-rec .rec{width:72px;height:72px}
+.sr-rec .rec::before{inset:5px}
+.sr-rec .rec-core{width:28px;height:28px}
+.sr-rec .rec.is-rec .rec-core{width:24px;height:24px;border-radius:6px}
+.price-row{display:flex;align-items:center;gap:8px}
+.price-row input{width:110px}
 .gen-panel{background:linear-gradient(160deg,#0f3b46 0%,#12263f 60%,#161a33 100%);border-color:rgba(45,212,191,.28)}
 .gen-panel h2{color:#99f6e4}
 .gen-panel textarea,.gen-panel .text{background:rgba(3,14,24,.55);border-color:rgba(153,246,228,.22)}
@@ -481,7 +496,7 @@ legend{padding:0}
   </main>
 
   <main id="page1" class="page" hidden>
-    <button type="button" class="back-top" data-to="0" aria-label="Back to Create"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button type="button" class="back-top" data-to="0" aria-label="Back to Studio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <h1 class="sr-only">Record and edit</h1>
 
     <div class="recorder">
@@ -577,10 +592,13 @@ legend{padding:0}
       <ul id="mkList" class="point-list"></ul>
     </section>
 
-    <section class="panel" aria-labelledby="sfxHead">
-      <div>
-        <h2 id="sfxHead">Sound effects</h2>
-        <p class="hint">Adds at <span id="sfxAt" class="mono">0:00.0</span></p>
+    <section class="panel sfx-panel" aria-labelledby="sfxHead">
+      <div class="sfx-head">
+        <div>
+          <h2 id="sfxHead">Sound effects</h2>
+          <p class="hint">Adds at <span id="sfxAt" class="mono">0:00.0</span></p>
+        </div>
+        <button type="button" id="sfxNew" class="sfx-plus" aria-label="Record a new sound effect">+</button>
       </div>
       <div id="sfxLib" class="d-list"></div>
       <p id="sfxEmpty" class="hint">None yet. Get some on Discover or upload one.</p>
@@ -752,12 +770,14 @@ legend{padding:0}
     </section>
     <details class="panel manage">
       <summary>Manage songs and sounds</summary>
+      <div class="manage-body">
       <h3>Songs</h3>
       <div id="pSongs" class="d-list"></div>
       <h3>Sound effects</h3>
       <div id="pSfx" class="d-list"></div>
       <label class="btn small file-pick" style="align-self:flex-start">Upload a sound effect<input id="pSfxFile" class="sr-only" type="file" accept="audio/*"></label>
       <p id="pSfxNote" class="hint"></p>
+      </div>
     </details>
     <section class="panel earn-panel" aria-labelledby="pEarnHead">
       <h2 id="pEarnHead">Earnings</h2>
@@ -814,7 +834,7 @@ legend{padding:0}
 <nav class="tabbar" aria-label="Sections">
   <div class="tabbar-inner">
     <button type="button" class="tab" data-sec="discover"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>Discover</button>
-    <button type="button" class="tab tab-create" data-sec="create" aria-current="page"><span class="tab-orb"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>Create</button>
+    <button type="button" class="tab tab-create" data-sec="create" aria-current="page"><span class="tab-orb"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>Studio</button>
     <button type="button" class="tab" data-sec="profile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</button>
   </div>
 </nav>
@@ -829,6 +849,32 @@ legend{padding:0}
     <div class="actions">
       <button type="button" id="fxCancel" class="btn">Cancel</button>
       <button type="button" id="fxSave" class="btn primary">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="srSheet" class="sheet-backdrop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="srTitle">
+    <h2 id="srTitle">New sound effect</h2>
+    <div class="sr-rec">
+      <button type="button" id="srRec" class="rec" aria-label="Start recording" aria-pressed="false"><span class="rec-core"></span></button>
+      <div class="item-main">
+        <span id="srTime" class="mono" style="font-size:22px">0:00.0</span>
+        <span id="srNote" class="hint">Tap to record, up to 15 seconds.</span>
+      </div>
+      <button type="button" id="srPlay" class="btn small" hidden>Play</button>
+    </div>
+    <label class="sr-only" for="srName">Name</label>
+    <input id="srName" class="text" type="text" maxlength="40" placeholder="Name it">
+    <label class="switch" for="srSell"><span>Sell it <span id="srPrem" class="tag premium-tag">Premium</span></span><input type="checkbox" id="srSell" role="switch"></label>
+    <div class="price-row" id="srPriceRow" hidden>
+      <span class="label" style="margin:0">Price $</span>
+      <input id="srPrice" class="text" type="number" min="0.49" max="49.99" step="0.5" value="0.99" aria-label="Price in dollars">
+      <span id="srKeep" class="hint"></span>
+    </div>
+    <div class="actions">
+      <button type="button" id="srCancel" class="btn">Cancel</button>
+      <button type="button" id="srSave" class="btn primary" disabled>Save</button>
     </div>
   </div>
 </div>
@@ -2435,7 +2481,7 @@ $('#edSaveSfx').addEventListener('click', async () => {
   const sr = ctx().sampleRate, data = renderRange(state.layers[sel.layer], sel.a, sel.b, sr);
   const it = await addSfxToLib({ name:'Clip ' + fmtT(sel.a), source:'take', dur:data.length / sr, isPublic:lib.profile.isPublic, forSale:false });
   await store.set('blob:' + it.id, encodeWav([data], sr));
-  setStatus($('#status1'), 'Saved ' + fmtT(sel.a) + '–' + fmtT(sel.b) + ' as a sound effect. Add it to your song on step 3, or sell it from Profile.', 'ok');
+  setStatus($('#status1'), 'Saved ' + fmtT(sel.a) + '–' + fmtT(sel.b) + ' as a sound effect. Add it to your song on step 2, or sell it from Profile.', 'ok');
 });
 
 /* ---------- playback: every layer from the playhead ---------- */
@@ -3706,6 +3752,86 @@ async function addSfxToLib(fields, blob){
 }
 
 
+/* Step 2 studio: record your own sound effect, name it, and price it to sell */
+const sr2 = { stream:null, src:null, sp:null, chunks:[], data:null, sr:48000, t0:0, timer:0, on:false, prev:null };
+function srReset(){
+  srStopRec(true); srStopPrev();
+  Object.assign(sr2, { chunks:[], data:null });
+  $('#srTime').textContent = '0:00.0'; $('#srNote').textContent = 'Tap to record, up to 15 seconds.';
+  $('#srPlay').hidden = true; $('#srSave').disabled = true;
+  $('#srName').value = 'My sound ' + (lib.sfx.filter((x) => x.source === 'take').length + 1);
+  $('#srSell').checked = false; $('#srPriceRow').hidden = true; $('#srPrice').value = '0.99'; srKeep();
+  $('#srPrem').hidden = lib.premium;
+}
+function srKeep(){ const v = +$('#srPrice').value || 0; $('#srKeep').textContent = 'You keep ' + money(v * (1 - FEE)); }
+async function srStartRec(){
+  srStopPrev();
+  try {
+    const c = ctx();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw Object.assign(new Error('no api'), { name:'NoApi' });
+    audioSession('play-and-record');
+    const stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false } });
+    if (c.state !== 'running') await c.resume();
+    const src = c.createMediaStreamSource(stream), sp = c.createScriptProcessor(2048, 1, 1), mute = c.createGain(); mute.gain.value = 0;
+    sr2.chunks = []; sr2.sr = c.sampleRate;
+    sp.onaudioprocess = (e) => { if (sr2.on) sr2.chunks.push(e.inputBuffer.getChannelData(0).slice()); };
+    src.connect(sp); sp.connect(mute); mute.connect(c.destination);
+    Object.assign(sr2, { stream, src, sp, mute, on:true, t0:performance.now() });
+    $('#srRec').classList.add('is-rec'); $('#srRec').setAttribute('aria-pressed', 'true'); $('#srRec').setAttribute('aria-label', 'Stop recording');
+    $('#srNote').textContent = 'Recording… tap to stop.';
+    sr2.timer = setInterval(() => { const el = (performance.now() - sr2.t0) / 1000; $('#srTime').textContent = fmtT(el); if (el >= 15) srStopRec(); }, 100);
+  } catch (err){ srStopRec(true); $('#srNote').textContent = micError(err); }
+}
+function srStopRec(silent){
+  clearInterval(sr2.timer);
+  const was = sr2.on; sr2.on = false;
+  [sr2.src, sr2.sp, sr2.mute].forEach((n) => { if (n){ try { n.disconnect(); } catch (_) {} } });
+  if (sr2.stream) sr2.stream.getTracks().forEach((t) => t.stop());
+  Object.assign(sr2, { stream:null, src:null, sp:null, mute:null });
+  audioSession('playback');
+  $('#srRec').classList.remove('is-rec'); $('#srRec').setAttribute('aria-pressed', 'false'); $('#srRec').setAttribute('aria-label', 'Start recording');
+  if (!was || silent) return;
+  const len = sr2.chunks.reduce((a, b) => a + b.length, 0);
+  if (len < sr2.sr * 0.15){ $('#srNote').textContent = 'That was too short. Tap to try again.'; return; }
+  const data = new Float32Array(len); let o = 0, pk = 0;
+  sr2.chunks.forEach((ch) => { data.set(ch, o); o += ch.length; });
+  for (let i = 0; i < len; i++) pk = Math.max(pk, Math.abs(data[i]));
+  if (pk < 0.003){ $('#srNote').textContent = 'No sound came through the microphone. Check that it\'s allowed, then try again.'; return; }
+  const g = 0.9 / pk, fade = Math.min(Math.floor(sr2.sr * 0.01), len >> 2);
+  for (let i = 0; i < len; i++) data[i] *= g;
+  for (let i = 0; i < fade; i++){ data[i] *= i / fade; data[len - 1 - i] *= i / fade; }
+  sr2.data = data;
+  $('#srTime').textContent = fmtT(len / sr2.sr); $('#srNote').textContent = 'Got it. Play it back, or tap to record again.';
+  $('#srPlay').hidden = false; $('#srSave').disabled = false;
+}
+function srStopPrev(){ if (sr2.prev){ try { sr2.prev.stop(); } catch (_) {} sr2.prev = null; $('#srPlay').textContent = 'Play'; } }
+$('#srRec').addEventListener('click', () => { if (sr2.on) srStopRec(); else srStartRec(); });
+$('#srPlay').addEventListener('click', () => {
+  if (sr2.prev){ srStopPrev(); return; }
+  if (!sr2.data) return;
+  const c = ctx(), b = c.createBuffer(1, sr2.data.length, sr2.sr); b.getChannelData(0).set(sr2.data);
+  const s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.onended = () => { if (sr2.prev === s) srStopPrev(); };
+  s.start(); sr2.prev = s; $('#srPlay').textContent = 'Stop';
+});
+$('#srSell').addEventListener('change', (e) => {
+  if (e.target.checked && !lib.premium){ e.target.checked = false; openPremium('Selling sound effects is part of Premium.'); return; }
+  $('#srPriceRow').hidden = !e.target.checked;
+});
+$('#srPrice').addEventListener('input', srKeep);
+function srClose(){ srStopRec(true); srStopPrev(); $('#srSheet').hidden = true; }
+$('#srCancel').addEventListener('click', srClose);
+$('#srSheet').addEventListener('click', (e) => { if (e.target === $('#srSheet')) srClose(); });
+$('#sfxNew').addEventListener('click', () => { stopAllPlayback(); srReset(); $('#srSheet').hidden = false; });
+$('#srSave').addEventListener('click', async () => {
+  if (!sr2.data) return;
+  const sell = $('#srSell').checked && lib.premium, price = clamp(Math.round((+$('#srPrice').value || 0.99) * 100) / 100, 0.49, 49.99);
+  const it = await addSfxToLib({ name:$('#srName').value.trim() || 'My sound', source:'take', dur:sr2.data.length / sr2.sr, isPublic:lib.profile.isPublic || sell, forSale:sell, price }, encodeWav([sr2.data], sr2.sr));
+  const b = ctx().createBuffer(1, sr2.data.length, sr2.sr); b.getChannelData(0).set(sr2.data); bufCache.set(it.id, b);
+  if (sell){ lib.profile.sellSfx = true; saveLib(); }
+  srClose(); renderSfxPanel();
+  setStatus($('#status2'), 'Saved "' + it.name + '"' + (sell ? ' and put it up for sale at ' + money(price) + '.' : '.') + ' Press Add to put it in your song.', 'ok');
+});
+
 /* Step 2: sound effects placed on your song; they're layered into the finished mix */
 const introOf = (plan) => 4 * 60 / plan.tempo;
 function syncResultSfx(){
@@ -3781,7 +3907,7 @@ $('#saveSong').addEventListener('click', async () => {
   await store.set('blob:' + id, r.wav);
   lib.songs.unshift({ id, title, dur:r.mix.duration, created:Date.now(), isPublic:lib.profile.postSongs, allowSave:lib.profile.allowSaves, cover:r.cover || null });
   saveLib();
-  setStatus($('#status3'), 'Saved "' + title + '" to your songs on the Create page. ' + (lib.profile.postSongs && lib.profile.isPublic ? 'It\'s public on Discover; change that in Profile.' : 'It\'s private; change that in Profile.'), 'ok');
+  setStatus($('#status3'), 'Saved "' + title + '" to your songs in Studio. ' + (lib.profile.postSongs && lib.profile.isPublic ? 'It\'s public on Discover; change that in Profile.' : 'It\'s private; change that in Profile.'), 'ok');
   showAd();
 });
 
@@ -3892,7 +4018,7 @@ async function saveCurrentAsDraft(){
 $('#saveDraft').addEventListener('click', async () => {
   if (state.busy) return;
   const name = await saveCurrentAsDraft();
-  setStatus($('#status3'), 'Saved "' + name + '" to Drafts. Find it on the Create page.', 'ok');
+  setStatus($('#status3'), 'Saved "' + name + '" to Drafts. Find it in Studio.', 'ok');
 });
 async function openDraft(d){
   const doc = await store.get('draft:' + d.id);
@@ -4225,7 +4351,7 @@ function renderProfile(){
         miniSwitch('Public', s.isPublic, (v) => { s.isPublic = v; saveLib(); }),
         miniSwitch('Others can save it', s.allowSave, (v) => { s.allowSave = v; saveLib(); })));
   });
-  $('#pSongs').replaceChildren(...(songs.length ? songs : [h('p', { class:'hint' }, 'No songs yet. Make one in Create, then press Save to my songs.')]));
+  $('#pSongs').replaceChildren(...(songs.length ? songs : [h('p', { class:'hint' }, 'No songs yet. Make one in Studio, then press Save to my songs.')]));
 
   const mine = lib.sfx.filter((x) => x.source === 'take' || x.source === 'file');
   $('#pSfx').replaceChildren(...(mine.length ? mine.map((x) => {
@@ -4242,7 +4368,7 @@ function renderProfile(){
         pr.sellSfx && lib.premium ? miniSwitch('For sale', x.forSale, (v) => { x.forSale = v; saveLib(); renderProfile(); }) : h('span', { class:'item-meta' }, lib.premium ? 'Selling is off' : 'Selling needs Premium'),
         x.forSale && pr.sellSfx && lib.premium ? h('span', { class:'price-wrap' }, '$', price) : null,
         x.forSale && pr.sellSfx && lib.premium ? keep : null));
-  }) : [h('p', { class:'hint' }, 'No sound effects yet. Save a take as a sound effect in Create, or upload one below.')]));
+  }) : [h('p', { class:'hint' }, 'No sound effects yet. Save a take as a sound effect in Studio, or upload one below.')]));
 
   renderAlbum();
 
@@ -4374,7 +4500,7 @@ const TOURS = {
   ],
   p2:[
     { sel:'.tl-card', title:'Your song timeline', text:'Scroll through your song. Tap the wave, then + to pin a note for the AI, like "beat drops here". Add duration to turn a note into a box you can slide and stretch over a whole part.' },
-    { sel:'#sfxHead', title:'Sound effects', text:'Add sounds you made, uploaded, bought or saved on Discover. Put the red line where you want one, then press Add. They go into the finished song.' },
+    { sel:'#sfxHead', title:'Sound effects', text:'Add sounds you made, uploaded, bought or saved on Discover. Put the red line where you want one, then press Add. Tap + to record your own sound effect, name it, and set a price to sell it (Premium).' },
     { sel:'#vibe', title:'Generation prompt', text:'Words like slow, dance, acoustic, 80s synth or dark shape the music. The key comes from your voice, or write one here, like "in A minor".' },
     { sel:'#artists', title:'Artists you like', text:'Artists are style hints only: tempo, sound and mood. The app never copies their songs, recordings or voice.' },
     { sel:'.ref-box', title:'A song you like', text:'Upload a song file and the app matches its tempo and energy. A link is passed to the AI as a hint; the app can\'t open links.' },
