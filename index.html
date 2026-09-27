@@ -262,9 +262,9 @@ body:not(.recording) #recTime{display:none}
 .title-row{display:flex;align-items:center;gap:8px;min-width:0}
 .title-row .item-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row-acts{display:flex;align-items:center;gap:6px;flex:none}
-.flag{appearance:none;display:grid;place-items:center;width:40px;height:40px;border-radius:12px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.08);color:#fbbf24;cursor:pointer;padding:0}
-.flag .ic{width:20px;height:20px;stroke-width:2}
-.flag.on{background:rgba(251,191,36,.18);border-color:rgba(251,191,36,.6)}
+.flag{appearance:none;display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:12px;background:none;color:#8b86a0;cursor:pointer;padding:0}
+.flag .ic{width:24px;height:24px;stroke-width:2}
+.flag.on{color:#fbbf24}
 .flag.on .ic{fill:#fbbf24}
 .flag:active{transform:scale(.94)}
 .row-acts .like{flex-direction:column;gap:0;padding:2px;font-size:11px;min-width:34px}
@@ -320,6 +320,34 @@ body:not(.recording) #recTime{display:none}
 .pub-hero .prof-stats{width:100%;margin-top:6px}
 .pub-hero .prof-stats:has(> :nth-child(4)){grid-template-columns:repeat(4,1fr)}
 .pub-body > .d-list,.pub-body > .pub-private{margin:0 16px}
+/* Discover play buttons wear the purple-to-pink theme */
+.d-list .btn.small.round.ic-play,.det-top .btn.small.round.ic-play{border-color:transparent;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:#fff;box-shadow:none}
+.d-list .item.tap{cursor:pointer}
+/* price button: clean, no glow, a big $ then the price */
+.btn.small.price-btn{border-color:transparent;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:#fff;box-shadow:none;gap:1px;padding:0 12px;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums;align-items:center}
+.price-btn .cur{font-size:19px;font-weight:800;line-height:1;margin-right:1px}
+.item-meta .shield-mark{display:inline-flex;vertical-align:-2px;margin-right:4px;color:#a78bfa}
+.item-meta .shield-mark .ic{width:14px;height:14px}
+.sheet-backdrop#detSheet{z-index:70}
+.sheet-backdrop#sheet{z-index:72}
+#detSheet .sheet{max-height:88vh;overflow-y:auto}
+.det-kind{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.det-top{display:flex;align-items:center;gap:12px}
+.det-top h2{margin:0;font-size:22px;overflow-wrap:anywhere}
+.det-top .cover-sm{width:56px;height:56px}
+.det-acts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.det-acts .like{flex-direction:row;gap:4px}
+.det-desc{margin:0;font-size:15px;line-height:1.45;white-space:pre-wrap;overflow-wrap:anywhere}
+.det-desc.none{color:var(--muted);font-size:14px}
+.det-guard{display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:14px;border:1px solid color-mix(in srgb,#a78bfa 45%,transparent);background:color-mix(in srgb,#8b5cf6 12%,var(--surface-2))}
+.det-guard .ic{width:22px;height:22px;flex:none;color:#a78bfa}
+.det-guard b{display:block;font-size:14px;color:#c4b5fd}
+.det-guard span{font-size:13px;color:var(--muted)}
+.det-label{margin:4px 0 0;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.det-creator{display:flex;align-items:center;gap:12px;width:100%;padding:12px;border-radius:16px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.det-creator .item-main{flex:1;min-width:0}
+.det-creator .chev{width:18px;height:18px;flex:none;color:var(--muted);transform:rotate(180deg)}
+.desc-in{width:100%;min-height:0;font-size:14px;flex-basis:100%;resize:vertical}
 .pub-body > .d-list > .pub-private{margin:0}
 .pub-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
 .pub-tabs button{appearance:none;border:0;background:none;color:var(--muted);font:inherit;font-weight:700;font-size:14px;padding:10px 4px;border-radius:10px;cursor:pointer}
@@ -1151,6 +1179,13 @@ legend{padding:0}
   </div>
 </div>
 
+<div id="detSheet" class="sheet-backdrop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="detTitle">
+    <div id="detBody" style="display:flex;flex-direction:column;gap:12px"></div>
+    <div class="actions"><button type="button" id="detClose" class="btn">Close</button></div>
+  </div>
+</div>
+
 <div id="confirmSheet" class="sheet-backdrop" hidden>
   <div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
     <h2 id="confirmTitle">Are you sure?</h2>
@@ -1330,7 +1365,7 @@ const ICONS = {
   pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
   trophy:'<path d="M8 4h8v6a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 14v3M9 20h6M10 17h4"/>',
   shield:'<path d="M12 3l7 3v5c0 4.6-3 8.3-7 10-4-1.7-7-5.4-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
-  flag:'<path d="M6 21V4"/><path d="M6 4.5h11.5l-2.8 4.2 2.8 4.3H6z"/>',
+  flag:'<path d="M4.5 6h15l-3.8 6 3.8 6h-15z"/>',
   heart:'<path d="M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.7 3.8 4.5 7.2 4.5c2 0 3.6 1.1 4.8 2.8 1.2-1.7 2.8-2.8 4.8-2.8 3.4 0 5.6 3.2 4.4 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"/>',
   copy:'<rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'
 };
@@ -4886,15 +4921,15 @@ function renderDrafts(){
    ========================================================= */
 const EXAMPLES = [
   { id:'ex-nova', name:'Nova Reyes', handle:'novareyes', isPublic:true, verified:true, followers:12400, color:'#ec4899', bio:'Bedroom pop with too much echo.',
-    songs:[{ id:'ex-nova-1', title:'Late Bus Home', allowSave:true, melody:DEMO_SONG[0].melody.concat(DEMO_SONG[2].melody),
+    songs:[{ id:'ex-nova-1', title:'Late Bus Home', allowSave:true, desc:'Written on the last bus after a long shift. Headphones on.', melody:DEMO_SONG[0].melody.concat(DEMO_SONG[2].melody),
       plan:{ tempo:84, wave:'sawtooth', detune:9, reverbSec:3.4, wet:0.42, beat:false, scale:'minor', root:57, brightness:0.55, harmony:0.7, progression:[0,5,2,6], sections:[] } }],
-    sfx:[{ id:'ex-nova-x1', name:'Tape riser', recipe:'riser', forSale:true, price:1.99 }, { id:'ex-nova-x2', name:'Vinyl crackle', recipe:'crackle', forSale:false, price:0 }] },
+    sfx:[{ id:'ex-nova-x1', name:'Tape riser', recipe:'riser', desc:'A warm tape swell that lifts into a drop. Made on a cassette deck and a lot of patience.', forSale:true, price:1.99 }, { id:'ex-nova-x2', name:'Vinyl crackle', recipe:'crackle', forSale:false, price:0 }] },
   { id:'ex-kw', name:'DJ Kilowatt', handle:'djkilowatt', isPublic:true, verified:true, followers:48900, color:'#14b8a6', bio:'Club edits and one-shots you can hit.',
     songs:[{ id:'ex-kw-1', title:'Voltage', allowSave:false, melody:DEMO_SONG[1].melody.concat(DEMO_SONG[1].melody),
       plan:{ tempo:126, wave:'triangle', detune:0, reverbSec:1.6, wet:0.22, beat:true, scale:'major', root:60, brightness:0.7, harmony:0.5, progression:[0,4,5,3], sections:[] } }],
-    sfx:[{ id:'ex-kw-x1', name:'Clap stack', recipe:'clap', forSale:true, price:0.99 }, { id:'ex-kw-x2', name:'Laser zap', recipe:'zap', forSale:true, price:1.49 }, { id:'ex-kw-x3', name:'Sub drop', recipe:'subdrop', forSale:true, price:2.49 }] },
+    sfx:[{ id:'ex-kw-x1', name:'Clap stack', recipe:'clap', desc:'Three claps layered tight. Hits hard on the 2 and 4.', forSale:true, price:0.99 }, { id:'ex-kw-x2', name:'Laser zap', recipe:'zap', forSale:true, price:1.49 }, { id:'ex-kw-x3', name:'Sub drop', recipe:'subdrop', desc:'Deep sub that falls away. Best right before the beat comes back.', forSale:true, price:2.49 }] },
   { id:'ex-mari', name:'Marisol Vega', handle:'marisolsings', isPublic:true, followers:3100, color:'#f59e0b', bio:'Front-porch folk, recorded on my phone.',
-    songs:[{ id:'ex-mari-1', title:'Porch Light', allowSave:true, melody:DEMO_SONG[2].melody.concat(DEMO_SONG[0].melody),
+    songs:[{ id:'ex-mari-1', title:'Porch Light', allowSave:true, desc:'Recorded on the porch one summer night. You can hear the crickets if you listen.', melody:DEMO_SONG[2].melody.concat(DEMO_SONG[0].melody),
       plan:{ tempo:72, wave:'triangle', detune:0, reverbSec:1.1, wet:0.15, beat:false, scale:'major', root:67, brightness:0.35, harmony:0.8, progression:[0,3,4,3], sections:[] } }],
     sfx:[{ id:'ex-mari-x1', name:'Rain on tin', recipe:'rain', forSale:false, price:0 }, { id:'ex-mari-x2', name:'Little bell', recipe:'bell', forSale:true, price:0.99 }] },
   { id:'ex-theo', name:'Theo Lin', handle:'theolin', isPublic:false, followers:870, color:'#3b82f6', bio:'', songs:[], sfx:[] }
@@ -5030,24 +5065,77 @@ function songRow(s, c){
   if (s.mine) action = h('span', { class:'tag' }, 'Yours');
   else if (!s.allowSave) action = h('span', { class:'tag muted' }, 'Listen only');
   else action = saveFlag(s, c);
-  return h('div', { class:'item' }, s.cover ? h('img', { class:'cover cover-sm', src:s.cover, alt:'' }) : null, play,
+  return tapRow(h('div', { class:'item' }, s.cover ? h('img', { class:'cover cover-sm', src:s.cover, alt:'' }) : null, play,
     h('div', { class:'item-main' }, h('span', { class:'item-title', text:s.title }), h('span', { class:'item-meta', text:'Song · ' + c.name + ' · ' + lenTxt(s.mine ? (s.dur || 0) : exampleDur(s)) })),
-    h('div', { class:'row-acts' }, likeBtn('song', s, c), action));
+    h('div', { class:'row-acts' }, likeBtn('song', s, c), action)), () => openDetails('song', s, c));
 }
+// tap anywhere on a song or sound (but its buttons) to see its details and who made it
+function tapRow(row, open){
+  row.classList.add('tap');
+  row.addEventListener('click', (e) => { if (!e.target.closest('button,a,input,label')) open(); });
+  return row;
+}
+const shieldMark = () => h('span', { class:'shield-mark', title:'Protected: copies of this sound can\'t be posted or sold by anyone else', role:'img', 'aria-label':'Protected' }, icon('shield'));
 function sfxRow(x, c){
-  const meta = h('span', { class:'item-meta', text:'Sound effect · ' + c.name }); sfxLen(x, meta, 'Sound effect · ' + c.name);
-  const guard = c.verified ? h('span', { class:'protected', title:'Protected: copies of this sound can\'t be posted or sold by anyone else' }, icon('shield'), 'Protected') : null;
+  // a verified creator's sound shows the Protected shield in place of the words "Sound effect"
+  const pre = c.verified ? c.name : 'Sound effect · ' + c.name, len = h('span', { text:pre }), meta = h('span', { class:'item-meta' }, c.verified ? shieldMark() : null, len);
+  sfxLen(x, len, pre);
   const play = playIconBtn('Play ' + x.name);
   play.addEventListener('click', () => { if (pv.key !== 'sfx:' + x.id) track('play', 'sfx:' + x.id); previewToggle('sfx:' + x.id, () => getSfxBuffer(x), play); });
+  return tapRow(h('div', { class:'item' }, play,
+    h('div', { class:'item-main' }, h('span', { class:'item-title', text:x.name }), meta),
+    h('div', { class:'row-acts' }, likeBtn('sfx', x, c), sfxAction(x, c))), () => openDetails('sfx', x, c));
+}
+function sfxAction(x, c){
   let action;
   if (x.mine) action = h('span', { class:'tag' }, x.forSale ? money(x.price) + ' · yours' : 'Yours');
   else if (owned(x.id)) action = h('span', { class:'tag' }, 'In your library');
-  else if (x.forSale) action = h('button', { type:'button', class:'btn small primary', onclick:() => openCheckout(x, c) }, 'Buy ' + money(x.price));
-  else action = h('button', { type:'button', class:'btn small', onclick:async () => { await addSfxToLib({ name:x.name, recipe:x.recipe, source:'saved', from:c.name, origin:x.id }); track('save', 'sfx:' + x.id); renderDiscover(); showAd(); } }, 'Get free');
-  return h('div', { class:'item' }, play,
-    h('div', { class:'item-main' }, h('span', { class:'item-title', text:x.name }), meta, guard),
-    h('div', { class:'row-acts' }, likeBtn('sfx', x, c), action));
+  else if (x.forSale) action = h('button', { type:'button', class:'btn small price-btn', 'aria-label':'Buy ' + x.name + ' for ' + money(x.price), onclick:() => openCheckout(x, c) }, h('span', { class:'cur', text:'$' }), (+x.price).toFixed(2));
+  else action = h('button', { type:'button', class:'btn small', onclick:async () => { await addSfxToLib({ name:x.name, recipe:x.recipe, source:'saved', from:c.name, origin:x.id }); track('save', 'sfx:' + x.id); renderDiscover(); if (!$('#pubView').hidden) renderPublicView(); if (!$('#detSheet').hidden) openDetails('sfx', x, c); showAd(); } }, 'Get free');
+  return action;
 }
+/* details for one song or sound: its description, whether it's protected, and its creator */
+let detOpen = null;
+function openDetails(kind, x, c){
+  detOpen = { kind, x, c };
+  if (pv.key !== kind + ':' + x.id) track('view', kind + ':' + x.id);
+  const song = kind === 'song', title = song ? x.title : x.name;
+  const play = playIconBtn('Play ' + title), pkey = kind + ':' + x.id;
+  if (pv.key === pkey) setBtnState(play, 'play');
+  play.addEventListener('click', () => previewToggle(pkey, () => song ? (x.mine ? store.get('blob:' + x.id).then(decodeBlob) : exampleSongBuffer(x)) : getSfxBuffer(x), play));
+  const len = h('span', { class:'item-meta', text:song ? 'Length · ' + lenTxt(x.mine ? (x.dur || 0) : exampleDur(x)) : '' });
+  if (!song) sfxLen(x, len, 'Length');
+  let action;
+  if (song) action = x.mine ? h('span', { class:'tag' }, 'Yours') : !x.allowSave ? h('span', { class:'tag muted' }, 'Listen only') : saveFlag(x, c);
+  else {
+    action = sfxAction(x, c);
+    if (action.tagName === 'BUTTON' && x.forSale && !x.mine && !owned(x.id)) action.onclick = () => { closeDetails(); openCheckout(x, c); };
+  }
+  const desc = (x.desc || '').trim();
+  const who = h('button', { type:'button', class:'det-creator', 'aria-label':'See ' + c.name + '\'s profile' },
+    avatar(c),
+    h('span', { class:'item-main' },
+      h('span', { class:'item-title' }, h('span', { class:'cname', text:c.name }), c.verified ? badge() : null, trophyFor(c)),
+      h('span', { class:'item-meta', text:'@' + c.handle + (c.mine ? '' : ' · ' + compact(followers(c)) + ' followers') })),
+    icon('back', 'chev'));
+  who.addEventListener('click', () => {
+    closeDetails();
+    const here = !$('#pubView').hidden && (c.mine ? !pubWho : pubWho === c.id);
+    if (!here) openCreatorView(c);
+  });
+  $('#detBody').replaceChildren(...[
+    h('span', { class:'det-kind', text:song ? 'Song' : 'Sound effect' }),
+    h('div', { class:'det-top' }, x.cover ? h('img', { class:'cover cover-sm', src:x.cover, alt:'' }) : null, play,
+      h('div', { class:'item-main' }, h('h2', { id:'detTitle', text:title }), len)),
+    h('div', { class:'det-acts' }, likeBtn(kind, x, c), action),
+    desc ? h('p', { class:'det-desc', text:desc }) : h('p', { class:'det-desc none', text:'No description yet.' }),
+    !song && c.verified ? h('div', { class:'det-guard' }, icon('shield'), h('div', null, h('b', null, 'Protected'), h('span', null, c.name + ' is verified, so copies of this sound can\'t be posted or sold by anyone else.'))) : null,
+    h('p', { class:'det-label', text:'Creator' }), who].filter(Boolean));
+  $('#detSheet').hidden = false;
+}
+function closeDetails(){ $('#detSheet').hidden = true; detOpen = null; }
+$('#detClose').addEventListener('click', closeDetails);
+$('#detSheet').addEventListener('click', (e) => { if (e.target === $('#detSheet')) closeDetails(); });
 /* Leaderboard: everything a creator has earned so far (followers, likes, saves, buys, views), not just this week */
 function leaderScore(c){
   let pts = followers(c) * 2;
@@ -5385,6 +5473,13 @@ function deleteBtn(onconfirm){
   });
   return b;
 }
+// a short description people see when they tap your song or sound on Discover
+function descField(it){
+  const t = h('textarea', { class:'text desc-in', rows:'2', maxlength:'300', placeholder:'Description (shows when people tap it on Discover)', 'aria-label':'Description for ' + (it.title || it.name) });
+  t.value = it.desc || '';
+  t.addEventListener('change', () => { it.desc = t.value.trim(); saveLib(); });
+  return t;
+}
 function renderProfile(){
   const pr = lib.profile;
   $('#pName').value = pr.name; $('#pHandle').value = pr.handle; $('#pBio').value = pr.bio;
@@ -5409,7 +5504,8 @@ function renderProfile(){
       deleteBtn(() => { lib.songs = lib.songs.filter((x) => x !== s); store.del('blob:' + s.id); saveLib(); renderProfile(); }),
       h('div', { class:'item-ctl' },
         miniSwitch('Public', s.isPublic, (v) => { s.isPublic = v; saveLib(); }),
-        miniSwitch('Others can save it', s.allowSave, (v) => { s.allowSave = v; saveLib(); })));
+        miniSwitch('Others can save it', s.allowSave, (v) => { s.allowSave = v; saveLib(); })),
+      descField(s));
   });
   $('#pSongs').replaceChildren(...(songs.length ? songs : [h('p', { class:'hint' }, 'No songs yet. Make one in Studio, then press Save to my songs.')]));
 
@@ -5427,7 +5523,8 @@ function renderProfile(){
         miniSwitch('Public', x.isPublic, (v) => { x.isPublic = v; saveLib(); }),
         pr.sellSfx && lib.premium ? miniSwitch('For sale', x.forSale, (v) => { x.forSale = v; saveLib(); renderProfile(); }) : h('span', { class:'item-meta' }, lib.premium ? 'Selling is off' : 'Selling needs Premium'),
         x.forSale && pr.sellSfx && lib.premium ? h('span', { class:'price-wrap' }, '$', price) : null,
-        x.forSale && pr.sellSfx && lib.premium ? keep : null));
+        x.forSale && pr.sellSfx && lib.premium ? keep : null),
+      descField(x));
   }) : [h('p', { class:'hint' }, 'No sound effects yet. Save a take as a sound effect in Studio, or upload one below.')]));
 
   renderAlbum();
