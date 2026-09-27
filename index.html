@@ -1716,7 +1716,7 @@ $('#tryBtn').addEventListener('click', () => { if (trySt.on) tryStop(); else try
 /* Painting: once there's a recording, hold a pad while your song plays.
    The effect starts where the red line was and ends where you let go. */
 const paint = { on:false, pad:null, lane:0, a:0, b:0, limit:0, node:null };
-const paintMode = () => !trySt.on && !paint.busy && rec.state === 'idle' && state.section === 'create' && state.page === 1 && songDur() > 0.05;
+const paintMode = () => state.cursorOn && !trySt.on && !paint.busy && rec.state === 'idle' && state.section === 'create' && state.page === 1 && songDur() > 0.05;
 function onlyPad(p){
   // the settings of just this pad, as it's set now
   const saved = {}; PADS.forEach((q) => { saved[q.id] = fx[q.id].on; fx[q.id].on = q.id === p.id; });
@@ -2149,10 +2149,14 @@ function drawEditor(){
     ed.plus.push({ x:cx, y:cy, r:r + 6, lane:li, t:end });
   });
   // playhead
+  // the red line shows while recording or playing, or after you tap the wave; tapping outside the wave hides it
+  const showCur = rec.state === 'recording' || edPlayState.playing || paint.on || (state.cursorOn && !ed.panning);
   const px = X(rec.state === 'recording' ? rec.recordAt + rec.live.length * 1024 / (actx ? actx.sampleRate : 48000) : state.playhead1);
-  g.fillStyle = pink; g.fillRect(px - 1, RULER - 4, 2, hh - RULER + 4);
-  if (rec.state !== 'recording'){ g.beginPath(); g.arc(px, RULER - 2, 8, 0, Math.PI * 2); g.fillStyle = pink; g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke(); }
-  ed.px = px;
+  if (showCur){
+    g.fillStyle = pink; g.fillRect(px - 1, RULER - 4, 2, hh - RULER + 4);
+    if (rec.state !== 'recording'){ g.beginPath(); g.arc(px, RULER - 2, 8, 0, Math.PI * 2); g.fillStyle = pink; g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke(); }
+  }
+  ed.px = showCur ? px : null;
   $('#edEmpty').hidden = true;
 }
 function edReadouts(){
@@ -2341,7 +2345,7 @@ $('#clipDelete').addEventListener('click', () => {
     cancelAnimationFrame(glide);
     const r = edCanvas.getBoundingClientRect(), hit = (ed.plus || []).find((q) => Math.hypot(e.clientX - r.left - q.x, e.clientY - r.top - q.y) <= q.r);
     if (hit){
-      state.activeLayer = hit.lane; state.sel1 = null; setPlayhead1(hit.t);
+      state.activeLayer = hit.lane; state.sel1 = null; state.cursorOn = true; setPlayhead1(hit.t);
       setStatus($('#status1'), 'Press record to keep going from the end' + (state.layers.length > 1 ? ' of layer ' + (hit.lane + 1) : '') + '.', 'ok');
       return;
     }
@@ -2388,14 +2392,14 @@ $('#clipDelete').addEventListener('click', () => {
     if (!d.moved && Math.abs(e.clientX - d.x) < 6) return;
     d.moved = true; clearTimeout(d.timer);
     // sliding on the wave moves the whole wave
-    d.mode = 'pan'; d.x = e.clientX; d.vs = ed.viewStart; d.lastX = e.clientX; d.lastT = performance.now();
+    d.mode = 'pan'; ed.panning = true; d.x = e.clientX; d.vs = ed.viewStart; d.lastX = e.clientX; d.lastT = performance.now();
   });
   const up = (e) => {
     if (!d) return;
     clearTimeout(d.timer);
     if (d.mode === 'scrub' || d.mode === 'edge'){ d = null; drawEditor(); edReadouts(); return; }
     if (d.mode === 'pan'){
-      let v = d.vel; d = null;
+      let v = d.vel; d = null; ed.panning = false; state.cursorOn = true; drawEditor(); edReadouts();
       const w = edCanvas.getBoundingClientRect().width - 16;
       let last = performance.now();
       const step = () => {
@@ -2420,7 +2424,7 @@ $('#clipDelete').addEventListener('click', () => {
       if (fh && !(lastTap && lastTap.seg === d.seg && now - lastTap.t < 350)){ lastTap = null; d = null; openFxSheet(fh); return; }
       if (lastTap && d.seg && lastTap.seg === d.seg && now - lastTap.t < 350){ lastTap = null; const x = d; d = null; askDeleteClip(x.lane, x.seg); drawEditor(); edReadouts(); return; }
       lastTap = { t:now, seg:d.seg };
-      state.activeLayer = d.lane;
+      state.activeLayer = d.lane; state.cursorOn = true;
       state.sel1 = d.seg ? { layer:d.lane, a:d.seg.at, b:segEnd(d.seg) } : null;
       setPlayhead1(d.t0);
     } else if (state.sel1 && state.sel1.b - state.sel1.a < 0.05) state.sel1 = null;
@@ -2434,6 +2438,16 @@ $('#rzOut').addEventListener('click', () => { state.recSpan = Math.min(60, (stat
 function zoomTo(span){ state.span1 = span; ed.viewStart = Math.max(0, state.playhead1 - edSpan() * 0.5); drawEditor(); edReadouts(); }
 $('#edZoomIn').addEventListener('click', () => zoomTo(Math.max(0.05, edSpan() / 2)));
 $('#edZoomOut').addEventListener('click', () => { const n = edSpan() * 2; zoomTo(n >= edFull() * 1.12 ? Infinity : n); });
+
+/* ---------- tap outside the wave: the red line goes away and the pads are just for setting up ---------- */
+document.addEventListener('pointerdown', (e) => {
+  if (state.page !== 1 || state.section !== 'create' || rec.state !== 'idle' || paint.busy) return;
+  if (!state.cursorOn && !state.sel1 && !edPlayState.playing) return;
+  if (e.target.closest('#edCanvas, #pads, #presets, .ed-tools, .editor .tl-bar, .ed-links, .sheet-backdrop, .rec-zoom, .tabbar, #tryBtn, .tour')) return;
+  state.cursorOn = false; state.sel1 = null;
+  if (edPlayState.playing) edStop();
+  drawEditor(); edReadouts();
+}, true);
 
 /* ---------- tools ---------- */
 $('#edSplit').addEventListener('click', () => {
@@ -2498,7 +2512,7 @@ function scheduleSong(c, from, dest, skipLayer, onlyLayer){
   return { nodes, t0 };
 }
 function edPlay(fxNode, fxLane){
-  edStop(true);
+  edStop(true); state.cursorOn = true;
   const c = ctx(), dur = songDur(); if (!dur) return;
   let from = state.playhead1; if (from >= dur - 0.05) from = 0;
   const bus = c.createGain(); bus.gain.value = 1 / Math.sqrt(state.layers.length); bus.connect(c.destination);
@@ -2549,7 +2563,7 @@ async function placeRecording(raw, sr, events){
   const piece = { id:nextId++, src, start:trim, end:raw.length / sr, at:0 };
   insertPiece(layer, rec.recordAt, piece);
   state.activeLayer = state.layers.indexOf(layer);
-  state.playhead1 = segEnd(piece); state.sel1 = null;
+  state.playhead1 = segEnd(piece); state.sel1 = null; state.cursorOn = false;
   follow(state.playhead1);
   renderClips();
   await refreshSongKey($('#status1'));
@@ -4491,7 +4505,7 @@ const TOURS = {
   ],
   p1:[
     { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
-    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to move the red line, or grab the round handle on the red line and drag it. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it, then drag its pink edges to pick exactly the part you want, then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end to keep going from the end. Double-tap a clip to delete it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Tap + to zoom in closer and closer; − zooms out to the whole song. + Layer stacks up to 4 layers; the other layers play while you record.' },
+    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it, then drag its pink edges to pick exactly the part you want, then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end to keep going from the end. Double-tap a clip to delete it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Tap + to zoom in closer and closer; − zooms out to the whole song. + Layer stacks up to 4 layers; the other layers play while you record.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does, and slide up or down to hear it get stronger or weaker.' },
