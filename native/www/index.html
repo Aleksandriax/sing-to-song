@@ -3770,36 +3770,49 @@ async function denoise(x, sr, onProgress){
   const N = 1024, hop = 256, bins = N / 2 + 1, win = new Float32Array(N);
   for (let i = 0; i < N; i++) win[i] = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / N);
   if (x.length < N * 2) return new Float32Array(x);
-  const frames = Math.ceil((x.length - N) / hop) + 1;
-  // 1. the noise: average spectrum of the quietest tenth of the recording
-  const energy = new Float32Array(frames);
-  for (let f = 0; f < frames; f++){ let e = 0; const o = f * hop; for (let i = 0; i < N; i += 4){ const v = x[o + i] || 0; e += v * v; } energy[f] = e; }
-  const order = Array.from(energy.keys()).sort((a, b) => energy[a] - energy[b]);
-  const pick = order.slice(0, Math.max(4, Math.floor(frames * 0.1)));
-  const noise = new Float32Array(bins), re = new Float32Array(N), im = new Float32Array(N);
-  for (const f of pick){
-    const o = f * hop; for (let i = 0; i < N; i++){ re[i] = (x[o + i] || 0) * win[i]; im[i] = 0; }
-    fftInPlace(re, im); for (let k = 0; k < bins; k++) noise[k] += Math.hypot(re[k], im[k]);
+  const frames = Math.ceil((x.length - N) / hop) + 1, re = new Float32Array(N), im = new Float32Array(N);
+  const spec = (o) => { for (let i = 0; i < N; i++){ re[i] = (x[o + i] || 0) * win[i]; im[i] = 0; } fftInPlace(re, im); };
+  // 1. learn the noise, one pitch at a time: each pitch's quieter moments (20th percentile) are the room,
+  //    so it works even when you sing the whole time. The quietest frames' average is a second opinion.
+  const step = Math.max(1, Math.floor(frames / 2500)), cols = Math.ceil(frames / step), mags = new Float32Array(cols * bins), en = new Float32Array(cols);
+  for (let c = 0; c < cols; c++){
+    spec(c * step * hop); let e = 0;
+    for (let k = 0; k < bins; k++){ const m = Math.hypot(re[k], im[k]); mags[c * bins + k] = m; e += m * m; }
+    en[c] = e;
+    if ((c & 255) === 0){ if (onProgress) onProgress(0.3 * c / cols); await nextTick(); }
   }
-  for (let k = 0; k < bins; k++) noise[k] /= pick.length;
-  // 2. turn that sound down in every frame (extra below 80 Hz for rumble), smoothed so it doesn't warble
+  const noise = new Float32Array(bins), col = new Float32Array(cols);
+  for (let k = 0; k < bins; k++){
+    for (let c = 0; c < cols; c++) col[c] = mags[c * bins + k];
+    col.sort(); noise[k] = col[Math.floor(cols * 0.1)] * 2.4;   // 20th percentile of a noise bin is about 0.53 of its average
+  }
+  // real pauses (much quieter than the singing) are a second opinion; if you never stop, they're skipped
+  const byE = Array.from(en.keys()).sort((p, q) => en[p] - en[q]), quiet = byE.slice(0, Math.max(3, Math.floor(cols * 0.08)));
+  const qE = quiet.reduce((s2, c) => s2 + en[c], 0) / quiet.length, medE = en[byE[Math.floor(cols / 2)]];
+  if (qE < medE * 0.08) for (let k = 0; k < bins; k++){ let m = 0; for (const c of quiet) m += mags[c * bins + k]; m /= quiet.length; noise[k] = Math.max(noise[k], m); }
+  // 2. turn the noise down in every frame (extra below 80 Hz for rumble), smoothed so it doesn't warble,
+  //    then 3. frames where there's no voice at all get turned right down (the phone boosts noise in pauses)
   const out = new Float32Array(x.length + N), norm = new Float32Array(x.length + N), prev = new Float32Array(bins).fill(1), g = new Float32Array(bins);
-  const lowBin = Math.floor(80 / (sr / N)), OVER = 2.2, FLOOR = 0.06;
+  const lowBin = Math.floor(80 / (sr / N)), OVER = 1.3, FLOOR = 0.05, vLo = Math.floor(150 / (sr / N)), vHi = Math.ceil(4000 / (sr / N));
+  let gate = 1;
   for (let f = 0; f < frames; f++){
-    const o = f * hop;
-    for (let i = 0; i < N; i++){ re[i] = (x[o + i] || 0) * win[i]; im[i] = 0; }
-    fftInPlace(re, im);
+    const o = f * hop; spec(o);
+    let inE = 0, toneE = 0;
     for (let k = 0; k < bins; k++){
       const m = Math.hypot(re[k], im[k]) + 1e-12, nz = noise[k] * OVER;
-      let gain = m > nz ? Math.sqrt(1 - (nz * nz) / (m * m)) : 0;
+      let gain = m > nz ? 1 - nz / m : 0;                   // magnitude subtraction: gentle on the voice
       if (k < lowBin) gain *= 0.3;
-      g[k] = Math.max(FLOOR, gain, prev[k] * 0.55);   // quick attack, gentle release
+      gain = Math.max(FLOOR, gain, prev[k] * 0.5);           // quick attack, gentle release
+      g[k] = gain; if (k >= vLo && k <= vHi){ inE += m * m; if (m > noise[k] * 4) toneE += m * m; }
     }
-    for (let k = 0; k < bins; k++){ const sm = (g[Math.max(0, k - 1)] + 2 * g[k] + g[Math.min(bins - 1, k + 1)]) / 4; prev[k] = g[k]; re[k] *= sm; im[k] *= sm; if (k > 0 && k < N / 2){ re[N - k] = re[k]; im[N - k] = -im[k]; } }
+    // someone singing? clear tones standing well above the noise (loudness alone is fooled when the phone boosts pauses)
+    const voice = toneE / (inE + 1e-12), want = voice > 0.35 ? 1 : voice > 0.12 ? (voice - 0.12) / 0.23 : 0.08;
+    gate = want > gate ? want : gate * 0.85 + want * 0.15;    // opens fast, closes slowly so word endings stay
+    for (let k = 0; k < bins; k++){ const sm = (g[Math.max(0, k - 1)] + 2 * g[k] + g[Math.min(bins - 1, k + 1)]) / 4 * gate; prev[k] = g[k]; re[k] *= sm; im[k] *= sm; if (k > 0 && k < N / 2){ re[N - k] = re[k]; im[N - k] = -im[k]; } }
     for (let i = 0; i < N; i++) im[i] = -im[i];   // inverse FFT by the conjugate trick
     fftInPlace(re, im);
     for (let i = 0; i < N; i++){ out[o + i] += (re[i] / N) * win[i]; norm[o + i] += win[i] * win[i]; }
-    if ((f & 511) === 0){ if (onProgress) onProgress(f / frames); await nextTick(); }
+    if ((f & 511) === 0){ if (onProgress) onProgress(0.3 + 0.7 * f / frames); await nextTick(); }
   }
   const y = new Float32Array(x.length);
   for (let i = 0; i < x.length; i++) y[i] = norm[i] > 1e-6 ? out[i] / norm[i] : 0;
