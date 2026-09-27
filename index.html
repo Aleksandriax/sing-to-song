@@ -81,6 +81,14 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .pad-fill{position:absolute;left:0;right:0;bottom:0;height:var(--lvl,50%);background:var(--pad);border-top:3px solid #fff;pointer-events:none;opacity:0;transition:opacity .15s}
 .pad.on .pad-fill{opacity:1}
 .presets{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+/* hold to add every pad that's on, all at once */
+.all-fx{appearance:none;display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;min-height:58px;padding:8px 14px;border-radius:16px;border:1.5px solid #fbbf24;background:linear-gradient(135deg,rgba(251,191,36,.16),rgba(236,72,153,.12));color:var(--text);font:inherit;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.all-fx[hidden]{display:none}
+.all-fx-name{font-size:15px;font-weight:800}
+.all-fx-sub{font-size:12px;color:var(--muted);text-align:center;overflow-wrap:anywhere}
+.all-fx.none{opacity:.55}
+.all-fx.holding{background:linear-gradient(135deg,#fbbf24,#ec4899);border-color:transparent;color:#241a05;transform:scale(.985)}
+.all-fx.holding .all-fx-sub{color:#241a05}
 .preset.filled .preset-num{color:var(--accent-b)}
 .preset{appearance:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:52px;padding:4px;border-radius:12px;border:1px dashed var(--line);background:transparent;color:var(--muted);font:inherit;cursor:pointer;min-width:0;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 .preset.filled{border-style:solid;border-color:transparent;background:var(--surface-2);color:var(--text)}
@@ -766,6 +774,7 @@ legend{padding:0}
       <button type="button" id="tryBtn" class="try-btn" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg><span>Try a sample</span></button>
     </div>
     <div id="presets" class="presets" aria-label="Presets"></div>
+    <button type="button" id="allFxBtn" class="all-fx" hidden><span class="all-fx-name">Hold to add all your effects</span><span id="allFxSub" class="all-fx-sub"></span></button>
     <section id="pads" class="pads" aria-label="Voice effects"></section>
     <div class="pad-foot" style="justify-content:flex-end">
       <button type="button" id="monitorBtn" class="linkish" aria-pressed="false">Hear yourself: off</button>
@@ -2018,6 +2027,7 @@ function padParams(){
 }
 function pushPads(){
   const p = padParams();
+  if (typeof updateAllFx === 'function') updateAllFx();
   if (trySt.on) trySend(p);
   if (rec.node) rec.node.port.postMessage({ type:'params', params:p });
   if (rec.engine){ rec.engine.set(p); if (rec.state === 'recording') rec.events.push({ at:rec.count, params:p }); }
@@ -2170,31 +2180,60 @@ async function paintStart(p){
   paint.limit = sel ? sel.b : songDur();
   paint.b = paint.a; paint.pad = p; paint.on = true; paint.node = null;
   state.playhead1 = paint.a;
-  padEls[p.id].classList.add('on');
+  if (padEls[p.id]) padEls[p.id].classList.add('on');
   const c = ctx(); if (c.state !== 'running') { try { await c.resume(); } catch (_) {} }
   if (!paint.on) return;
   let node = null;
   try {
     if (await ensureWorklet(c)){
       node = new AudioWorkletNode(c, 's2s-voice', { numberOfInputs:1, numberOfOutputs:1, outputChannelCount:[1], channelCount:1, channelCountMode:'explicit' });
-      node.port.postMessage({ type:'key', params:keyParams() }); node.port.postMessage({ type:'params', params:onlyPad(p) });
+      node.port.postMessage({ type:'key', params:keyParams() }); node.port.postMessage({ type:'params', params:padOver(p) });
     }
   } catch (_) { node = null; }
   if (!paint.on){ return; }
   paint.node = node;
   edPlay(node, node ? paint.lane : undefined);
 }
-function paintAdjust(p){ if (paint.node) paint.node.port.postMessage({ type:'params', params:onlyPad(p) }); }
+function paintAdjust(p){ if (paint.node) paint.node.port.postMessage({ type:'params', params:padOver(p) }); }
+// the "all" button stands in for every pad that's on right now
+const ALL_PAD = { id:'all', name:'Your effects', color:'#fbbf24' };
+const padOver = (p) => p.id === 'all' ? padParams() : onlyPad(p);
+const padsOn = () => PADS.filter((q) => fx[q.id].on);
 async function paintEnd(p){
   if (!paint.on) return;
   const playing = edPlayState.playing;
   const b = playing ? Math.min(paint.limit, edPlayState.from + Math.max(0, ctx().currentTime - edPlayState.t0)) : paint.b;
   edStop(); paint.on = false; paint.node = null;
-  paintPad(p); drawEditor();
-  const a = paint.a, lane = paint.lane;
-  if (b - a < 0.15){ state.playhead1 = a; setStatus($('#status1'), 'Hold the pad down while your song plays. The effect goes from the red line to where you let go.', ''); drawEditor(); edReadouts(); return; }
-  state.playhead1 = b; padEdited(true);
-  await applyPaint(lane, a, b, onlyPad(p), p.name);
+  if (p.id !== 'all') paintPad(p); drawEditor();
+  const a = paint.a, lane = paint.lane, all = p.id === 'all';
+  if (b - a < 0.15){ state.playhead1 = a; setStatus($('#status1'), all ? 'Hold the button down while your song plays. Your effects go from the red line to where you let go, or to the end of the part you selected.' : 'Hold the pad down while your song plays. The effect goes from the red line to where you let go.', ''); drawEditor(); edReadouts(); return; }
+  state.playhead1 = b; if (!all) padEdited(true);
+  const on = padsOn().map((q) => q.name);
+  await applyPaint(lane, a, b, padOver(p), all ? (on.length > 2 ? on.slice(0, 2).join(', ') + ' and ' + (on.length - 2) + ' more' : on.join(' and ')) : p.name);
+}
+function updateAllFx(){
+  const btn = $('#allFxBtn'); if (!btn) return;
+  const has = songDur() > 0.05 && rec.state === 'idle' && !cd.on;
+  btn.hidden = !has; if (!has) return;
+  const on = padsOn();
+  btn.classList.toggle('none', !on.length);
+  $('#allFxSub').textContent = !on.length ? 'Turn on pads or load a preset first' : on.map((q) => q.name).join(' · ') + (state.sel1 ? ' · until the end of your selection' : '');
+}
+{
+  const btn = $('#allFxBtn'); let held = false;
+  btn.addEventListener('pointerdown', (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    e.preventDefault(); try { btn.setPointerCapture(e.pointerId); } catch (_) {}
+    if (paint.busy || paint.on) return;
+    if (!padsOn().length){ setStatus($('#status1'), 'Turn on the pads you want (or tap a preset), then hold this button while your song plays.', ''); return; }
+    // with no red line and nothing selected, start from the beginning of the layer you're on
+    if (!state.cursorOn && !state.sel1){ const l = state.layers[state.activeLayer]; state.playhead1 = l.segs.length ? Math.min(...l.segs.map((x) => x.at)) : 0; state.cursorOn = true; }
+    if (!(!trySt.on && rec.state === 'idle' && state.section === 'create' && state.page === 1 && songDur() > 0.05)) return;
+    held = true; btn.classList.add('holding'); paintStart(ALL_PAD);
+  });
+  const up = () => { if (!held) return; held = false; btn.classList.remove('holding'); paintEnd(ALL_PAD); };
+  btn.addEventListener('pointerup', up); btn.addEventListener('pointercancel', up); btn.addEventListener('lostpointercapture', up);
+  btn.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 async function applyPaint(lane, a, b, over, name){
   const layer = state.layers[lane];
@@ -2660,6 +2699,7 @@ function drawEditor(){
   $('#edEmpty').hidden = true;
 }
 function edReadouts(){
+  updateAllFx();
   const dur = songDur();
   $('#edTime').textContent = fmtT(state.playhead1) + ' / ' + fmtT(dur) + (dur > MAX_SEC ? ' (over 10:00)' : '');
   const layer = state.layers[state.activeLayer], sel = state.sel1, has = dur > 0;
@@ -3107,7 +3147,7 @@ $('#addRec').addEventListener('click', () => { closeAddSheet(); if (addAt){ stat
 document.addEventListener('pointerdown', (e) => {
   if (state.page !== 1 || state.section !== 'create' || rec.state !== 'idle' || paint.busy) return;
   if (!state.cursorOn && !state.sel1 && !edPlayState.playing) return;
-  if (e.target.closest('#edCanvas, #pads, #presets, .ed-tools, .editor .tl-bar, .ed-links, .sheet-backdrop, #addSheet, #fadeSheet, .rec-zoom, .tabbar, #tryBtn, .tour')) return;
+  if (e.target.closest('#edCanvas, #pads, #presets, .ed-tools, .editor .tl-bar, .ed-links, .sheet-backdrop, #addSheet, #fadeSheet, .rec-zoom, .tabbar, #tryBtn, #allFxBtn, .tour')) return;
   state.cursorOn = false; state.sel1 = null;
   if (edPlayState.playing) edStop();
   drawEditor(); edReadouts();
@@ -6123,6 +6163,7 @@ const TOURS = {
     { sel:'.editor', title:'Edit a part', text:'Tap a part to select it. Drag its pink handles in to trim, or back out to bring trimmed audio back. Then Duplicate, Delete, Split at the red line, or Fade its start and end. Hold a part and drag to move it, even onto another layer. Double-tap a part to delete it.' },
     { sel:'.editor', title:'Layers', text:'+ Layer stacks up to 4 layers, and the new one records from the red line while the others play. Tap a layer to set its volume. Tap an empty layer and press Delete to remove it. The + at the end of your audio records more there or adds audio from a file or your camera roll.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where an effect should start (or select a part), then hold a pad. Tap a gold effect strip to change it or remove it.' },
+    { sel:'#pads', title:'Add all your effects', text:'After you record, turn on the pads you want (or tap a preset), then hold the gold "Hold to add all your effects" button. Your song plays and every effect you have on goes in from the red line until you let go. If you selected a part, it stops at the end of the part.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does.' },
     { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on, then name it or skip. Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
