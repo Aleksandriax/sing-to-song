@@ -86,8 +86,8 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .editor{display:flex;flex-direction:column;gap:10px}
 .ed-wrap{position:relative}
 .ed-wrap canvas{display:block;width:100%;height:150px;touch-action:pan-y;cursor:pointer}
-.ed-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.ed-tools .btn{padding:0 4px;font-size:13px;white-space:nowrap}
+.ed-tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.ed-tools .btn.small{padding:0 4px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .ed-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .danger-link{color:var(--err)}
 .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
@@ -193,6 +193,7 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .recording .rec-core{width:30px;height:30px}
 .recording .rec.is-rec .rec-core{width:26px;height:26px;border-radius:7px}
 .recording .rec-hint{display:none}
+body:not(.recording) #recTime{display:none}
 .recording .presets .preset{min-height:44px}
 .recording .pad{aspect-ratio:auto;height:max(56px,calc((100dvh - 246px - var(--edh,84px) - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 4))}
 .recording #status1{display:none}
@@ -468,15 +469,12 @@ legend{padding:0}
 
   <main id="page1" class="page" hidden>
     <button type="button" class="back-top" data-to="0" aria-label="Back to Create"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-    <div class="p1-title">
-      <h1>Sing it</h1>
-      <p class="lede">Press record and sing. Hit the pads to add effects as you go.</p>
-    </div>
+    <h1 class="sr-only">Record and edit</h1>
 
     <div class="recorder">
       <button type="button" id="recBtn" class="rec" aria-label="Start recording" aria-pressed="false"><span class="rec-core"></span></button>
       <div id="recTime" class="rec-time mono">0:00</div>
-      <div id="recHint" class="rec-hint">Tap to start, tap again to stop. Or hold, then release.</div>
+      <div id="recHint" class="rec-hint sr-only">Tap to start, tap again to stop. Or hold, then release.</div>
     </div>
 
     <section class="editor" aria-label="Your song">
@@ -2008,7 +2006,12 @@ function drawEditor(){
     }
     // selection
     const sel = state.sel1;
-    if (sel && sel.layer === li){ const a = X(sel.a), b = X(sel.b); g.fillStyle = 'rgba(219,39,119,.28)'; g.fillRect(a, y, b - a, lh); g.fillStyle = pink; g.fillRect(a - 1, y, 2, lh); g.fillRect(b - 1, y, 2, lh); }
+    if (sel && sel.layer === li){
+      const a = X(sel.a), b = X(sel.b);
+      g.fillStyle = 'rgba(236,72,153,.16)'; roundRectPath(g, a, y + 1, Math.max(2, b - a), lh - 2, 8); g.fill();
+      g.lineWidth = 2.5; g.strokeStyle = '#ec4899'; g.stroke();
+      [a, b].forEach((gx) => { roundRectPath(g, gx - 5, y + lh / 2 - 16, 10, 32, 5); g.fillStyle = '#ec4899'; g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke(); });
+    }
     if (state.layers.length > 1){ g.fillStyle = 'rgba(243,238,251,.75)'; g.font = '700 10px "Figtree", system-ui, sans-serif'; g.fillText('Layer ' + (li + 1), 10, y + 13); }
   });
   // part being painted with a pad
@@ -2039,6 +2042,8 @@ function drawEditor(){
   // playhead
   const px = X(rec.state === 'recording' ? rec.recordAt + rec.live.length * 1024 / (actx ? actx.sampleRate : 48000) : state.playhead1);
   g.fillStyle = pink; g.fillRect(px - 1, RULER - 4, 2, hh - RULER + 4);
+  if (rec.state !== 'recording'){ g.beginPath(); g.arc(px, RULER - 2, 8, 0, Math.PI * 2); g.fillStyle = pink; g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke(); }
+  ed.px = px;
   $('#edEmpty').hidden = dur > 0 || rec.state === 'recording';
 }
 function edReadouts(){
@@ -2049,7 +2054,7 @@ function edReadouts(){
   $('#edZoomIn').disabled = state.span1 !== Infinity && edSpan() <= 0.051; $('#edZoomOut').disabled = state.span1 === Infinity || !has;
   $('#edDup').disabled = !(sel || segAt(layer, state.playhead1));
   $('#edDel').disabled = !sel;
-  $('#edDel').textContent = sel ? 'Delete ' + fmtS(sel.b - sel.a) : 'Delete';
+  $('#edDel').textContent = 'Delete'; $('#edDel').setAttribute('aria-label', sel ? 'Delete ' + fmtS(sel.b - sel.a) : 'Delete');
   $('#edLayer').disabled = state.layers.length >= MAX_LAYERS || !has;
   $('#edSaveSfx').hidden = !sel;
   $('#edRemoveLayer').hidden = state.activeLayer === 0;
@@ -2230,10 +2235,19 @@ $('#clipDelete').addEventListener('click', () => {
       setStatus($('#status1'), 'Press record to keep going from the end' + (state.layers.length > 1 ? ' of layer ' + (hit.lane + 1) : '') + '.', 'ok');
       return;
     }
-    const t0 = tAt(e), lane = laneAt(e);
-    d = { t0, cx:e.clientX - r.left, cy:e.clientY - r.top, x:e.clientX, moved:false, lane, seg:segAt(state.layers[lane], t0), mode:null, timer:0, time:performance.now(), vs:ed.viewStart, lastX:e.clientX, lastT:performance.now(), vel:0 };
-    state.activeLayer = lane;
+    const t0 = tAt(e), lane = laneAt(e), cx = e.clientX - r.left, cy = e.clientY - r.top;
+    d = { t0, cx, cy, x:e.clientX, moved:false, lane, seg:segAt(state.layers[lane], t0), mode:null, timer:0, time:performance.now(), vs:ed.viewStart, lastX:e.clientX, lastT:performance.now(), vel:0 };
     try { edCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+    const Xc = (t) => 8 + ((t - ed.viewStart) / edSpan()) * (r.width - 16);
+    // grab an edge of the selection box
+    const sel = state.sel1;
+    if (sel){
+      const ea = Math.abs(cx - Xc(sel.a)), eb = Math.abs(cx - Xc(sel.b));
+      if (Math.min(ea, eb) <= 20){ d.mode = 'edge'; d.edge = ea <= eb ? 'a' : 'b'; if (edPlayState.playing) edStop(); return; }
+    }
+    // grab the red line: it follows your finger
+    if (ed.px != null && Math.abs(cx - ed.px) <= 22){ d.mode = 'scrub'; if (edPlayState.playing) edStop(); return; }
+    state.activeLayer = lane;
     if (d.seg) d.timer = setTimeout(() => {
       if (!d || d.moved) return;
       d.mode = 'move'; d.origAt = d.seg.at; state.sel1 = null;
@@ -2249,6 +2263,12 @@ $('#clipDelete').addEventListener('click', () => {
       if (d.lane === 0) state.moving.dropT = t; else d.seg.at = Math.max(0, d.origAt + (t - d.t0));
       drawEditor(); return;
     }
+    if (d.mode === 'scrub'){ state.playhead1 = t; follow(t); drawEditor(); edReadouts(); return; }
+    if (d.mode === 'edge'){
+      const sl = state.sel1; if (!sl) return;
+      if (d.edge === 'a') sl.a = Math.min(t, sl.b - 0.05); else sl.b = Math.max(t, sl.a + 0.05);
+      state.playhead1 = d.edge === 'a' ? sl.a : sl.b; follow(t); drawEditor(); edReadouts(); return;
+    }
     if (d.mode === 'pan'){
       const w = edCanvas.getBoundingClientRect().width - 16, now = performance.now();
       ed.viewStart = d.vs - ((e.clientX - d.x) / w) * edSpan(); clampView();
@@ -2257,17 +2277,13 @@ $('#clipDelete').addEventListener('click', () => {
     }
     if (!d.moved && Math.abs(e.clientX - d.x) < 6) return;
     d.moved = true; clearTimeout(d.timer);
-    // a quick swipe scrolls through the song; a slower drag selects a part
-    if (performance.now() - d.time < 170 && edFull() > edSpan() * 0.85){ d.mode = 'pan'; d.lastX = e.clientX; d.lastT = performance.now(); return; }
-    state.sel1 = { layer:d.lane, a:Math.min(d.t0, t), b:Math.max(d.t0, t) };
-    // the red line follows your finger
-    if (edPlayState.playing) edStop();
-    state.playhead1 = t; follow(t);
-    drawEditor(); edReadouts();
+    // sliding on the wave moves the whole wave
+    d.mode = 'pan'; d.x = e.clientX; d.vs = ed.viewStart; d.lastX = e.clientX; d.lastT = performance.now();
   });
   const up = (e) => {
     if (!d) return;
     clearTimeout(d.timer);
+    if (d.mode === 'scrub' || d.mode === 'edge'){ d = null; drawEditor(); edReadouts(); return; }
     if (d.mode === 'pan'){
       let v = d.vel; d = null;
       const w = edCanvas.getBoundingClientRect().width - 16;
@@ -2294,7 +2310,9 @@ $('#clipDelete').addEventListener('click', () => {
       if (fh && !(lastTap && lastTap.seg === d.seg && now - lastTap.t < 350)){ lastTap = null; d = null; openFxSheet(fh); return; }
       if (lastTap && d.seg && lastTap.seg === d.seg && now - lastTap.t < 350){ lastTap = null; const x = d; d = null; askDeleteClip(x.lane, x.seg); drawEditor(); edReadouts(); return; }
       lastTap = { t:now, seg:d.seg };
-      state.sel1 = null; setPlayhead1(d.t0);
+      state.activeLayer = d.lane;
+      state.sel1 = d.seg ? { layer:d.lane, a:d.seg.at, b:segEnd(d.seg) } : null;
+      setPlayhead1(d.t0);
     } else if (state.sel1 && state.sel1.b - state.sel1.a < 0.05) state.sel1 = null;
     d = null; drawEditor(); edReadouts();
   };
@@ -4271,7 +4289,7 @@ const TOURS = {
   ],
   p1:[
     { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
-    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to move the red line. Swipe quickly to scroll through it, and zoom out to see the whole song. Drag slowly across it to pick a part, then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end to keep going from the end. Double-tap a clip to delete it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Tap + to zoom in closer and closer; − zooms out to the whole song. + Layer stacks up to 4 layers; the other layers play while you record.' },
+    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to move the red line, or grab the round handle on the red line and drag it. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it, then drag its pink edges to pick exactly the part you want, then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end to keep going from the end. Double-tap a clip to delete it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Tap + to zoom in closer and closer; − zooms out to the whole song. + Layer stacks up to 4 layers; the other layers play while you record.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#presets', title:'Presets', text:'Tap an empty slot to save the pads you like. Tap it later to bring them back; while it\'s selected, your changes save into it. Hold one to give it a name.' },
