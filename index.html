@@ -298,7 +298,7 @@ legend{padding:0}
 /* timeline */
 .tl-card{gap:12px}
 .tl-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.editor .tl-bar{flex-wrap:nowrap;gap:6px}
+.editor .tl-bar,.tl-card .tl-bar{flex-wrap:nowrap;gap:6px}
 .editor .tl-bar .tl-time{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .editor .tl-bar .btn.small{padding-inline:10px}
 .editor .tl-bar #edZoomOut,.editor .tl-bar #edZoomIn{min-width:34px!important;padding-inline:0}
@@ -315,6 +315,14 @@ legend{padding:0}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .file-pick{position:relative}
 .file-pick:focus-within{outline:2px solid var(--focus);outline-offset:2px}
+.gen-panel{background:linear-gradient(160deg,#0f3b46 0%,#12263f 60%,#161a33 100%);border-color:rgba(45,212,191,.28)}
+.gen-panel h2{color:#99f6e4}
+.gen-panel textarea,.gen-panel .text{background:rgba(3,14,24,.55);border-color:rgba(153,246,228,.22)}
+.ref-pick{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ref-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:72px;padding:10px;border-radius:14px;border:1.5px solid rgba(153,246,228,.3);background:rgba(45,212,191,.08);color:#e6fffb;font:inherit;font-size:13px;font-weight:700;text-align:center;cursor:pointer}
+.ref-tile span{font-size:20px;line-height:1}
+.ref-tile:active{transform:scale(.98)}
+.ref-row:empty{display:none}
 .ref-box{display:flex;flex-direction:column;gap:8px}
 .ref-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .mk-dur{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
@@ -423,7 +431,7 @@ legend{padding:0}
   <header class="topbar">
     <div class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="logoGrad" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><path d="M3.5 23 Q 6 20.5 8 23.5 Q 10 26.5 14 26.5 C 19 26.5 22 24 21.5 20.5 C 21 16.5 11 17.5 10.5 12 C 10 7.5 15 6 18.5 6.5 Q 21.5 7 22.8 9.2 Q 24.5 11.5 28 4.5" fill="none" stroke="url(#logoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Sing to Song</div>
     <nav class="steps-nav" id="stepsNav" aria-label="Creator steps">
-      <button type="button" class="step-tab" id="tab1" data-page="1" aria-current="step"><span>Step 1</span>Record and cut</button>
+      <button type="button" class="step-tab" id="tab1" data-page="1" aria-current="step"><span>Step 1</span>Record and edit</button>
       <button type="button" class="step-tab" id="tab2" data-page="2" disabled><span>Step 2</span>Prep and adjust</button>
       <button type="button" class="step-tab" id="tab3" data-page="3" disabled><span>Step 3</span>Generate and finish</button>
     </nav>
@@ -515,11 +523,8 @@ legend{padding:0}
 
   <!-- STEP 2 -->
   <main id="page2" class="page" hidden>
-    <button type="button" class="back-top" data-to="1" aria-label="Back to Record and cut"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-    <div>
-      <h1>Prep and adjust</h1>
-      <p class="lede">Scroll through your song. Tap the wave, then tap + to pin a note for the AI. Give it a duration to cover a whole section.</p>
-    </div>
+    <button type="button" class="back-top" data-to="1" aria-label="Back to Record and edit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <h1 class="sr-only">Prep and adjust</h1>
     <div id="status2" class="status" role="status" aria-live="polite"></div>
 
     <section class="panel tl-card" aria-label="Song timeline">
@@ -527,7 +532,6 @@ legend{padding:0}
         <button type="button" id="tlPlay" class="btn small" style="min-width:76px">Play</button>
         <span id="tlTime" class="tl-time mono">0:00.0 / 0:00.0</span>
         <span class="spacer"></span>
-        <span class="tl-time">Zoom</span>
         <button type="button" id="zoomOut" class="btn small" style="min-width:36px" aria-label="Zoom out">−</button>
         <button type="button" id="zoomIn" class="btn small" style="min-width:36px" aria-label="Zoom in">+</button>
       </div>
@@ -546,7 +550,7 @@ legend{padding:0}
         <div class="mk-dur">
           <button type="button" id="mkDurBtn" class="btn small">Add duration</button>
           <div id="mkDurCtl" hidden>
-            <span class="label" style="margin:0">Covers <span id="mkRange" class="mono"></span>. Slide the box on the wave to move it, or drag its edges to change the length.</span>
+            <span class="label" style="margin:0">Covers <span id="mkRange" class="mono"></span></span>
             <button type="button" id="mkDurRemove" class="linkish">Make it a single moment again</button>
           </div>
         </div>
@@ -563,10 +567,10 @@ legend{padding:0}
     <section class="panel" aria-labelledby="sfxHead">
       <div>
         <h2 id="sfxHead">Sound effects</h2>
-        <p class="hint">Tap the wave to put the red line where you want a sound, then press Add. It drops in at <span id="sfxAt" class="mono">0:00.0</span>.</p>
+        <p class="hint">Adds at <span id="sfxAt" class="mono">0:00.0</span></p>
       </div>
       <div id="sfxLib" class="d-list"></div>
-      <p id="sfxEmpty" class="hint">No sound effects yet. Save part of a recording as a sound effect on step 1, get some on Discover, or upload one.</p>
+      <p id="sfxEmpty" class="hint">None yet. Get some on Discover or upload one.</p>
       <label class="btn small file-pick" style="align-self:flex-start">Upload a sound effect<input id="sfxFile" class="sr-only" type="file" accept="audio/*"></label>
       <div>
         <span class="label">In your song</span>
@@ -574,35 +578,27 @@ legend{padding:0}
       </div>
     </section>
 
-    <section class="panel" aria-labelledby="vibeHead">
-      <h2 id="vibeHead">Music vibe</h2>
-      <div>
-        <label class="label" for="vibe">Describe the vibe</label>
-        <textarea id="vibe" rows="2" maxlength="300" placeholder="dreamy 80s synths, slow acoustic ballad…"></textarea>
-        <p class="hint" style="margin-top:6px">The key comes from your voice. To pick one yourself, write it here, like "in A minor".</p>
-      </div>
-      <div>
-        <label class="label" for="artists">Artists or songs you like</label>
-        <input id="artists" class="text" type="text" maxlength="200" placeholder="e.g. The Weeknd, Daft Punk, Adele">
-        <p class="hint" style="margin-top:6px">These are used as style hints: tempo, sounds and mood. The app can't add an artist's actual songs, recordings or voice.</p>
-      </div>
-      <div>
-        <span class="label">Music you like (reference)</span>
-        <div class="ref-box">
-          <label class="sr-only" for="refLink">Link to a song you like</label>
-          <input id="refLink" class="text" type="url" maxlength="300" placeholder="Paste a link to a song">
-          <div class="ref-row">
-            <label class="btn small file-pick">Upload a song file<input id="refFile" class="sr-only" type="file" accept="audio/*,video/*"></label>
-            <button type="button" id="refPlay" class="btn small" hidden>Play</button>
-            <button type="button" id="refClear" class="linkish" hidden>Remove</button>
-          </div>
-          <p id="refInfo" class="hint"></p>
+    <section class="panel gen-panel" aria-labelledby="vibeHead">
+      <h2 id="vibeHead">Generation prompt</h2>
+      <label class="sr-only" for="vibe">Describe the music you want</label>
+      <textarea id="vibe" rows="3" maxlength="300" placeholder="Describe the music: dreamy piano ballad, 80s synths, soft strings…"></textarea>
+      <label class="sr-only" for="artists">Artists you like</label>
+      <input id="artists" class="text" type="text" maxlength="200" placeholder="Artists you like">
+      <div class="ref-box">
+        <div class="ref-pick">
+          <label class="ref-tile file-pick"><span aria-hidden="true">♪</span>Upload a song file<input id="refFile" class="sr-only" type="file" accept="audio/*,video/*"></label>
+          <button type="button" id="refLinkBtn" class="ref-tile"><span aria-hidden="true">🔗</span>Upload song link</button>
         </div>
-        <p class="hint" style="margin-top:6px">From a file, the app measures tempo, brightness and energy and matches your song to them. It can't open links: with Claude on, the link text is passed along as a hint. Nothing from the reference is copied into your song.</p>
+        <label class="sr-only" for="refLink">Song link</label>
+        <input id="refLink" class="text" type="url" maxlength="300" placeholder="Paste the song link" hidden>
+        <div class="ref-row">
+          <p id="refInfo" class="hint" style="flex:1;margin:0"></p>
+          <button type="button" id="refPlay" class="btn small" hidden>Play</button>
+          <button type="button" id="refClear" class="linkish" hidden>Remove</button>
+        </div>
       </div>
-      <div>
-        <span class="label">What the AI will use</span>
-        <p id="aiMode" class="hint" style="margin-bottom:8px"></p>
+      <div hidden>
+        <p id="aiMode" class="hint"></p>
         <div id="moodChips" class="chips"></div>
       </div>
     </section>
@@ -610,7 +606,7 @@ legend{padding:0}
     <section class="panel blend-panel" aria-label="AI Blend">
       <label class="switch" for="blendSw">
         <span>AI Blend <span class="tag premium-tag">Premium</span>
-          <small>On: the AI polishes your voice so it comes through clearer, evens out your volume and blends the music around it. Off: the AI only makes music that matches your voice and edits.</small></span>
+</span>
         <input type="checkbox" id="blendSw" role="switch">
       </label>
     </section>
@@ -2464,7 +2460,7 @@ $('#toStep2').addEventListener('click', async () => {
     if (!state.markers.length) state.markers.push({ id:nextId++, t:3.8, end:null, text:'beat comes in here, upbeat' });
     setStatus($('#status1'), '');
     renderClips(); showPage(2);
-    setStatus($('#status2'), 'Demo song loaded: the chorus was sung with Auto-tune and the end with Echo (pink strips). A sample note is pinned at 0:03.8. Go back to step 1 to cut it or add layers.', 'ok');
+    setStatus($('#status2'), 'Demo song loaded.', 'ok');
   } catch (err){
     setStatus($('#status1'), 'Couldn\'t load the demo song: ' + (err.message || err), 'error');
   } finally { btn.disabled = false; edReadouts(); }
@@ -2520,21 +2516,26 @@ function drawTimeline(){
     g.fillStyle = major ? muted : faint; g.fillRect(x, major ? 12 : 17, 1, major ? 10 : 5);
     if (major) g.fillText(fmt(t), x + 3, 10);
   }
-  // wave background
-  const bx = Math.max(0, x0), bw = Math.min(w, x1) - bx;
-  if (bw > 0){ roundRectPath(g, x0, top, x1 - x0, wh, 12); g.fillStyle = cssVar('--wave-bg', '#1d1631'); g.fill(); }
-  // blob of the visible part
+  // the same look as step 1: each section is its own rounded block, purple-to-pink wave, gold effect strips
+  const edges = j.bounds.concat([j.dur]), blocks = [];
+  for (let i = 0; i < edges.length - 1; i++){
+    const xa = tlX(edges[i]) - sl + 2, xb = tlX(edges[i + 1]) - sl - 2;
+    if (xb > -10 && xa < w + 10 && xb > xa) blocks.push([xa, xb]);
+  }
+  blocks.forEach(([xa, xb]) => { roundRectPath(g, xa, top + 3, xb - xa, wh - 6, Math.min(9, (xb - xa) / 2)); g.fillStyle = cssVar('--wave-bg', '#1d1631'); g.fill(); g.lineWidth = 1; g.strokeStyle = 'rgba(167,139,250,.28)'; g.stroke(); });
+  g.save(); g.beginPath(); blocks.forEach(([xa, xb]) => g.rect(xa, top + 3, xb - xa, wh - 6)); g.clip();
   const col = 3, pts = [];
   for (let x = Math.max(0, Math.floor(x0)); x <= Math.min(w, x1); x += col){
     const t = (x + sl - TL_PAD) / pps, a = Math.floor(t * j.sr), b = Math.min(j.data.length, Math.floor((t + col / pps) * j.sr));
     const stride = Math.max(1, Math.floor((b - a) / 400));
     let pk = 0; for (let i = Math.max(0, a); i < b; i += stride){ const v = Math.abs(j.data[i]); if (v > pk) pk = v; }
-    pts.push([x, Math.max(1.2, (pk / j.peak) * amp)]);
+    pts.push([x, Math.max(1, (pk / j.peak) * amp)]);
   }
-  if (pts.length > 1){ blobPath(g, pts, mid); g.fillStyle = cssVar('--wave-fill', '#a78bfa'); g.fill(); }
-  // where effect pads were on
-  g.fillStyle = cssVar('--tuned', '#ec4899');
-  j.fx.forEach(([a, b]) => { const xa = tlX(a) - sl, xb = tlX(b) - sl; if (xb > 0 && xa < w) g.fillRect(xa, top + wh - 7, Math.max(2, xb - xa), 4); });
+  const wf = g.createLinearGradient(0, 0, w, 0); wf.addColorStop(0, '#8b5cf6'); wf.addColorStop(0.55, '#c084fc'); wf.addColorStop(1, '#ec4899');
+  if (pts.length > 1){ blobPath(g, pts, mid); g.fillStyle = wf; g.fill(); }
+  g.fillStyle = cssVar('--tuned', '#fbbf24');
+  j.fx.forEach(([a, b]) => { const xa = tlX(a) - sl, xb = tlX(b) - sl; if (xb > 0 && xa < w){ roundRectPath(g, xa, top + wh - 13, Math.max(3, xb - xa), 5, 2.5); g.fill(); } });
+  g.restore();
   // notes that cover a section: outlined boxes (the selected one is the box you can slide)
   state.markers.forEach((m) => {
     if (m.end == null || state.selMarker === m.id) return;
@@ -2549,14 +2550,6 @@ function drawTimeline(){
     g.fillStyle = '#1a1206'; g.fillText('♪', x, top + wh - 12);
   });
   g.textAlign = 'left';
-  // take boundaries
-  g.setLineDash([4, 4]); g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1;
-  j.bounds.forEach((bt, i) => {
-    const x = tlX(bt) - sl; if (x < -40 || x > w + 2) return;
-    if (i > 0){ g.beginPath(); g.moveTo(x + 0.5, top + 4); g.lineTo(x + 0.5, top + wh - 4); g.stroke(); }
-    g.fillStyle = 'rgba(243,238,251,.8)'; g.font = '600 10px "JetBrains Mono", ui-monospace, monospace'; g.fillText(String(i + 1).padStart(2, '0'), x + 5, top + wh - 8);
-  });
-  g.setLineDash([]);
   // playhead
   const px = tlX(state.playhead2) - sl;
   if (px >= -2 && px <= w + 2){ g.fillStyle = cssVar('--playhead', '#db2777'); g.fillRect(px - 1, top - 4, 2, wh + 8); }
@@ -2848,6 +2841,7 @@ $('#refFile').addEventListener('change', async (e) => {
 $('#refClear').addEventListener('click', () => { previewStop(); state.ref = null; $('#refInfo').textContent = ''; $('#refPlay').hidden = true; $('#refClear').hidden = true; refreshMood(); });
 $('#refPlay').addEventListener('click', () => { if (state.ref) previewToggle('ref', async () => state.ref.buffer, $('#refPlay')); });
 $('#refLink').addEventListener('input', refreshMood);
+$('#refLinkBtn').addEventListener('click', () => { const l = $('#refLink'); l.hidden = false; l.focus(); });
 
 function keywordPlan(variation, seed){
   seed = seed == null ? freshSeed() : seed; const R = mulberry(seed);
@@ -3759,7 +3753,7 @@ async function loadProject(doc, statusEl, landHome){
     state.playhead1 = doc.playhead1 || 0; state.sel1 = null;
     state.markers = (doc.markers || []).map((m) => Object.assign({ end:null }, m)); state.selMarker = null;
     state.sfx2 = (doc.sfx2 || []).map((p) => { const item = lib.sfx.find((x) => x.id === p.itemId); return item ? { id:uid('p'), item, name:p.name, at:p.at } : null; }).filter(Boolean);
-    $('#vibe').value = doc.vibe || ''; $('#artists').value = doc.artists || ''; $('#refLink').value = doc.refLink || '';
+    $('#vibe').value = doc.vibe || ''; $('#artists').value = doc.artists || ''; $('#refLink').value = doc.refLink || ''; $('#refLink').hidden = !doc.refLink;
     state.variation = doc.variation || 0;
     const ids = [0, ...state.layers.map((l) => l.id), ...state.clips.map((s) => s.id), ...state.markers.map((m) => m.id)].filter(Number.isFinite);
     nextId = Math.max(nextId, ...ids) + 1;
@@ -4286,10 +4280,10 @@ const TOURS = {
   p2:[
     { sel:'.tl-card', title:'Your song timeline', text:'Scroll through your song. Tap the wave, then + to pin a note for the AI, like "beat drops here". Add duration to turn a note into a box you can slide and stretch over a whole part.' },
     { sel:'#sfxHead', title:'Sound effects', text:'Add sounds you made, uploaded, bought or saved on Discover. Put the red line where you want one, then press Add. They go into the finished song.' },
-    { sel:'#vibe', title:'Describe the vibe', text:'Words like slow, dance, acoustic, 80s synth or dark shape the music. The key comes from your voice, or write one here, like "in A minor".' },
+    { sel:'#vibe', title:'Generation prompt', text:'Words like slow, dance, acoustic, 80s synth or dark shape the music. The key comes from your voice, or write one here, like "in A minor".' },
     { sel:'#artists', title:'Artists you like', text:'Artists are style hints only: tempo, sound and mood. The app never copies their songs, recordings or voice.' },
-    { sel:'.ref-box', title:'A song you like', text:'Upload a song and the app matches its tempo and energy. It can\'t open links.' },
-    { sel:'.blend-panel', title:'AI Blend', text:'Premium: polishes your voice and blends the music around it. Off: the AI only makes the music behind you.' },
+    { sel:'.ref-box', title:'A song you like', text:'Upload a song file and the app matches its tempo and energy. A link is passed to the AI as a hint; the app can\'t open links.' },
+    { sel:'.blend-panel', title:'AI Blend', text:'Premium. On: the AI polishes your voice so it comes through clearer, evens out your volume and blends the music around it. Off: it only makes music that fits your voice.' },
     { sel:'#genBtn', title:'Generate', text:'The music is built around your voice: its key, tempo and melody. The backing uses the app\'s own synths and drums, never real recordings.' }
   ],
   p3:[
@@ -4410,7 +4404,7 @@ let coverTarget = null;
 function renderHome(){
   const doc = projectDoc(), work = hasWork(doc);
   $('#continueCard').hidden = !work;
-  if (work) $('#continueMeta').textContent = fmt(songDur()) + ' recorded · ' + ['', 'record and cut', 'prep and adjust', 'generate and finish'][state.workPage || 1];
+  if (work) $('#continueMeta').textContent = fmt(songDur()) + ' recorded · ' + ['', 'record and edit', 'prep and adjust', 'generate and finish'][state.workPage || 1];
   renderDrafts();
   const songs = lib.songs;
   $('#homeLibrary').replaceChildren(...(songs.length ? songs.map((s) => {
@@ -4445,7 +4439,7 @@ function resetProject(){
   resetHist();
   stopAllPlayback();
   Object.assign(state, { layers:[{ id:nextId++, segs:[] }], activeLayer:0, playhead1:0, sel1:null, zoom1:0, span1:6, markers:[], sfx2:[], selMarker:null, playhead2:0, result:null, variation:0, workPage:1 });
-  takeCount = 0; $('#vibe').value = ''; $('#artists').value = ''; $('#refLink').value = ''; state.ref = null; $('#refInfo').textContent = ''; $('#refPlay').hidden = true; $('#refClear').hidden = true; $('#mkEditor').hidden = true;
+  takeCount = 0; $('#vibe').value = ''; $('#artists').value = ''; $('#refLink').value = ''; $('#refLink').hidden = true; state.ref = null; $('#refInfo').textContent = ''; $('#refPlay').hidden = true; $('#refClear').hidden = true; $('#mkEditor').hidden = true;
   resetPads(); state.keyFrom = null; setKey('60:chromatic'); rec.live = [];
   ['#status1', '#status2', '#status3'].forEach((s) => setStatus($(s), ''));
   renderClips(); renderMarkerList();
