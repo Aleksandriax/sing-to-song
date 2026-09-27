@@ -85,6 +85,9 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .preset.active{box-shadow:inset 0 0 0 2px var(--accent-b);background:color-mix(in srgb,var(--accent-b) 12%,var(--surface-2))}
 .editor{display:flex;flex-direction:column;gap:10px}
 .ed-wrap{position:relative}
+.rec-zoom{display:none;position:absolute;right:6px;top:-2px;z-index:2;gap:6px}
+.recording .rec-zoom{display:flex}
+.rec-zoom button{width:34px;height:26px;border-radius:99px;border:1px solid var(--line);background:rgba(20,14,36,.9);color:var(--text);font:inherit;font-size:17px;font-weight:700;line-height:1;cursor:pointer;padding:0}
 .ed-wrap canvas{display:block;width:100%;height:150px;touch-action:pan-y;cursor:pointer}
 .ed-tools{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .ed-tools .btn.small{padding:0 4px;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -488,6 +491,7 @@ legend{padding:0}
         <button type="button" id="edZoomIn" class="btn small" style="min-width:36px" aria-label="Zoom in">+</button>
       </div>
       <div class="ed-wrap">
+        <div class="rec-zoom"><button type="button" id="rzOut" aria-label="Zoom out">−</button><button type="button" id="rzIn" aria-label="Zoom in">+</button></div>
         <canvas id="edCanvas" aria-label="Your song's wave. Tap to move the playhead, swipe quickly to scroll, drag slowly to select a part."></canvas>
         <div id="edEmpty" class="live-empty">Your wave draws here as you sing</div>
         <div id="noteRead" class="note-read mono" hidden></div>
@@ -1414,6 +1418,7 @@ function finishStart(c){
       rec.backing = scheduleSong(c, rec.recordAt, c.destination, rec.layer);
       rec.latency = (c.outputLatency || 0) + (c.baseLatency || 0) + 0.02;
     }
+    if (!state.recSpanSet) state.recSpan = state.layers.length > 1 ? 3 : 6;
     rec.state = 'recording'; rec.t0 = performance.now(); rec.hitLimit = false; recTime.textContent = '0:00 / 10:00';
     rec.timer = setInterval(() => {
       const el = (performance.now() - rec.t0) / 1000;
@@ -1425,7 +1430,7 @@ function finishStart(c){
     setRecUI();
     state.sel1 = null;
     const loop = () => {
-      follow(liveEnd());
+      ed.viewStart = Math.max(0, liveEnd() - edSpan() * 0.45);
       drawEditor(); rec.raf = requestAnimationFrame(loop);
     };
     rec.raf = requestAnimationFrame(loop);
@@ -1930,12 +1935,15 @@ const RULER = 20, LANE_PAD = 4;
 // The wave starts zoomed in (6 s across) and scrolls along; zoom out to see the whole song.
 const liveEnd = () => rec.state === 'recording' && rec.layer != null ? rec.recordAt + rec.live.length * 1024 / (actx ? actx.sampleRate : 48000) : 0;
 const edFull = () => Math.max(songDur(), liveEnd());
-function edSpan(){ return state.span1 === Infinity ? Math.max(edFull() * 1.12, 2) : (state.span1 || 6); }
-function clampView(){ const span = edSpan(); ed.viewStart = clamp(ed.viewStart, 0, Math.max(0, edFull() + span * 0.15 - span)); }
+function edSpan(){
+  if (rec.state === 'recording' && state.recSpan) return state.recSpan;
+  return state.span1 === Infinity ? Math.max(edFull() * 1.12, 2) : (state.span1 || 6);
+}
+function clampView(){ const span = edSpan(), room = rec.state === 'recording' ? 0.6 : 0.15; ed.viewStart = clamp(ed.viewStart, 0, Math.max(0, edFull() + span * room - span)); }
 function follow(t){ const span = edSpan(); if (t > ed.viewStart + span * 0.8) ed.viewStart = t - span * 0.8; else if (t < ed.viewStart) ed.viewStart = Math.max(0, t - span * 0.2); }
 function laneBox(h){ const n = state.layers.length, lh = (h - RULER - LANE_PAD * n) / n; return (i) => ({ y:RULER + i * (lh + LANE_PAD), h:lh }); }
 function sizeEditor(){
-  const n = state.layers.length, recH = n === 1 ? 84 : RULER + n * 46;
+  const n = state.layers.length, recH = n === 1 ? 84 : RULER + n * (n === 2 ? 58 : 46);
   document.body.style.setProperty('--edh', recH + 'px');
   edCanvas.style.height = (document.body.classList.contains('recording') ? recH : n === 1 ? 150 : RULER + n * 72) + 'px';
 }
@@ -2319,6 +2327,8 @@ $('#clipDelete').addEventListener('click', () => {
   edCanvas.addEventListener('pointerup', up); edCanvas.addEventListener('pointercancel', up);
   edCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
 }
+$('#rzIn').addEventListener('click', () => { state.recSpan = Math.max(0.5, (state.recSpan || 6) / 2); state.recSpanSet = true; drawEditor(); });
+$('#rzOut').addEventListener('click', () => { state.recSpan = Math.min(60, (state.recSpan || 6) * 2); state.recSpanSet = true; drawEditor(); });
 function zoomTo(span){ state.span1 = span; ed.viewStart = Math.max(0, state.playhead1 - edSpan() * 0.5); drawEditor(); edReadouts(); }
 $('#edZoomIn').addEventListener('click', () => zoomTo(Math.max(0.05, edSpan() / 2)));
 $('#edZoomOut').addEventListener('click', () => { const n = edSpan() * 2; zoomTo(n >= edFull() * 1.12 ? Infinity : n); });
