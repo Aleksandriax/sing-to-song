@@ -447,6 +447,7 @@ body:not(.recording) #recTime{display:none}
 textarea{resize:vertical;min-height:72px}
 fieldset{border:0;margin:0;padding:0;min-width:0}
 legend{padding:0}
+.seg.seg-two{grid-template-columns:1fr 1fr}
 .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px}
 .seg input{position:absolute;opacity:0;pointer-events:none}
 .seg label{display:flex;align-items:center;justify-content:center;min-height:40px;border-radius:9px;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted);text-align:center}
@@ -889,6 +890,10 @@ legend{padding:0}
           <span class="item-meta">Optional. Shown on your songs and on Discover.</span>
         </div>
         <label class="btn small file-pick" id="coverLabel">Add<input id="coverFile" class="sr-only" type="file" accept="image/*"></label>
+      </div>
+      <div class="seg seg-two" role="radiogroup" aria-label="Who can hear this song">
+        <input type="radio" name="songVis" id="songPublic" value="public" checked><label for="songPublic">Public</label>
+        <input type="radio" name="songVis" id="songPrivate" value="private"><label for="songPrivate">Private</label>
       </div>
       <div class="downloads">
         <button type="button" id="saveSong" class="btn primary">Save to my songs</button>
@@ -4747,9 +4752,9 @@ $('#saveSong').addEventListener('click', async () => {
   const id = uid('song'), title = $('#vibe').value.trim() || 'Song ' + (lib.songs.length + 1);
   if (!r.wav) r.wav = bufferToWav(r.mix);
   await store.set('blob:' + id, r.wav);
-  lib.songs.unshift({ id, title, dur:r.mix.duration, created:Date.now(), isPublic:lib.profile.postSongs, allowSave:lib.profile.allowSaves, cover:r.cover || null });
+  lib.songs.unshift({ id, title, dur:r.mix.duration, created:Date.now(), isPublic:$('#songPublic').checked, allowSave:lib.profile.allowSaves, cover:r.cover || null });
   saveLib();
-  setStatus($('#status3'), 'Saved "' + title + '" to your songs in Studio. ' + (lib.profile.postSongs && lib.profile.isPublic ? 'It\'s public on Discover; change that in Profile.' : 'It\'s private; change that in Profile.'), 'ok');
+  setStatus($('#status3'), 'Saved "' + title + '" to your songs in Studio. ' + (!$('#songPublic').checked ? 'It\'s private, so only you can hear it; change that in Profile.' : lib.profile.isPublic ? 'It\'s public on Discover; change that in Profile.' : 'It\'s public, but your account is private, so only people you approve can hear it.'), 'ok');
   showAd();
 });
 
@@ -5546,7 +5551,6 @@ function renderProfile(){
   renderProfileHead();
   $('#pSwitches').replaceChildren(
     switchEl('swPublic', 'Public account', null, pr.isPublic, (v) => { pr.isPublic = v; saveLib(); }),
-    switchEl('swPost', 'Post my new songs', null, pr.postSongs, (v) => { pr.postSongs = v; saveLib(); }),
     switchEl('swSaves', 'Let people save my songs', null, pr.allowSaves, (v) => { pr.allowSaves = v; saveLib(); }),
     switchEl('swLikes', 'Show my likes', null, pr.showLikes !== false, (v) => { pr.showLikes = v; saveLib(); }),
     switchEl('swFollows', 'Show followers and following', null, pr.showFollows !== false, (v) => { pr.showFollows = v; saveLib(); }),
