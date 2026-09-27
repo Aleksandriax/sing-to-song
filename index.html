@@ -340,6 +340,11 @@ legend{padding:0}
 .sfx-panel .item,.sfx-panel .point-list li{background:rgba(24,14,4,.5)}
 .sfx-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .sfx-plus{flex:none;width:48px;height:48px;border-radius:99px;border:0;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#2a1a02;font:inherit;font-size:30px;font-weight:700;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(245,158,11,.4)}
+.add-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.add-grid.two{grid-template-columns:1fr 1fr}
+.add-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:84px;padding:10px 6px;border-radius:14px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:inherit;font-size:13px;font-weight:700;text-align:center;cursor:pointer}
+.add-grid.two .add-tile{min-height:60px;flex-direction:row}
+.add-tile svg{width:26px;height:26px;fill:none;stroke:var(--accent-b);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .sr-rec{display:flex;align-items:center;gap:14px}
 .sr-rec .rec{width:72px;height:72px}
 .sr-rec .rec::before{inset:5px}
@@ -604,8 +609,7 @@ legend{padding:0}
         <button type="button" id="sfxNew" class="sfx-plus" aria-label="Record a new sound effect">+</button>
       </div>
       <div id="sfxLib" class="d-list"></div>
-      <p id="sfxEmpty" class="hint">None yet. Get some on Discover or upload one.</p>
-      <label class="btn small file-pick" style="align-self:flex-start">Upload a sound effect<input id="sfxFile" class="sr-only" type="file" accept="audio/*"></label>
+      <p id="sfxEmpty" class="hint">None yet. Tap + to make or upload one, or get some on Discover.</p>
       <div>
         <span class="label">In your song</span>
         <ul id="sfxPlaced" class="point-list"></ul>
@@ -856,6 +860,18 @@ legend{padding:0}
   </div>
 </div>
 
+<div id="addSheet" class="sheet-backdrop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <h2 id="addTitle">Add audio</h2>
+    <div class="add-grid">
+      <button type="button" id="addRec" class="add-tile"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg><span>Record here</span></button>
+      <label class="add-tile file-pick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M10 17a2 2 0 1 1-2-2V10l5-1v6"/></svg><span>Upload a file</span><input id="addFile" class="sr-only" type="file" accept="audio/*"></label>
+      <label class="add-tile file-pick"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg><span>From camera roll</span><input id="addRoll" class="sr-only" type="file" accept="video/*,audio/*"></label>
+    </div>
+    <div class="actions"><button type="button" id="addCancel" class="btn">Cancel</button></div>
+  </div>
+</div>
+
 <div id="srSheet" class="sheet-backdrop" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="srTitle">
     <h2 id="srTitle">New sound effect</h2>
@@ -866,6 +882,10 @@ legend{padding:0}
         <span id="srNote" class="hint">Tap to record, up to 15 seconds.</span>
       </div>
       <button type="button" id="srPlay" class="btn small" hidden>Play</button>
+    </div>
+    <div class="add-grid two">
+      <label class="add-tile file-pick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M10 17a2 2 0 1 1-2-2V10l5-1v6"/></svg><span>Upload a file</span><input id="srFile" class="sr-only" type="file" accept="audio/*"></label>
+      <label class="add-tile file-pick"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg><span>From camera roll</span><input id="srRoll" class="sr-only" type="file" accept="video/*,audio/*"></label>
     </div>
     <label class="sr-only" for="srName">Name</label>
     <input id="srName" class="text" type="text" maxlength="40" placeholder="Name it">
@@ -1815,7 +1835,6 @@ function erasePreset(i){
   lib.presets[i] = null; if (lib.presetNames) lib.presetNames[i] = '';
   if (activePreset === i) activePreset = null;
   presetTrash = null; saveLib(); renderPresets();
-  setStatus($('#status1'), 'Preset ' + (i + 1) + ' erased.', 'ok');
 }
 document.addEventListener('pointerdown', (e) => { if (presetTrash != null && !e.target.closest('.preset-trash')){ presetTrash = null; renderPresets(); } }, true);
 function padEdited(full){
@@ -1840,7 +1859,6 @@ function renderPresets(){
     const save = () => {
       if (!PADS.some((p) => fx[p.id].on)){ setStatus($('#status1'), 'Turn on the pads you like first, then tap an empty preset to save them.', 'error'); return; }
       lib.presets[i] = snapshot(); activePreset = i; saveLib(); renderPresets();
-      setStatus($('#status1'), 'Saved to preset ' + (i + 1) + '. Changes you make to the pads now save into it. Hold it to give it a name.', 'ok');
     };
     b.addEventListener('pointerdown', () => { longDone = false; if (pr) timer = setTimeout(() => { longDone = true; openRename(i); }, 600); });
     const cancel = () => clearTimeout(timer);
@@ -1852,12 +1870,12 @@ function renderPresets(){
       const now = performance.now();
       if (pr && lastPresetTap.i === i && now - lastPresetTap.t < 380){ lastPresetTap = { i:null, t:0 }; presetTrash = i; renderPresets(); return; }
       lastPresetTap = pr ? { i, t:now } : { i:null, t:0 };
-      if (pr && activePreset === i){ activePreset = null; renderPresets(); setStatus($('#status1'), 'Stopped saving to ' + label + '. Your pads stay as they are.', 'ok'); }
-      else if (pr){ applyPreset(pr); activePreset = i; renderPresets(); setStatus($('#status1'), label + ' on. Changes you make to the pads save into it. Tap it again to stop.', 'ok'); }
+      if (pr && activePreset === i){ activePreset = null; renderPresets(); }
+      else if (pr){ applyPreset(pr); activePreset = i; renderPresets(); }
       else save();
     });
     return b;
-  }), h('button', { type:'button', class:'preset preset-off', 'aria-label':'Turn all pads off', onclick:() => { resetPads(); renderPresets(); setStatus($('#status1'), 'All voice effects off. Your presets are unchanged.', 'ok'); } },
+  }), h('button', { type:'button', class:'preset preset-off', 'aria-label':'Turn all pads off', onclick:() => { resetPads(); renderPresets(); } },
     h('span', { class:'preset-num' }, 'Off')));
 }
 let renameIdx = null;
@@ -2161,7 +2179,6 @@ function drawEditor(){
   // a + at the end of each layer's audio, so you can see where it ends and continue from there
   ed.plus = [];
   if (rec.state === 'idle') state.layers.forEach((layer, li) => {
-    if (!layer.segs.length) return;
     const end = layer.segs.reduce((m, x) => Math.max(m, segEnd(x)), 0), { y, h:lh } = box(li);
     const r = Math.min(13, lh / 2 - 4), cx = X(end) + r + 6, cy = y + lh / 2;
     if (cx - r > w || cx + r < 0) return;
@@ -2368,8 +2385,8 @@ $('#clipDelete').addEventListener('click', () => {
     cancelAnimationFrame(glide);
     const r = edCanvas.getBoundingClientRect(), hit = (ed.plus || []).find((q) => Math.hypot(e.clientX - r.left - q.x, e.clientY - r.top - q.y) <= q.r);
     if (hit){
-      state.activeLayer = hit.lane; state.sel1 = null; state.cursorOn = true; setPlayhead1(hit.t);
-      setStatus($('#status1'), 'Press record to keep going from the end' + (state.layers.length > 1 ? ' of layer ' + (hit.lane + 1) : '') + '.', 'ok');
+      state.activeLayer = hit.lane; state.sel1 = null; setPlayhead1(hit.t); state.cursorOn = false;
+      openAddSheet(hit.lane, hit.t);
       return;
     }
     const t0 = tAt(e), lane = laneAt(e), cx = e.clientX - r.left, cy = e.clientY - r.top;
@@ -2483,11 +2500,38 @@ function zoomTo(span){ state.span1 = span; ed.viewStart = Math.max(0, state.play
 $('#edZoomIn').addEventListener('click', () => zoomTo(Math.max(0.05, edSpan() / 2)));
 $('#edZoomOut').addEventListener('click', () => { const n = edSpan() * 2; zoomTo(n >= edFull() * 1.12 ? Infinity : n); });
 
+/* ---------- the + at the end of a layer: record there, or bring in audio from a file or the camera roll ---------- */
+let addAt = null;
+function openAddSheet(lane, t){ addAt = { lane, t }; $('#addSheet').hidden = false; }
+function closeAddSheet(){ $('#addSheet').hidden = true; }
+$('#addCancel').addEventListener('click', closeAddSheet);
+$('#addSheet').addEventListener('click', (e) => { if (e.target === $('#addSheet')) closeAddSheet(); });
+$('#addRec').addEventListener('click', () => { closeAddSheet(); if (addAt){ state.activeLayer = addAt.lane; state.playhead1 = addAt.t; } startCountdown(); });
+['#addFile', '#addRoll'].forEach((sel) => $(sel).addEventListener('change', async (e) => {
+  const f = e.target.files && e.target.files[0]; e.target.value = '';
+  closeAddSheet();
+  if (!f || !addAt) return;
+  const { lane, t } = addAt;
+  setStatus($('#status1'), 'Reading ' + f.name + '…');
+  try {
+    const { raw, sr } = await fileToMono(f, MAX_SEC);
+    const src = await makeSrc(raw, sr, [{ at:0, params:Object.assign({}, NEUTRAL) }], f.name);
+    const layer = state.layers[lane] || state.layers[0];
+    const piece = { id:nextId++, src, start:0, end:raw.length / sr, at:0 };
+    insertPiece(layer, t, piece);
+    state.activeLayer = state.layers.indexOf(layer); state.playhead1 = segEnd(piece); state.sel1 = null;
+    follow(state.playhead1); renderClips();
+    await refreshSongKey($('#status1'));
+    setStatus($('#status1'), 'Added ' + fileName(f) + ' (' + fmtS(segLen(piece)) + ').', 'ok');
+    renderClips();
+  } catch (err){ setStatus($('#status1'), 'Couldn\'t use ' + f.name + ': ' + (err.message || 'unreadable audio') + '. Try an MP3, WAV, M4A or a video.', 'error'); }
+}));
+
 /* ---------- tap outside the wave: the red line goes away and the pads are just for setting up ---------- */
 document.addEventListener('pointerdown', (e) => {
   if (state.page !== 1 || state.section !== 'create' || rec.state !== 'idle' || paint.busy) return;
   if (!state.cursorOn && !state.sel1 && !edPlayState.playing) return;
-  if (e.target.closest('#edCanvas, #pads, #presets, .ed-tools, .editor .tl-bar, .ed-links, .sheet-backdrop, .rec-zoom, .tabbar, #tryBtn, .tour')) return;
+  if (e.target.closest('#edCanvas, #pads, #presets, .ed-tools, .editor .tl-bar, .ed-links, .sheet-backdrop, #addSheet, .rec-zoom, .tabbar, #tryBtn, .tour')) return;
   state.cursorOn = false; state.sel1 = null;
   if (edPlayState.playing) edStop();
   drawEditor(); edReadouts();
@@ -3947,17 +3991,30 @@ async function applySfx(){
   scrub.max = r.mix.duration.toFixed(2); $('#durT').textContent = fmt(r.mix.duration);
   paintIdle(); renderSfxPanel();
 }
-$('#sfxFile').addEventListener('change', async (e) => {
+// read any audio or video file into one mono track
+async function fileToMono(f, maxSec){
+  const buf = await decodeBlob(f);
+  if (buf.duration > maxSec) throw new Error('it can be up to ' + (maxSec >= 60 ? Math.round(maxSec / 60) + ' minutes' : maxSec + ' seconds'));
+  const n = buf.length, nc = buf.numberOfChannels, raw = new Float32Array(n);
+  for (let c = 0; c < nc; c++){ const d = buf.getChannelData(c); for (let i = 0; i < n; i++) raw[i] += d[i] / nc; }
+  let pk = 0; for (let i = 0; i < n; i++) pk = Math.max(pk, Math.abs(raw[i]));
+  if (pk < 0.001) throw new Error('there\'s no sound in it');
+  if (pk > 0) for (let i = 0; i < n; i++) raw[i] *= 0.9 / pk;
+  return { raw, sr:buf.sampleRate };
+}
+const fileName = (f) => f.name.replace(/\.[^.]+$/, '') || 'Sound';
+['#srFile', '#srRoll'].forEach((sel) => $(sel).addEventListener('change', async (e) => {
   const f = e.target.files && e.target.files[0]; e.target.value = '';
   if (!f) return;
+  srStopRec(true); srStopPrev();
+  $('#srNote').textContent = 'Reading ' + f.name + '…';
   try {
-    const buf = await decodeBlob(f);
-    if (buf.duration > MAX_SEC) throw new Error('files can be up to 10 minutes');
-    const it = await addSfxToLib({ name:f.name.replace(/\.[^.]+$/, '') || 'Sound', source:'file', dur:buf.duration }, f);
-    bufCache.set(it.id, buf);
-    renderSfxPanel(); setStatus($('#status2'), 'Added "' + it.name + '" to your sound effects. Press Add to put it in your song.', 'ok');
-  } catch (err){ setStatus($('#status2'), 'Couldn\'t use ' + f.name + ': ' + (err.message || 'unreadable audio') + '.', 'error'); }
-});
+    const { raw, sr } = await fileToMono(f, 60);
+    sr2.data = raw; sr2.sr = sr;
+    $('#srTime').textContent = fmtT(raw.length / sr); $('#srNote').textContent = 'Got it. Play it back, name it, then save.';
+    $('#srName').value = fileName(f).slice(0, 40); $('#srPlay').hidden = false; $('#srSave').disabled = false;
+  } catch (err){ $('#srNote').textContent = 'Couldn\'t use ' + f.name + ': ' + (err.message || 'unreadable audio') + '.'; }
+}));
 $('#saveSong').addEventListener('click', async () => {
   const r = state.result; if (!r || state.busy) return;
   const id = uid('song'), title = $('#vibe').value.trim() || 'Song ' + (lib.songs.length + 1);
@@ -4549,7 +4606,7 @@ const TOURS = {
   ],
   p1:[
     { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
-    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it. Drag its pink handles inward to trim it: whatever you pull past is cut off when you let go (undo brings it back), then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end to keep going from the end. Double-tap a clip to delete it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Tap + to zoom in closer and closer; − zooms out to the whole song. + Layer stacks up to 4 layers; the other layers play while you record.' },
+    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it. Drag its pink handles inward to trim it: whatever you pull past is cut off when you let go (undo brings it back), then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end of the audio to record more there, or add audio from a file or your camera roll. Double-tap a clip to delete it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Tap + to zoom in closer and closer; − zooms out to the whole song. + Layer stacks up to 4 layers; the other layers play while you record.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does, and slide up or down to hear it get stronger or weaker.' },
