@@ -121,8 +121,16 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 @media (prefers-reduced-motion: reduce){ .tour-spot{transition:none} }
 .share-box{display:flex;flex-direction:column;gap:10px;border:1px solid var(--accent-b);border-radius:14px;padding:14px;background:color-mix(in srgb,var(--accent-b) 10%,var(--surface))}
 .share-box .summary{margin:0}
-.seg4{grid-template-columns:repeat(4,1fr)}
-.seg4 label{font-size:13px;padding-inline:2px}
+.subseg{display:inline-flex;align-self:flex-start;gap:4px;padding:3px;border-radius:99px;background:var(--surface-2);border:1px solid var(--line);margin-top:-6px}
+.subseg input{position:absolute;opacity:0;pointer-events:none}
+.subseg label{padding:6px 14px;border-radius:99px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.subseg input:checked + label{background:var(--text);color:var(--bg)}
+.subseg input:focus-visible + label{outline:2px solid var(--focus);outline-offset:2px}
+.creator .item-main{min-width:0}
+.creator .item-title{flex-wrap:nowrap}
+.creator .cname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.creator .item-meta{overflow-wrap:anywhere}
+.creator .btn.small{flex:none}
 .home-tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .tile{appearance:none;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:2px;aspect-ratio:1/0.85;padding:14px;border-radius:18px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;text-align:left;cursor:pointer}
 .tile svg{width:30px;height:30px;fill:none;stroke:var(--accent-b);stroke-width:1.8;stroke-linejoin:round;margin-bottom:auto}
@@ -602,12 +610,15 @@ legend{padding:0}
     <div id="dFilters" class="page" style="gap:10px">
       <label class="sr-only" for="dSearch">Search</label>
       <input id="dSearch" class="text" type="search" placeholder="Search creators, songs and sounds">
-      <div class="seg seg4" role="radiogroup" aria-label="Show">
-        <input type="radio" name="dview" id="dvF" value="following"><label for="dvF">Following</label>
+      <div class="seg" role="radiogroup" aria-label="Show">
         <input type="radio" name="dview" id="dvC" value="creators" checked><label for="dvC">Creators</label>
         <input type="radio" name="dview" id="dvS" value="songs"><label for="dvS">Songs</label>
         <input type="radio" name="dview" id="dvX" value="sounds"><label for="dvX">Sounds</label>
       </div>
+    </div>
+    <div id="dSub" class="subseg" role="radiogroup" aria-label="Which creators">
+      <input type="radio" name="dsub" id="dsT" value="trending" checked><label for="dsT">Trending</label>
+      <input type="radio" name="dsub" id="dsF" value="following"><label for="dsF">Following</label>
     </div>
     <div id="dBack" hidden><button type="button" id="dBackBtn" class="linkish">← All creators</button></div>
     <div id="dList" class="d-list"></div>
@@ -3185,19 +3196,19 @@ function renderDrafts(){
    The example creators are made up for the preview.
    ========================================================= */
 const EXAMPLES = [
-  { id:'ex-nova', name:'Nova Reyes', handle:'novareyes', isPublic:true, verified:true, color:'#ec4899', bio:'Bedroom pop with too much echo.',
+  { id:'ex-nova', name:'Nova Reyes', handle:'novareyes', isPublic:true, verified:true, followers:12400, color:'#ec4899', bio:'Bedroom pop with too much echo.',
     songs:[{ id:'ex-nova-1', title:'Late Bus Home', allowSave:true, melody:DEMO_SONG[0].melody.concat(DEMO_SONG[2].melody),
       plan:{ tempo:84, wave:'sawtooth', detune:9, reverbSec:3.4, wet:0.42, beat:false, scale:'minor', root:57, brightness:0.55, harmony:0.7, progression:[0,5,2,6], sections:[] } }],
     sfx:[{ id:'ex-nova-x1', name:'Tape riser', recipe:'riser', forSale:true, price:1.99 }, { id:'ex-nova-x2', name:'Vinyl crackle', recipe:'crackle', forSale:false, price:0 }] },
-  { id:'ex-kw', name:'DJ Kilowatt', handle:'djkilowatt', isPublic:true, verified:true, color:'#14b8a6', bio:'Club edits and one-shots you can hit.',
+  { id:'ex-kw', name:'DJ Kilowatt', handle:'djkilowatt', isPublic:true, verified:true, followers:48900, color:'#14b8a6', bio:'Club edits and one-shots you can hit.',
     songs:[{ id:'ex-kw-1', title:'Voltage', allowSave:false, melody:DEMO_SONG[1].melody.concat(DEMO_SONG[1].melody),
       plan:{ tempo:126, wave:'triangle', detune:0, reverbSec:1.6, wet:0.22, beat:true, scale:'major', root:60, brightness:0.7, harmony:0.5, progression:[0,4,5,3], sections:[] } }],
     sfx:[{ id:'ex-kw-x1', name:'Clap stack', recipe:'clap', forSale:true, price:0.99 }, { id:'ex-kw-x2', name:'Laser zap', recipe:'zap', forSale:true, price:1.49 }, { id:'ex-kw-x3', name:'Sub drop', recipe:'subdrop', forSale:true, price:2.49 }] },
-  { id:'ex-mari', name:'Marisol Vega', handle:'marisolsings', isPublic:true, color:'#f59e0b', bio:'Front-porch folk, recorded on my phone.',
+  { id:'ex-mari', name:'Marisol Vega', handle:'marisolsings', isPublic:true, followers:3100, color:'#f59e0b', bio:'Front-porch folk, recorded on my phone.',
     songs:[{ id:'ex-mari-1', title:'Porch Light', allowSave:true, melody:DEMO_SONG[2].melody.concat(DEMO_SONG[0].melody),
       plan:{ tempo:72, wave:'triangle', detune:0, reverbSec:1.1, wet:0.15, beat:false, scale:'major', root:67, brightness:0.35, harmony:0.8, progression:[0,3,4,3], sections:[] } }],
     sfx:[{ id:'ex-mari-x1', name:'Rain on tin', recipe:'rain', forSale:false, price:0 }, { id:'ex-mari-x2', name:'Little bell', recipe:'bell', forSale:true, price:0.99 }] },
-  { id:'ex-theo', name:'Theo Lin', handle:'theolin', isPublic:false, color:'#3b82f6', bio:'', songs:[], sfx:[] }
+  { id:'ex-theo', name:'Theo Lin', handle:'theolin', isPublic:false, followers:870, color:'#3b82f6', bio:'', songs:[], sfx:[] }
 ];
 async function exampleSongBuffer(song){
   const key = 'song:' + song.id; if (bufCache.has(key)) return bufCache.get(key);
@@ -3215,7 +3226,9 @@ function me(){
     sfx:lib.sfx.filter((s) => s.isPublic && (s.source === 'take' || s.source === 'file')).map((s) => Object.assign({ mine:true }, s, { forSale:s.forSale && pr.sellSfx && lib.premium })) };
 }
 function creators(){ const m = me(); return (m.isPublic ? [m] : []).concat(EXAMPLES); }
-const dState = { view:'creators', creator:null, q:'' };
+const dState = { view:'creators', sub:'trending', creator:null, q:'' };
+const compact = (n) => n >= 1000 ? (Math.round(n / 100) / 10) + 'K' : String(n);
+const followers = (c) => (c.followers || 0) + (lib.follows.includes(c.id) ? 1 : 0);
 function badge(){
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'vbadge'); s.setAttribute('role', 'img'); s.setAttribute('aria-label', 'Verified');
@@ -3256,12 +3269,13 @@ function creatorCard(c){
       ? h('button', { type:'button', class:'btn small' + (following ? '' : ' primary'), onclick:(e) => { e.stopPropagation(); lib.follows = following ? lib.follows.filter((x) => x !== c.id) : lib.follows.concat(c.id); saveLib(); renderDiscover(); } }, following ? 'Following' : 'Follow')
       : h('button', { type:'button', class:'btn small', disabled:requested, onclick:(e) => { e.stopPropagation(); lib.requests.push(c.id); saveLib(); renderDiscover(); } }, requested ? 'Requested' : 'Request');
   }
-  const counts = c.isPublic ? c.songs.length + ' song' + (c.songs.length === 1 ? '' : 's') + ' · ' + c.sfx.length + ' sound' + (c.sfx.length === 1 ? '' : 's') : 'Private account';
+  const counts = (c.mine ? '' : compact(followers(c)) + ' followers · ') + (c.isPublic ? c.songs.length + ' song' + (c.songs.length === 1 ? '' : 's') : 'private');
   const card = h('div', { class:'creator', role:'button', tabindex:'0', 'aria-label':'Open ' + c.name },
     avatar(c),
     h('div', { class:'item-main' },
-      h('span', { class:'item-title' }, c.name, c.verified ? badge() : null, c.mine ? h('span', { class:'tag' }, 'You') : h('span', { class:'tag muted' }, 'Example')),
-      h('span', { class:'item-meta', text:'@' + c.handle + ' · ' + counts })),
+      h('span', { class:'item-title' }, h('span', { class:'cname', text:c.name }), c.verified ? badge() : null, c.mine ? h('span', { class:'tag' }, 'You') : null),
+      h('span', { class:'item-meta', text:'@' + c.handle }),
+      h('span', { class:'item-meta', text:counts + (c.mine ? '' : ' · Example') })),
     follow);
   const open = () => { dState.creator = c.id; renderDiscover(); window.scrollTo(0, 0); };
   card.addEventListener('click', open);
@@ -3271,7 +3285,7 @@ function creatorCard(c){
 function renderDiscover(){
   const list = $('#dList'), q = dState.q.toLowerCase().trim(), all = creators();
   const match = (...ss) => !q || ss.some((s) => (s || '').toLowerCase().includes(q));
-  $('#dBack').hidden = !dState.creator; $('#dFilters').hidden = !!dState.creator;
+  $('#dBack').hidden = !dState.creator; $('#dFilters').hidden = !!dState.creator; $('#dSub').hidden = !!dState.creator || dState.view !== 'creators';
   if (dState.creator){
     const c = all.find((x) => x.id === dState.creator) || EXAMPLES[0];
     const head = h('div', { class:'panel creator-head' }, creatorCard(c), c.bio ? h('p', { class:'hint', text:c.bio }) : null);
@@ -3282,17 +3296,18 @@ function renderDiscover(){
     return;
   }
   let rows = [];
-  if (dState.view === 'following'){
+  if (dState.view === 'creators' && dState.sub === 'following'){
     rows = EXAMPLES.filter((c) => (lib.follows.includes(c.id) || lib.requests.includes(c.id)) && match(c.name, c.handle, c.bio)).map(creatorCard);
-    if (!rows.length && !q) rows = [h('p', { class:'empty' }, 'You aren\'t following anyone yet. Tap Creators and follow the singers you like.')];
+    if (!rows.length && !q) rows = [h('p', { class:'empty' }, 'You aren\'t following anyone yet. Switch to Trending and follow the singers you like.')];
   }
-  else if (dState.view === 'creators') rows = all.filter((c) => match(c.name, c.handle, c.bio)).map(creatorCard);
+  else if (dState.view === 'creators') rows = EXAMPLES.filter((c) => match(c.name, c.handle, c.bio)).sort((a, b) => followers(b) - followers(a)).map(creatorCard);
   else if (dState.view === 'songs') all.filter((c) => c.isPublic).forEach((c) => c.songs.forEach((s) => { if (match(s.title, c.name)) rows.push(songRow(s, c)); }));
   else all.filter((c) => c.isPublic).forEach((c) => c.sfx.forEach((x) => { if (match(x.name, c.name)) rows.push(sfxRow(x, c)); }));
   list.replaceChildren(...(rows.length ? rows : [h('p', { class:'empty' }, q ? 'Nothing matches "' + dState.q + '".' : 'Nothing here yet.')]));
 }
 $('#dSearch').addEventListener('input', (e) => { dState.q = e.target.value; renderDiscover(); });
 document.querySelectorAll('input[name=dview]').forEach((r) => r.addEventListener('change', () => { if (r.checked){ dState.view = r.value; renderDiscover(); } }));
+document.querySelectorAll('input[name=dsub]').forEach((r) => r.addEventListener('change', () => { if (r.checked){ dState.sub = r.value; renderDiscover(); } }));
 $('#dBackBtn').addEventListener('click', () => { dState.creator = null; previewStop(); renderDiscover(); });
 
 // Checkout (test mode): the app keeps FEE of each sale
@@ -3588,7 +3603,7 @@ const TOURS = {
     { sel:'#saveAudio', title:'Save to your phone', text:'On a phone this opens the share menu: Save Video puts it in your camera roll, Save to Files keeps the audio.' }
   ],
   discover:[
-    { sel:'label[for=dvF]', title:'Following', text:'The singers you follow. Tap one to see their profile, songs and sounds.' },
+    { sel:'#dSub', title:'Trending and Following', text:'Trending shows the most followed creators. Switch to Following to see the singers you follow; tap one for their profile, songs and sounds.' },
     { sel:'#dFilters', title:'Discover', text:'Search creators, songs and sounds. Creators marked Example are made up to show how this works; your own public songs and sounds show up here too.' },
     { sel:'#dList', title:'Follow and get sounds', text:'Follow singers, play their songs, and get sound effects. Paid sounds are test purchases for now, so no money moves. A purple check means the account is verified.' }
   ],
