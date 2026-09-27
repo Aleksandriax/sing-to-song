@@ -134,9 +134,6 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .lv-val{font-size:12px;color:var(--muted);min-width:40px;text-align:right}
 .recording .layer-vol{display:none!important}
 .ed-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.denoise-btn{display:inline-flex;align-items:center;gap:6px}
-.denoise-btn[hidden]{display:none}
-.denoise-btn .ic{width:16px;height:16px}
 .switch.mon-switch + .switch.mon-switch{flex-basis:100%;justify-content:flex-end}
 .danger-link{color:var(--err)}
 .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
@@ -865,7 +862,6 @@ legend{padding:0}
         <span id="lvVal" class="lv-val mono">100%</span>
       </div>
       <div class="ed-links">
-        <button type="button" id="edDenoise" class="btn small denoise-btn" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/><path d="M4 20 20 4"/></svg>Clear background noise</button>
         <button type="button" id="edSaveSfx" class="linkish" hidden>Save selection as a sound effect</button>
         <button type="button" id="edRemoveLayer" class="linkish danger-link" hidden>Remove layer</button>
       </div>
@@ -3137,7 +3133,6 @@ function edReadouts(){
   $('#edDel').textContent = 'Delete'; $('#edDel').setAttribute('aria-label', sel ? 'Delete ' + fmtS(sel.b - sel.a) : 'Delete');
   $('#edLayer').disabled = state.layers.length >= MAX_LAYERS || !has;
   $('#edSaveSfx').hidden = !sel;
-  $('#edDenoise').hidden = !has || rec.state !== 'idle';
   $('#edRemoveLayer').hidden = state.activeLayer === 0;
   $('#edRemoveLayer').textContent = 'Remove layer ' + (state.activeLayer + 1);
   const where = (state.layers.length > 1 ? 'layer ' + (state.activeLayer + 1) : 'your song') + ' at ' + fmtT(state.activeLayer === 0 ? Math.min(state.playhead1, state.layers[0].segs.reduce((d, s) => Math.max(d, segEnd(s)), 0)) : state.playhead1);
@@ -3825,15 +3820,17 @@ async function denoiseSong(statusEl, quiet){
   if (!quiet) setStatus(statusEl, '');
   return srcs.length;
 }
-$('#edDenoise').addEventListener('click', async () => {
-  if (state.busy || rec.state !== 'idle' || !state.clips.length) return;
-  stopAllPlayback();
-  const b = $('#edDenoise'); b.disabled = true;
-  try { await denoiseSong($('#status1')); histNext = 'Cleared background noise'; renderClips(); setStatus($('#status1'), 'Background noise cleared. Undo brings it back.', 'ok'); toast('Background noise cleared'); }
+// one switch: on cleans what you've recorded (Undo brings it back) and every new take from now on
+$('#cleanSw').addEventListener('change', async () => {
+  const sw = $('#cleanSw');
+  lib.cleanVoice = sw.checked; saveLib();
+  if (!sw.checked){ setStatus($('#status1'), 'New takes keep their background sound. Undo brings back noise that was already cleared.', ''); return; }
+  if (!state.clips.length || state.busy || rec.state !== 'idle'){ setStatus($('#status1'), 'Background noise will be cleared from every take you record.', 'ok'); return; }
+  stopAllPlayback(); sw.disabled = true;
+  try { await denoiseSong($('#status1')); histNext = 'Cleared background noise'; renderClips(); setStatus($('#status1'), 'Background noise cleared, and new takes will be cleaned too. Undo brings it back.', 'ok'); toast('Background noise cleared'); }
   catch (err){ setStatus($('#status1'), 'Noise couldn\'t be cleared: ' + (err.message || err), 'error'); }
-  finally { b.disabled = false; }
+  finally { sw.disabled = false; }
 });
-$('#cleanSw').addEventListener('change', () => { lib.cleanVoice = $('#cleanSw').checked; saveLib(); if (lib.cleanVoice) setStatus($('#status1'), 'New takes will have their background noise cleared automatically. To clean what you already recorded, press Clear background noise under the wave.', 'ok'); });
 async function placeRecording(raw, sr, events){
   if (lib.cleanVoice){ try { raw = await denoise(raw, sr, (f) => setStatus($('#status1'), 'Clearing background noise… ' + Math.round(f * 100) + '%')); } catch (_) {} }
   const label = 'your recording';
@@ -7005,7 +7002,7 @@ const TOURS = {
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where an effect should start (or select a part), then hold a pad to add it to your song. A quick tap still just turns a pad on or off. Tap a gold effect strip to change it or remove it.' },
     { sel:'#pads', title:'Add all your effects', text:'After you record, turn on the pads you want (or tap a preset), then hold the gold "Hold to add all your effects" button. Your song plays and every effect you have on goes in from the red line until you let go. If you selected a part, it stops at the end of the part.' },
     { sel:'.fx-tools', title:'Edit, add and your library', text:'Edit lets you drag your pads into any order, or tap the red x to take one off. Add effects (in Edit) shows what\'s trending, more effects and the basics: + puts one on your pads, the flag saves it. Effects library is yours: Created (effects you mixed yourself) and Saved. On uses an effect right now, even while you record.' },
-    { sel:'#cleanBtn', title:'Clear background noise', text:'Turn this on and every new take has its background noise (hum, fan, room hiss) cleared, so it\'s just your voice. To clean what you already recorded, press Clear background noise under the wave. Undo brings the noise back.' },
+    { sel:'#cleanBtn', title:'Clear background noise', text:'Turn this on to clear the background noise (hum, fan, room hiss) from what you\'ve recorded and from every new take, so it\'s just your voice. Undo brings the noise back.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does.' },
     { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on, then name it or skip. Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
