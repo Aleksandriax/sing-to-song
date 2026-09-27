@@ -1885,6 +1885,12 @@ const rec = { state:'idle', stream:null, src:null, node:null, sp:null, engine:nu
 const DEFAULT_HINT = 'Tap for a 3-second countdown, then tap again to stop. Or hold to record right here and let go to stop. Up to 10 minutes.';
 const cd = { on:false, timer:0 };
 
+// saved effects 1–4: under the pads on the main step 1 page, on top of them while recording
+function placePresets(){
+  const pr = $('#presets'), pads = $('#pads');
+  if (document.body.classList.contains('recording')){ if (pr.nextElementSibling !== pads) pads.before(pr); }
+  else if (pads.nextElementSibling !== pr) pads.after(pr);
+}
 function setRecUI(){
   const on = rec.state === 'recording';
   // holding the button records right here; only a tap goes to the countdown and recording screen
@@ -1897,6 +1903,7 @@ function setRecUI(){
   if (state.recView && rec.state === 'idle' && !cd.on) recTime.textContent = fmt(songDur());
   if (busy !== document.body.classList.contains('recording')){
     document.body.classList.toggle('recording', busy);
+    placePresets();
     if (busy) window.scrollTo(0, 0);
     requestAnimationFrame(() => { if (typeof drawEditor === 'function'){ sizeEditor(); drawEditor(); } });
   }
@@ -2268,6 +2275,7 @@ function boardRemove(id){
 }
 function boardAdd(id){ if (!boardIds().includes(id)){ lib.board = boardIds().concat(id); saveLib(); renderBoard(); } }
 renderBoard();
+placePresets();
 function resetPads(){ activePreset = null; allFx().forEach((p) => { fx[p.id].on = false; paintPad(p); }); pushPads(); }
 
 /* Effects library: every effect (the basics, more mixed ones, and yours). Use one now, put it on your pads, or make your own. */
