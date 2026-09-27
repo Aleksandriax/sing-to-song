@@ -56,6 +56,7 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .rec{position:relative;width:136px;height:136px;border-radius:50%;border:0;padding:0;cursor:pointer;
   background:linear-gradient(135deg,var(--accent-a),var(--accent-b));box-shadow:0 14px 44px var(--glow);
   display:grid;place-items:center;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;transition:transform .15s ease}
+.rec.pressing{transform:scale(.94)}
 .rec:active{transform:scale(.96)}
 .rec::before{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--bg)}
 .rec-core{position:relative;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));transition:border-radius .2s,width .2s,height .2s}
@@ -1724,14 +1725,16 @@ function fxSegments(events, len, sr){
 const recBtn = $('#recBtn'), recTime = $('#recTime'), recHint = $('#recHint');
 const rec = { state:'idle', stream:null, src:null, node:null, sp:null, engine:null, monitor:null, chunks:[], events:[], live:[], count:0,
   t0:0, timer:0, pressAt:0, startedByPress:false, stopWanted:false, holdTimer:0, stopWait:null, raf:0, lastNote:0 };
-const DEFAULT_HINT = 'Tap to start. You get a 3-second countdown. Tap again to stop. Up to 10 minutes.';
+const DEFAULT_HINT = 'Tap for a 3-second countdown, then tap again to stop. Or hold to record right here and let go to stop. Up to 10 minutes.';
 const cd = { on:false, timer:0 };
 
 function setRecUI(){
   const on = rec.state === 'recording';
-  const busy = rec.state !== 'idle' || cd.on || state.recView;
-  if (rec.state !== 'idle' || cd.on) state.recView = true;
-  document.body.classList.toggle('rec-live', rec.state !== 'idle' || cd.on);
+  // holding the button records right here; only a tap goes to the countdown and recording screen
+  const live = (rec.state !== 'idle' && !rec.startedByPress) || cd.on;
+  const busy = live || state.recView;
+  if (live) state.recView = true;
+  document.body.classList.toggle('rec-live', live);
   $('#recDone').hidden = !(state.recView && rec.state === 'idle' && !cd.on);
   $('#recHist').hidden = $('#recDone').hidden;
   if (state.recView && rec.state === 'idle' && !cd.on) recTime.textContent = fmt(songDur());
@@ -1747,7 +1750,7 @@ function setRecUI(){
   if (rec.state === 'idle') recHint.textContent = DEFAULT_HINT;
   else if (rec.state === 'starting') recHint.textContent = 'Asking for the microphone…';
   else if (rec.state === 'stopping') recHint.textContent = 'Saving your take…';
-  else if (!rec.startedByPress) recHint.textContent = 'Recording. Tap to stop.';
+  else recHint.textContent = rec.startedByPress ? 'Recording. Let go to stop.' : 'Recording. Tap to stop.';
 }
 function micError(err){
   const n = err && err.name;
@@ -1902,18 +1905,27 @@ function startCountdown(){
 }
 function cancelCountdown(){ if (!cd.on) return; clearTimeout(cd.timer); cd.on = false; $('#countdown').hidden = true; if (!songDur()) state.recView = false; setRecUI(); }
 $('#countdown').addEventListener('click', cancelCountdown);
+// tap: 3-2-1 countdown on the recording screen. hold: record right away on this screen, let go to stop.
 recBtn.addEventListener('pointerdown', (e) => {
   if (e.button !== undefined && e.button !== 0) return;
   e.preventDefault();
-  rec.startedByPress = false;
-  if (rec.state === 'idle' && !cd.on) startCountdown();
+  if (rec.state !== 'idle' || cd.on || (typeof paint !== 'undefined' && paint.busy)) return;
+  rec.startedByPress = false; rec.pendingTap = true; rec.pressAt = performance.now();
+  recBtn.classList.add('pressing');
+  clearTimeout(rec.holdTimer);
+  rec.holdTimer = setTimeout(() => {
+    rec.pendingTap = false; recBtn.classList.remove('pressing');
+    if (rec.state !== 'idle' || cd.on) return;
+    rec.startedByPress = true; if (navigator.vibrate) navigator.vibrate(12);
+    startRecording();
+  }, HOLD_MS);
 });
 function recRelease(cancelled){
-  clearTimeout(rec.holdTimer);
+  clearTimeout(rec.holdTimer); recBtn.classList.remove('pressing');
+  if (rec.pendingTap){ rec.pendingTap = false; if (!cancelled) startCountdown(); return; }
   if (rec.startedByPress){
-    rec.startedByPress = false;
-    if (performance.now() - rec.pressAt >= HOLD_MS && !(cancelled && rec.state === 'starting')) stopRecording();
-    else setRecUI();
+    if (rec.state === 'recording' || rec.state === 'starting') stopRecording();   // it clears startedByPress when it's done
+    else { rec.startedByPress = false; setRecUI(); }
   } else if (!cancelled && (rec.state === 'recording' || rec.state === 'starting')) stopRecording();
 }
 recBtn.addEventListener('pointerup', () => recRelease(false));
@@ -5846,7 +5858,7 @@ const TOURS = {
     { sel:'.tabbar', title:'Menu', text:'Discover to find singers, songs and sounds. Studio to make songs. Profile for your account. Everything saves on this device as you go.' }
   ],
   p1:[
-    { sel:'#recBtn', title:'Record', text:'Tap to start and tap again to stop, or hold it and let go. Your phone is enough, no headphones needed. While recording you can switch pads and presets. Press Done when you\'re finished; the arrows undo and redo (it says what it undid), and play listens back.' },
+    { sel:'#recBtn', title:'Record', text:'Tap for a 3-2-1 countdown on the recording screen, then tap again to stop. Or hold it to record right here, and let go to stop. Your phone is enough, no headphones needed. While recording you can switch pads and presets. Press Done when you\'re finished; the arrows undo and redo (it says what it undid), and play listens back.' },
     { sel:'.editor', title:'Your wave', text:'Tap the wave to place the red line, or drag its round handle. Slide to scroll. Spread two fingers to zoom in, pinch to zoom out, or use + and −. The round button on the left, next to the layer you tapped, jumps the red line to that layer\'s start. Tap outside the wave to hide the red line.' },
     { sel:'.editor', title:'Edit a part', text:'Tap a part to select it. Drag its pink handles in to trim, or back out to bring trimmed audio back. Then Duplicate, Delete, Split at the red line, or Fade its start and end. Hold a part and drag to move it, even onto another layer. Double-tap a part to delete it.' },
     { sel:'.editor', title:'Layers', text:'+ Layer stacks up to 4 layers, and the new one records from the red line while the others play. Tap a layer to set its volume. Tap an empty layer and press Delete to remove it. The + at the end of your audio records more there or adds audio from a file or your camera roll.' },
