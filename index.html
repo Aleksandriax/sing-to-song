@@ -246,6 +246,13 @@ body:not(.recording) #recTime{display:none}
 .like.on .ic{fill:currentColor}
 .like:active{transform:scale(1.15)}
 .sheet-backdrop#confirmSheet,.sheet-backdrop#nameSheet{z-index:80}
+.banner-edit{display:flex;flex-direction:column;gap:8px}
+.banner-prev{height:92px;border-radius:14px;background:var(--bnr, linear-gradient(135deg,#3b1170,#7a1d5c));background-size:cover;background-position:center;border:1px solid var(--line)}
+.banner-acts{display:flex;align-items:center;gap:12px}
+.prof-head.has-banner{background:linear-gradient(180deg,rgba(12,8,22,.25),rgba(12,8,22,.85) 70%),var(--bnr) center/cover}
+.pub-hero{position:relative;overflow:hidden;padding-top:0 !important}
+.pub-banner{align-self:stretch;height:140px;margin:0 -16px -56px;background:var(--bnr, linear-gradient(135deg,#3b1170,#7a1d5c));background-size:cover;background-position:center}
+.pub-hero .avatar{position:relative;z-index:1}
 .pub-view{position:fixed;inset:0;z-index:60;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch}
 .pub-view[hidden]{display:none}
 .pub-top{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 10px;background:linear-gradient(var(--bg) 75%,transparent)}
@@ -844,6 +851,13 @@ legend{padding:0}
       </div>
     </section>
     <section id="pEdit" class="panel" hidden aria-label="Edit profile">
+      <div class="banner-edit">
+        <div id="pBannerPrev" class="banner-prev"></div>
+        <div class="banner-acts">
+          <label class="btn small file-pick">Add banner<input id="pBanner" class="sr-only" type="file" accept="image/*"></label>
+          <button type="button" id="pBannerRemove" class="linkish" hidden>Remove</button>
+        </div>
+      </div>
       <div class="me">
         <div class="me-photo">
           <div id="pAvatar"></div>
@@ -945,7 +959,7 @@ legend{padding:0}
 <div id="pubView" class="pub-view" hidden role="dialog" aria-modal="true" aria-label="Your profile as others see it">
   <div class="pub-top">
     <button type="button" id="pubClose" class="back-top" aria-label="Close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-    <span class="pub-note">How others see you</span>
+    <span id="pubNote" class="pub-note">How others see you</span>
   </div>
   <div id="pubBody" class="pub-body"></div>
 </div>
@@ -4763,7 +4777,7 @@ function sfxLen(x, el, prefix){
 }
 function me(){
   const pr = lib.profile;
-  return { id:'me', mine:true, photo:pr.photo || null, name:pr.name.trim() || 'Your profile', handle:pr.handle.trim() || 'you', isPublic:pr.isPublic, verified:lib.verify.status === 'verified', color:'#8b5cf6', bio:pr.bio,
+  return { id:'me', mine:true, photo:pr.photo || null, banner:pr.banner || null, name:pr.name.trim() || 'Your profile', handle:pr.handle.trim() || 'you', isPublic:pr.isPublic, verified:lib.verify.status === 'verified', color:'#8b5cf6', bio:pr.bio,
     songs:lib.songs.filter((s) => s.isPublic).map((s) => Object.assign({ mine:true }, s)),
     sfx:lib.sfx.filter((s) => s.isPublic && (s.source === 'take' || s.source === 'file')).map((s) => Object.assign({ mine:true }, s, { forSale:s.forSale && pr.sellSfx && lib.premium })) };
 }
@@ -4836,7 +4850,7 @@ function creatorCard(c){
       h('span', { class:'item-meta', text:'@' + c.handle }),
       h('span', { class:'item-meta', text:counts + (c.mine ? '' : ' · Example') })),
     follow);
-  const open = () => { dState.creator = c.id; dState.ctab = 'songs'; renderDiscover(); window.scrollTo(0, 0); };
+  const open = () => openCreatorView(c);
   card.addEventListener('click', open);
   card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(); } });
   return card;
@@ -4967,27 +4981,58 @@ function renderProfileHead(){
   const pm = me(); $('#pStatSongs').textContent = pm.songs.length;
   $('#pStatSounds').textContent = pm.sfx.length;
   $('#pStatFollowing').textContent = lib.follows.length;
+  paintBanner();
 }
-/* your profile, full screen, the way other people see it */
-let pubTab = 'songs';
-function openPublicView(tab){ if (tab) pubTab = tab; stopAllPlayback(); renderPublicView(); $('#pubView').hidden = false; $('#pubView').scrollTop = 0; }
-function closePublicView(){ previewStop(); $('#pubView').hidden = true; }
+/* a profile, full screen: yours (the way others see it) or anyone else's */
+let pubTab = 'songs', pubWho = null;
+const pubStack = [];
+function openPublicView(tab){ pubStack.length = 0; pubWho = null; if (tab) pubTab = tab; stopAllPlayback(); renderPublicView(); $('#pubView').hidden = false; $('#pubView').scrollTop = 0; }
+function openCreatorView(c){
+  if (c.mine){ openPublicView('songs'); return; }
+  if (!$('#pubView').hidden) pubStack.push({ who:pubWho, tab:pubTab });
+  pubWho = c.id; pubTab = 'songs'; previewStop(); renderPublicView(); $('#pubView').hidden = false; $('#pubView').scrollTop = 0;
+}
+function closePublicView(){
+  previewStop();
+  if (pubStack.length){ const st = pubStack.pop(); pubWho = st.who; pubTab = st.tab; renderPublicView(); $('#pubView').scrollTop = 0; return; }
+  $('#pubView').hidden = true; if (state.section === 'discover') renderDiscover();
+}
+const bannerOf = (c) => c.banner ? 'url(' + c.banner + ')' : 'linear-gradient(135deg,' + c.color + ',#1a1030 85%)';
 function renderPublicView(){
-  const m = me(), follows = EXAMPLES.filter((c) => lib.follows.includes(c.id));
-  const stat = (tab, color, n, label) => { const b = h('button', { type:'button', class:'pstat' + (pubTab === tab ? ' on' : ''), style:'--st:' + color }, h('span', { class:'mono', text:String(n) }), h('span', { text:label })); b.addEventListener('click', () => { pubTab = tab; renderPublicView(); }); return b; };
+  const mine = !pubWho, m = mine ? me() : (EXAMPLES.find((x) => x.id === pubWho) || EXAMPLES[0]);
+  const follows = mine ? EXAMPLES.filter((c) => lib.follows.includes(c.id)) : [];
+  const following = lib.follows.includes(m.id), requested = lib.requests.includes(m.id);
+  $('#pubNote').textContent = mine ? 'How others see you' : '@' + m.handle;
+  const stat = (tab, color, n, label) => { const b = h('button', { type:'button', class:'pstat' + (pubTab === tab ? ' on' : ''), style:'--st:' + color }, h('span', { class:'mono', text:typeof n === 'number' ? compact(n) : n }), h('span', { text:label })); if (tab) b.addEventListener('click', () => { pubTab = tab; renderPublicView(); }); return b; };
+  let followBtn = null;
+  if (!mine){
+    followBtn = m.isPublic
+      ? h('button', { type:'button', class:'btn' + (following ? '' : ' primary'), style:'min-width:140px' }, following ? 'Following' : 'Follow')
+      : h('button', { type:'button', class:'btn', style:'min-width:140px', disabled:requested }, requested ? 'Requested' : 'Request to follow');
+    followBtn.addEventListener('click', async () => {
+      if (!m.isPublic){ lib.requests.push(m.id); saveLib(); renderPublicView(); return; }
+      if (following && !(await askConfirm('Unfollow ' + m.name + '?', 'Their songs and sounds stay on Discover. You can follow them again any time.', 'Unfollow'))) return;
+      lib.follows = following ? lib.follows.filter((x) => x !== m.id) : lib.follows.concat(m.id); saveLib(); renderPublicView();
+    });
+  }
   const hero = h('section', { class:'pub-hero' },
+    h('div', { class:'pub-banner', style:'--bnr:' + bannerOf(m) }),
     avatar({ name:m.name, color:m.color, photo:m.photo }),
     h('span', { class:'pub-name' }, h('span', { text:m.name }), m.verified ? badge() : null),
     h('span', { class:'prof-handle', text:'@' + m.handle }),
     m.bio ? h('p', { class:'prof-bio', text:m.bio }) : null,
-    h('div', { class:'prof-stats' }, stat('songs', '#f472b6', m.songs.length, 'songs'), stat('sounds', '#2dd4bf', m.sfx.length, 'sounds'), stat('following', '#fbbf24', follows.length, 'following')));
-  const tabs = h('div', { class:'pub-tabs four', role:'tablist' }, ...[['songs', 'Songs'], ['sounds', 'Sounds'], ['following', 'Following'], ['liked', 'Liked']].map(([k, l]) => {
+    followBtn,
+    h('div', { class:'prof-stats' }, stat('songs', '#f472b6', m.songs.length, 'songs'), stat('sounds', '#2dd4bf', m.sfx.length, 'sounds'),
+      mine ? stat('following', '#fbbf24', follows.length, 'following') : stat(null, '#fbbf24', followers(m), 'followers')));
+  const tabList = mine ? [['songs', 'Songs'], ['sounds', 'Sounds'], ['following', 'Following'], ['liked', 'Liked']] : [['songs', 'Songs'], ['sounds', 'Sounds']];
+  const tabs = h('div', { class:'pub-tabs' + (mine ? ' four' : ''), role:'tablist', style:mine ? '' : 'grid-template-columns:1fr 1fr' }, ...tabList.map(([k, l]) => {
     const b = h('button', { type:'button', role:'tab', 'aria-selected':pubTab === k ? 'true' : 'false' }, l);
     b.addEventListener('click', () => { pubTab = k; renderPublicView(); }); return b;
   }));
   let list;
-  if (pubTab === 'songs') list = m.songs.length ? m.songs.map((x) => songRow(x, m)) : [h('p', { class:'empty' }, 'No published songs yet. Songs you save and make public show up here.')];
-  else if (pubTab === 'sounds') list = m.sfx.length ? m.sfx.map((x) => sfxRow(x, m)) : [h('p', { class:'empty' }, 'No published sounds yet. Make a sound effect public in Manage songs and sounds.')];
+  if (!mine && !m.isPublic) list = [h('p', { class:'empty' }, 'This account is private. Their songs and sound effects are hidden until they accept your request.')];
+  else if (pubTab === 'songs') list = m.songs.length ? m.songs.map((x) => songRow(x, m)) : [h('p', { class:'empty' }, mine ? 'No published songs yet. Songs you save and make public show up here.' : 'No public songs yet.')];
+  else if (pubTab === 'sounds') list = m.sfx.length ? m.sfx.map((x) => sfxRow(x, m)) : [h('p', { class:'empty' }, mine ? 'No published sounds yet. Make a sound effect public in Manage songs and sounds.' : 'No public sound effects yet.')];
   else if (pubTab === 'liked'){
     const all = creators(), rows = [];
     lib.likes.forEach((l) => {
@@ -4995,15 +5040,11 @@ function renderPublicView(){
       if (l.kind === 'song'){ const it = c.songs.find((x) => x.id === l.id); if (it) rows.push(songRow(it, c)); }
       else { const it = c.sfx.find((x) => x.id === l.id); if (it) rows.push(sfxRow(it, c)); }
     });
-    list = [h('p', { class:'pub-private' }, lib.profile.showLikes ? 'Others can see what you like. You can hide this in Profile.' : 'Only you can see this. Turn on Show my likes in Profile to share it.')].concat(rows.length ? rows : [h('p', { class:'empty' }, 'Tap the heart on songs and sounds in Discover to like them.')]);
+    list = [h('p', { class:'pub-private' }, lib.profile.showLikes !== false ? 'Others can see what you like. You can hide this in Profile.' : 'Only you can see this. Turn on Show my likes in Profile to share it.')].concat(rows.length ? rows : [h('p', { class:'empty' }, 'Tap the heart on songs and sounds in Discover to like them.')]);
   }
-  else list = follows.length ? follows.map((c) => {
-    const card = creatorCard(c);
-    card.addEventListener('click', () => { closePublicView(); showSection('discover'); dState.creator = c.id; renderDiscover(); window.scrollTo(0, 0); });
-    return card;
-  }) : [h('p', { class:'empty' }, 'You aren\'t following anyone yet. Find singers on Discover.')];
+  else list = follows.length ? follows.map((c) => creatorCard(c)) : [h('p', { class:'empty' }, 'You aren\'t following anyone yet. Find singers on Discover.')];
   $('#pubBody').replaceChildren(hero,
-    ...(m.isPublic ? [] : [h('p', { class:'pub-private' }, 'Your account is private, so only people you approve can see your songs and sounds.')]),
+    ...(mine && !m.isPublic ? [h('p', { class:'pub-private' }, 'Your account is private, so only people you approve can see your songs and sounds.')] : []),
     tabs, h('div', { class:'d-list' }, ...list));
 }
 $('#pubClose').addEventListener('click', closePublicView);
@@ -5141,6 +5182,27 @@ function paintMyAvatar(){
   $('#pPhotoLabel').firstChild.textContent = pr.photo ? 'Change photo' : 'Add photo';
 }
 // Profile photo: cropped to a centered square and shrunk to 256 px before it's saved
+// banner behind your profile picture (stored as a small wide image)
+$('#pBanner').addEventListener('change', async (e) => {
+  const f = e.target.files && e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  try {
+    const url = URL.createObjectURL(f);
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const W = 960, H = 360, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const r = Math.max(W / img.naturalWidth, H / img.naturalHeight), sw = W / r, sh = H / r;
+    cv.getContext('2d').drawImage(img, (img.naturalWidth - sw) / 2, (img.naturalHeight - sh) / 2, sw, sh, 0, 0, W, H);
+    URL.revokeObjectURL(url);
+    lib.profile.banner = cv.toDataURL('image/jpeg', 0.82); saveLib(); paintBanner();
+  } catch (err){ $('#pHandleNote').textContent = 'That picture couldn\'t be used. Try a JPG or PNG.'; }
+});
+$('#pBannerRemove').addEventListener('click', () => { lib.profile.banner = null; saveLib(); paintBanner(); });
+function paintBanner(){
+  const b = lib.profile.banner, val = b ? 'url(' + b + ')' : '';
+  $('#pBannerPrev').style.setProperty('--bnr', val || 'linear-gradient(135deg,#3b1170,#7a1d5c)');
+  $('#pBannerRemove').hidden = !b;
+  const head = $('#pMe'); head.classList.toggle('has-banner', !!b); if (b) head.style.setProperty('--bnr', val); else head.style.removeProperty('--bnr');
+}
 $('#pPhoto').addEventListener('change', async (e) => {
   const f = e.target.files && e.target.files[0]; e.target.value = '';
   if (!f) return;
