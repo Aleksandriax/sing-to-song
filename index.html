@@ -16,7 +16,7 @@
   --text:#f3eefb; --muted:#a99dc2; --faint:#7d7197;
   --accent-a:#8b5cf6; --accent-b:#ec4899; --focus:#f0abfc;
   --err:#fb7185; --err-bg:rgba(251,113,133,.12); --ok:#4ade80;
-  --wave-bg:#c7dbff; --wave-fill:#1e3a8a; --playhead:#db2777; --tuned:#ec4899;
+  --wave-bg:#1d1631; --wave-fill:#a78bfa; --playhead:#ff3b6b; --tuned:#fbbf24;
   --glow:rgba(236,72,153,.32);
   color-scheme:dark;
 }
@@ -35,9 +35,10 @@ body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 "Figtree",sys
 .brand{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:19px;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
 .brand-mark{display:block;width:28px;height:28px;flex:none}
 .steps-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.step-tab{appearance:none;border:0;border-top:3px solid var(--line);background:none;color:var(--faint);font:inherit;font-size:12px;font-weight:600;text-align:left;padding:7px 0 0;cursor:pointer;letter-spacing:.02em}
-.step-tab span{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:500}
-.step-tab[aria-current="step"]{color:var(--text);border-image:linear-gradient(90deg,var(--accent-a),var(--accent-b)) 1}
+.step-tab{appearance:none;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--muted);font:inherit;font-size:13px;font-weight:700;line-height:1.2;text-align:left;padding:8px 10px;cursor:pointer;min-width:0}
+.step-tab span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;color:var(--faint);margin-bottom:2px}
+.step-tab[aria-current="step"]{color:#fff;border-color:transparent;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));box-shadow:0 6px 18px var(--glow)}
+.step-tab[aria-current="step"] span{color:rgba(255,255,255,.8)}
 .step-tab:disabled{cursor:default;opacity:.55}
 
 .page{display:flex;flex-direction:column;gap:18px}
@@ -63,7 +64,7 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .live{position:relative}
 .live canvas{display:block;width:100%;height:88px}
 .note-read{position:absolute;right:10px;top:8px;font-size:12px;color:#1e3a8a;background:rgba(255,255,255,.7);padding:2px 8px;border-radius:99px}
-.live-empty{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:#1e3a8a;pointer-events:none}
+.live-empty{position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:var(--muted);pointer-events:none}
 
 /* effect pads */
 .pads{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -157,10 +158,57 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .album-tile span.cap{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .album-tile.playing .cover{outline:3px solid var(--accent-b);outline-offset:2px}
 .cover-pick{display:flex;align-items:center;gap:12px}
-.panel.earn-panel{border:0;background:linear-gradient(135deg,#064e3b,#0f766e);color:#ecfdf5}
+.panel.earn-panel{border:0;background:linear-gradient(135deg,#7c2d12,#b45309);color:#fff7ed}
 .earn-panel h2{color:#fff}
 .earn-panel .stat{background:rgba(255,255,255,.12);color:#fff}
-.earn-panel .stat-label{color:rgba(236,253,245,.8)}
+.earn-panel .stat-label{color:rgba(255,247,237,.82)}
+.recording .topbar,.recording .tabbar,.recording #page1 > .back-top,.recording #page1 > .p1-title,.recording .editor .tl-bar,.recording #edPos,.recording .ed-tools,.recording .ed-links,.recording .pads-head,.recording .pad-foot,.recording #toStep2{display:none!important}
+.recording .app{padding-block:calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-bottom));gap:10px}
+.recording #page1{gap:10px}
+.recording #page1 > .editor{order:-1}
+.recording .recorder{flex-direction:row;justify-content:center;gap:16px;padding-block:0}
+.recording .rec{width:76px;height:76px}
+.recording .rec::before{inset:5px}
+.recording .rec-core{width:30px;height:30px}
+.recording .rec.is-rec .rec-core{width:26px;height:26px;border-radius:7px}
+.recording .rec-hint{display:none}
+.recording .ed-wrap canvas{height:84px!important}
+.recording .presets .preset{min-height:44px}
+.recording .pad{aspect-ratio:auto;height:max(60px,calc((100dvh - 330px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 4))}
+.recording #status1{display:none}
+.painting .editor,.painting .pads,.painting .ed-tools{pointer-events:none}
+.painting .pads{opacity:.6}
+.danger-fill{border-color:transparent;background:var(--err);color:#fff}
+.boot-cover{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);font-size:14px}
+.boot-cover svg{width:56px;height:56px}
+.prof-head{display:flex;flex-direction:column;gap:14px;padding:18px;border-radius:20px;background:linear-gradient(160deg,#2a1150 0%,#3b0f3d 55%,var(--surface) 100%);border:1px solid var(--line)}
+.prof-top{display:flex;align-items:center;gap:14px}
+.prof-avatar .avatar{width:72px;height:72px;font-size:30px;box-shadow:0 0 0 3px rgba(255,255,255,.12)}
+.prof-name{display:flex;align-items:center;gap:6px;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:22px;line-height:1.1;min-width:0}
+.prof-name > span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prof-name .vbadge{width:20px;height:20px}
+.prof-handle{font-size:14px;color:#c9bde0}
+.prof-bio{margin:0;font-size:15px;color:#e8def7}
+.prof-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pstat{display:flex;flex-direction:column;align-items:center;gap:0;padding:10px 4px;border-radius:14px;background:rgba(255,255,255,.07)}
+.pstat .mono{font-size:22px;font-weight:600;color:var(--st)}
+.pstat span:last-child{font-size:12px;color:#c9bde0}
+.album-sec{display:flex;flex-direction:column;gap:12px}
+.settings{gap:0;padding-block:6px}
+.set-row{display:flex;align-items:center;gap:12px;min-height:56px;border-bottom:1px solid var(--line)}
+.set-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:color-mix(in srgb,var(--i) 20%,transparent);color:var(--i);flex:none}
+.set-icon svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.set-label{flex:1;font-weight:600}
+.set-val{display:flex;align-items:center;gap:8px}
+.verify-form{display:flex;flex-direction:column;gap:8px;padding-block:12px;border-bottom:1px solid var(--line)}
+.settings .switches{gap:0}
+.settings .switch{min-height:56px;border-bottom:1px solid var(--line)}
+.settings .switch:last-child{border-bottom:0}
+.chip-state{font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.chip-state.good{background:color-mix(in srgb,#f59e0b 22%,transparent);color:#fbbf24}
+.manage summary{cursor:pointer;font-weight:700;list-style-position:inside}
+.manage[open]{gap:10px}
+.manage h3{margin:6px 0 0;font-size:14px;color:var(--muted);font-weight:600}
 .back-top{appearance:none;align-self:flex-start;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);cursor:pointer;padding:0;margin-bottom:-6px}
 .back-top svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .pad-sub{position:relative;font-size:12px;color:var(--muted)}
@@ -349,9 +397,9 @@ legend{padding:0}
   <header class="topbar">
     <div class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="logoGrad" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><path d="M3.5 23 Q 6 20.5 8 23.5 Q 10 26.5 14 26.5 C 19 26.5 22 24 21.5 20.5 C 21 16.5 11 17.5 10.5 12 C 10 7.5 15 6 18.5 6.5 Q 21.5 7 22.8 9.2 Q 24.5 11.5 28 4.5" fill="none" stroke="url(#logoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Sing to Song</div>
     <nav class="steps-nav" id="stepsNav" aria-label="Creator steps">
-      <button type="button" class="step-tab" id="tab1" data-page="1" aria-current="step"><span>Step 1</span>Record &amp; cut</button>
-      <button type="button" class="step-tab" id="tab2" data-page="2" disabled><span>Step 2</span>Notes &amp; vibe</button>
-      <button type="button" class="step-tab" id="tab3" data-page="3" disabled><span>Step 3</span>Listen &amp; save</button>
+      <button type="button" class="step-tab" id="tab1" data-page="1" aria-current="step"><span>Step 1</span>Record and cut</button>
+      <button type="button" class="step-tab" id="tab2" data-page="2" disabled><span>Step 2</span>Adjust and edit</button>
+      <button type="button" class="step-tab" id="tab3" data-page="3" disabled><span>Step 3</span>Generate and finish</button>
     </nav>
   </header>
 
@@ -386,7 +434,7 @@ legend{padding:0}
 
   <main id="page1" class="page" hidden>
     <button type="button" class="back-top" data-to="0" aria-label="Back to Create"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
-    <div>
+    <div class="p1-title">
       <h1>Sing it</h1>
       <p class="lede">Press record and sing. Hit the pads to add effects as you go.</p>
     </div>
@@ -418,7 +466,7 @@ legend{padding:0}
         <button type="button" id="edDel" class="btn small danger">Delete</button>
         <button type="button" id="edLayer" class="btn small">+ Layer</button>
       </div>
-      <p id="edHint" class="hint"></p>
+      <p id="edHint" class="hint" hidden></p>
       <div class="ed-links">
         <button type="button" id="edSaveSfx" class="linkish" hidden>Save selection as a sound effect</button>
         <button type="button" id="edRemoveLayer" class="linkish danger-link" hidden>Remove layer</button>
@@ -427,12 +475,10 @@ legend{padding:0}
 
     <div class="pads-head">
       <h2>Voice effects</h2>
-      <p class="hint">These change your voice while you sing. They aren't sound effects for the song.</p>
     </div>
     <div id="presets" class="presets" aria-label="Presets"></div>
     <section id="pads" class="pads" aria-label="Voice effects"></section>
-    <div class="pad-foot">
-      <span class="hint">Tap a pad to turn it on or off. Hold and slide up for more, down for less, then let go to lock it. Presets: tap an empty one to save the pads you have on. Tap a saved one to load it; while it's selected, every change you make saves into it. Hold one to name it.</span>
+    <div class="pad-foot" style="justify-content:flex-end">
       <button type="button" id="monitorBtn" class="linkish" aria-pressed="false">Hear yourself: off</button>
     </div>
 
@@ -445,7 +491,7 @@ legend{padding:0}
   <main id="page2" class="page" hidden>
     <button type="button" class="back-top" data-to="1" aria-label="Back to Record and cut"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div>
-      <h1>Notes &amp; vibe</h1>
+      <h1>Adjust and edit</h1>
       <p class="lede">Scroll through your song. Tap the wave, then tap + to pin a note for the AI. Give it a duration to cover a whole section.</p>
     </div>
     <div id="status2" class="status" role="status" aria-live="polite"></div>
@@ -542,7 +588,7 @@ legend{padding:0}
   <main id="page3" class="page" hidden>
     <button type="button" class="back-top" data-to="2" aria-label="Back to Notes and vibe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div>
-      <h1>Listen &amp; save</h1>
+      <h1>Generate and finish</h1>
       <p class="lede">Play your song. Regenerate for a different arrangement, or save it.</p>
     </div>
     <canvas id="viz" class="screen" width="720" height="720" aria-label="Song visualizer"></canvas>
@@ -626,12 +672,24 @@ legend{padding:0}
 
   <!-- PROFILE -->
   <main id="profile" class="page" hidden>
-    <div>
-      <h1>Profile</h1>
-      <p class="lede">Your account, what's public, and what's for sale.</p>
-    </div>
-    <section class="panel" aria-label="About you">
-      <div class="me" id="pMe">
+    <section class="prof-head" id="pMe" aria-label="Your profile">
+      <div class="prof-top">
+        <div id="pHeadAvatar" class="prof-avatar"></div>
+        <div class="item-main">
+          <span class="prof-name"><span id="pHeadName"></span><span id="pHeadBadge"></span></span>
+          <span id="pHeadHandle" class="prof-handle"></span>
+        </div>
+        <button type="button" id="pEditBtn" class="btn small" aria-expanded="false" aria-controls="pEdit">Edit</button>
+      </div>
+      <p id="pHeadBio" class="prof-bio" hidden></p>
+      <div class="prof-stats">
+        <div class="pstat" style="--st:#f472b6"><span id="pStatSongs" class="mono">0</span><span>songs</span></div>
+        <div class="pstat" style="--st:#2dd4bf"><span id="pStatSounds" class="mono">0</span><span>sounds</span></div>
+        <div class="pstat" style="--st:#fbbf24"><span id="pStatFollowing" class="mono">0</span><span>following</span></div>
+      </div>
+    </section>
+    <section id="pEdit" class="panel" hidden aria-label="Edit profile">
+      <div class="me">
         <div class="me-photo">
           <div id="pAvatar"></div>
           <label id="pPhotoLabel" class="linkish file-pick">Add photo<input id="pPhoto" class="sr-only" type="file" accept="image/*"></label>
@@ -646,37 +704,38 @@ legend{padding:0}
       </div>
       <label class="sr-only" for="pBio">Bio</label>
       <textarea id="pBio" class="text" rows="2" maxlength="160" placeholder="A line about your music"></textarea>
+      <button type="button" id="pEditDone" class="btn primary">Done</button>
     </section>
-    <section class="panel" aria-labelledby="pAlbumHead">
+    <section class="album-sec" aria-labelledby="pAlbumHead">
       <h2 id="pAlbumHead">Your album</h2>
       <div id="pAlbum" class="album-grid"></div>
     </section>
-    <section class="panel" aria-labelledby="pPlanHead">
-      <h2 id="pPlanHead">Your plan</h2>
-      <div id="pPlan"></div>
-    </section>
-    <section class="panel" aria-labelledby="pVerifyHead">
-      <h2 id="pVerifyHead">Verified badge</h2>
-      <div id="pVerify"></div>
-    </section>
-    <section class="panel" aria-labelledby="pCtlHead">
-      <h2 id="pCtlHead">Privacy and selling</h2>
+    <section class="panel settings" aria-label="Account">
+      <div class="set-row" id="pPlanRow"><span class="set-icon" style="--i:#f59e0b"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg></span><span class="set-label">Plan</span><div id="pPlan" class="set-val"></div></div>
+      <div class="set-row" id="pVerifyRow"><span class="set-icon" style="--i:#8b5cf6"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><span class="set-label">Verified badge</span><div id="pVerify" class="set-val"></div></div>
+      <div id="pVerifyForm" class="verify-form" hidden></div>
       <div id="pSwitches" class="switches"></div>
-      <p class="hint">Selling needs Premium. When a sound effect sells, the app keeps 15% as its fee and you keep 85%.</p>
     </section>
-    <section class="panel" aria-labelledby="pSongsHead"><h2 id="pSongsHead">My songs</h2><div id="pSongs" class="d-list"></div></section>
-    <section class="panel" aria-labelledby="pSfxHead">
-      <h2 id="pSfxHead">My sound effects</h2>
+    <details class="panel manage">
+      <summary>Manage songs and sounds</summary>
+      <h3>Songs</h3>
+      <div id="pSongs" class="d-list"></div>
+      <h3>Sound effects</h3>
       <div id="pSfx" class="d-list"></div>
       <label class="btn small file-pick" style="align-self:flex-start">Upload a sound effect<input id="pSfxFile" class="sr-only" type="file" accept="audio/*"></label>
       <p id="pSfxNote" class="hint"></p>
-    </section>
+    </details>
     <section class="panel earn-panel" aria-labelledby="pEarnHead">
       <h2 id="pEarnHead">Earnings</h2>
       <div id="pEarn" class="stats"></div>
     </section>
     <button type="button" id="helpBtn" class="btn big help-btn">Need help?</button>
   </main>
+</div>
+
+<div id="bootCover" class="boot-cover" role="status" aria-live="polite">
+  <svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="bootGrad" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><path d="M3.5 23 Q 6 20.5 8 23.5 Q 10 26.5 14 26.5 C 19 26.5 22 24 21.5 20.5 C 21 16.5 11 17.5 10.5 12 C 10 7.5 15 6 18.5 6.5 Q 21.5 7 22.8 9.2 Q 24.5 11.5 28 4.5" fill="none" stroke="url(#bootGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <span id="bootText">Loading…</span>
 </div>
 
 <div id="onboard" class="onboard" hidden>
@@ -725,6 +784,17 @@ legend{padding:0}
     <button type="button" class="tab" data-sec="profile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</button>
   </div>
 </nav>
+
+<div id="clipSheet" class="sheet-backdrop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="clipTitle">
+    <h2 id="clipTitle">Delete this clip?</h2>
+    <p id="clipText" class="summary"></p>
+    <div class="actions">
+      <button type="button" id="clipCancel" class="btn">Keep it</button>
+      <button type="button" id="clipDelete" class="btn danger-fill">Delete</button>
+    </div>
+  </div>
+</div>
 
 <div id="renameSheet" class="sheet-backdrop" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="renameTitle">
@@ -1206,6 +1276,12 @@ const DEFAULT_HINT = 'Tap to start, tap again to stop. Or hold, then release. Up
 
 function setRecUI(){
   const on = rec.state === 'recording';
+  const busy = rec.state !== 'idle';
+  if (busy !== document.body.classList.contains('recording')){
+    document.body.classList.toggle('recording', busy);
+    if (busy) window.scrollTo(0, 0);
+    requestAnimationFrame(() => { if (typeof drawEditor === 'function') drawEditor(); });
+  }
   recBtn.classList.toggle('is-rec', on);
   recBtn.classList.toggle('is-wait', rec.state === 'starting' || rec.state === 'stopping');
   recBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -1447,6 +1523,8 @@ PADS.forEach((p) => {
     if (e.button !== undefined && e.button !== 0) return;
     e.preventDefault();
     try { el.setPointerCapture(e.pointerId); } catch (_) {}
+    if (paint.busy) return;
+    if (paintMode()){ g = { paint:true, y:e.clientY, start:valueOf(p) }; paintStart(p); return; }
     const s = fx[p.id];
     g = { y:e.clientY, t:performance.now(), moved:false, wasOn:s.on, start:valueOf(p) };
     if (!s.on){ s.on = true; paintPad(p); pushPads(); padEdited(false); }
@@ -1454,11 +1532,13 @@ PADS.forEach((p) => {
   el.addEventListener('pointermove', (e) => {
     if (!g) return;
     const dy = g.y - e.clientY;
+    if (g.paint){ if (Math.abs(dy) >= 6){ adjust(p, g.start, dy); paintPad(p); paintAdjust(p); } return; }
     if (!g.moved && Math.abs(dy) < 6) return;
     g.moved = true; adjust(p, g.start, dy); paintPad(p); pushPads(); padEdited(false);
   });
   const up = () => {
     if (!g) return;
+    if (g.paint){ g = null; paintEnd(p); return; }
     const s = fx[p.id];
     if (!g.moved){
       if (g.wasOn) s.on = false;                                   // tap an active pad: off
@@ -1476,6 +1556,97 @@ PADS.forEach((p) => {
   paintPad(p);
 });
 function resetPads(){ activePreset = null; PADS.forEach((p) => { fx[p.id].on = false; paintPad(p); }); pushPads(); }
+
+/* Painting: once there's a recording, hold a pad while your song plays.
+   The effect starts where the red line was and ends where you let go. */
+const paint = { on:false, pad:null, lane:0, a:0, b:0, limit:0, node:null };
+const paintMode = () => !paint.busy && rec.state === 'idle' && state.section === 'create' && state.page === 1 && songDur() > 0.05;
+function onlyPad(p){
+  // the settings of just this pad, as it's set now
+  const saved = {}; PADS.forEach((q) => { saved[q.id] = fx[q.id].on; fx[q.id].on = q.id === p.id; });
+  const o = padParams(); PADS.forEach((q) => { fx[q.id].on = saved[q.id]; });
+  return o;
+}
+function overlayParams(base, over){
+  const o = Object.assign({}, NEUTRAL, base);
+  if (over.tune){ o.tune = true; o.strength = Math.max(o.tune && base.tune ? base.strength : 0, over.strength); }
+  if (over.shift) o.shift = over.shift;
+  if (over.harm) o.harm = over.harm;
+  AMT_KEYS.forEach((k) => { if (+over[k] > 0) o[k] = over[k]; });
+  return o;
+}
+function overlayEvents(events, A, B, over){
+  const ev = events.slice().sort((x, y) => x.at - y.at);
+  const at = (t) => { let q = NEUTRAL; for (const e of ev){ if (e.at <= t) q = e.params; else break; } return q; };
+  const endParams = at(B);
+  const out = ev.filter((e) => e.at < A);
+  out.push({ at:A, params:overlayParams(at(A), over) });
+  ev.forEach((e) => { if (e.at > A && e.at < B) out.push({ at:e.at, params:overlayParams(e.params, over) }); });
+  out.push({ at:B, params:Object.assign({}, endParams) });
+  ev.forEach((e) => { if (e.at > B) out.push(e); });
+  return out;
+}
+async function paintStart(p){
+  edStop(); stopAllPlayback();
+  const sel = state.sel1;
+  paint.lane = sel ? sel.layer : state.activeLayer;
+  if (!state.layers[paint.lane].segs.length){ paint.lane = 0; }
+  paint.a = sel ? sel.a : state.playhead1;
+  if (paint.a >= songDur() - 0.05) paint.a = 0;
+  paint.limit = sel ? sel.b : songDur();
+  paint.b = paint.a; paint.pad = p; paint.on = true; paint.node = null;
+  state.playhead1 = paint.a;
+  padEls[p.id].classList.add('on');
+  const c = ctx(); if (c.state !== 'running') { try { await c.resume(); } catch (_) {} }
+  if (!paint.on) return;
+  let node = null;
+  try {
+    if (await ensureWorklet(c)){
+      node = new AudioWorkletNode(c, 's2s-voice', { numberOfInputs:1, numberOfOutputs:1, outputChannelCount:[1], channelCount:1, channelCountMode:'explicit' });
+      node.port.postMessage({ type:'key', params:keyParams() }); node.port.postMessage({ type:'params', params:onlyPad(p) });
+    }
+  } catch (_) { node = null; }
+  if (!paint.on){ return; }
+  paint.node = node;
+  edPlay(node, node ? paint.lane : undefined);
+}
+function paintAdjust(p){ if (paint.node) paint.node.port.postMessage({ type:'params', params:onlyPad(p) }); }
+async function paintEnd(p){
+  if (!paint.on) return;
+  const playing = edPlayState.playing;
+  const b = playing ? Math.min(paint.limit, edPlayState.from + Math.max(0, ctx().currentTime - edPlayState.t0)) : paint.b;
+  edStop(); paint.on = false; paint.node = null;
+  paintPad(p); drawEditor();
+  const a = paint.a, lane = paint.lane;
+  if (b - a < 0.15){ state.playhead1 = a; setStatus($('#status1'), 'Hold the pad down while your song plays. The effect goes from the red line to where you let go.', ''); drawEditor(); edReadouts(); return; }
+  state.playhead1 = b; padEdited(true);
+  await applyPaint(lane, a, b, onlyPad(p), p.name);
+}
+async function applyPaint(lane, a, b, over, name){
+  const layer = state.layers[lane];
+  paint.busy = true; document.body.classList.add('painting');
+  try {
+  splitSegAt(layer, a); splitSegAt(layer, b);
+  const hit = layer.segs.filter((x) => inRange(x, a, b));
+  if (!hit.length){ renderClips(); return; }
+  // each recording that's touched gets a new copy with the effect added, so other clips that use it don't change
+  const bySrc = new Map(); hit.forEach((x) => { if (!bySrc.has(x.src)) bySrc.set(x.src, []); bySrc.get(x.src).push(x); });
+  let n = 0;
+  for (const [src, segs] of bySrc){
+    let events = src.events.length ? src.events : [{ at:0, params:Object.assign({}, NEUTRAL) }];
+    segs.forEach((x) => { events = overlayEvents(events, Math.floor(x.start * src.sr), Math.ceil(x.end * src.sr), over); });
+    const ns = { id:uid('src'), raw:src.raw, sr:src.sr, events, hist:src.hist, segs:fxSegments(events, src.raw.length, src.sr), key:null, buffer:null };
+    n++;
+    const key = state.key;
+    storeRender(ns, await renderTake(ns.raw, ns.sr, events, key, (f) => setStatus($('#status1'), 'Adding ' + name + '… ' + Math.round(((n - 1 + f) / bySrc.size) * 100) + '%')), key);
+    saveSrc(ns);
+    segs.forEach((x) => { x.src = ns; });
+  }
+  } finally { paint.busy = false; document.body.classList.remove('painting'); }
+  state.sel1 = null;
+  setStatus($('#status1'), name + ' added from ' + fmtT(a) + ' to ' + fmtT(b) + '.', 'ok');
+  renderClips();
+}
 
 /* Presets: save the pads you like and bring them back with one tap */
 const PRESET_COUNT = 4;
@@ -1719,7 +1890,8 @@ function drawEditor(){
   if (!state.zoom1) ed.viewStart = 0;
   const vs = ed.viewStart, X = (t) => 8 + ((t - vs) / span) * (w - 16);
   const muted = cssVar('--muted', '#a99dc2'), faint = cssVar('--faint', '#7d7197'), pink = cssVar('--playhead', '#db2777');
-  const waveBg = cssVar('--wave-bg', '#c7dbff'), waveFill = cssVar('--wave-fill', '#1e3a8a'), tuned = cssVar('--tuned', '#ec4899');
+  const waveBg = cssVar('--wave-bg', '#1d1631'), tuned = cssVar('--tuned', '#fbbf24');
+  const waveFill = g.createLinearGradient(0, 0, w, 0); waveFill.addColorStop(0, '#8b5cf6'); waveFill.addColorStop(0.55, '#c084fc'); waveFill.addColorStop(1, '#ec4899');
   // ruler
   const stepS = span > 240 ? 30 : span > 90 ? 10 : span > 30 ? 5 : span > 12 ? 2 : 1;
   g.font = '500 10px "JetBrains Mono", ui-monospace, monospace'; g.textAlign = 'left';
@@ -1751,7 +1923,7 @@ function drawEditor(){
       const a1 = Math.max(a, s.start), b1 = Math.min(b, s.end); if (b1 <= a1) return;
       const xa = X(s.at + a1 - s.start), xb = X(s.at + b1 - s.start); g.fillRect(xa, y + lh - 6, Math.max(2, xb - xa), 3);
     }));
-    g.setLineDash([3, 3]); g.strokeStyle = 'rgba(11,26,74,.5)'; g.lineWidth = 1;
+    g.setLineDash([3, 3]); g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1;
     layer.segs.forEach((s) => { if (s.at > 0.01){ const x = X(s.at) + 0.5; g.beginPath(); g.moveTo(x, y + 4); g.lineTo(x, y + lh - 4); g.stroke(); } });
     g.setLineDash([]);
     // live recording into this layer
@@ -1764,15 +1936,28 @@ function drawEditor(){
         for (let i = Math.floor(ci * pm); i < Math.floor((ci + 1) * pm) && i < rec.live.length; i++){ if (rec.live[i].p > pk) pk = rec.live[i].p; if (rec.live[i].fx) f = true; }
         lp.push([X(rec.recordAt) + ci * 3, Math.max(1, Math.min(1, Math.sqrt(pk) * 1.15) * amp)]); fx.push(f);
       }
-      g.fillStyle = 'rgba(199,219,255,.85)'; g.fillRect(lp[0][0], y + 2, lp[lp.length - 1][0] - lp[0][0], lh - 4);
+      g.fillStyle = 'rgba(139,92,246,.14)'; g.fillRect(lp[0][0], y + 2, lp[lp.length - 1][0] - lp[0][0], lh - 4);
       blobPath(g, lp, mid); g.fillStyle = waveFill; g.fill();
       g.save(); blobPath(g, lp, mid); g.clip(); g.fillStyle = tuned; fx.forEach((f, i) => { if (f) g.fillRect(lp[i][0] - 1.5, y, 3.5, lh); }); g.restore();
     }
     // selection
     const sel = state.sel1;
     if (sel && sel.layer === li){ const a = X(sel.a), b = X(sel.b); g.fillStyle = 'rgba(219,39,119,.28)'; g.fillRect(a, y, b - a, lh); g.fillStyle = pink; g.fillRect(a - 1, y, 2, lh); g.fillRect(b - 1, y, 2, lh); }
-    if (state.layers.length > 1){ g.fillStyle = 'rgba(11,26,74,.75)'; g.font = '700 10px "Figtree", system-ui, sans-serif'; g.fillText('Layer ' + (li + 1), 10, y + 13); }
+    if (state.layers.length > 1){ g.fillStyle = 'rgba(243,238,251,.75)'; g.font = '700 10px "Figtree", system-ui, sans-serif'; g.fillText('Layer ' + (li + 1), 10, y + 13); }
   });
+  // part being painted with a pad
+  if (paint.on && paint.pad){
+    const { y, h:lh } = box(paint.lane), xa = X(paint.a), xb = X(Math.max(paint.a, edPlayState.playing ? state.playhead1 : paint.b));
+    g.globalAlpha = 0.35; g.fillStyle = paint.pad.color; g.fillRect(xa, y, Math.max(2, xb - xa), lh); g.globalAlpha = 1;
+    g.fillStyle = paint.pad.color; g.fillRect(xa, y + lh - 6, Math.max(2, xb - xa), 4);
+  }
+  // clip being moved: outline it; on layer 1 also show where it will land
+  if (state.moving){
+    const mv = state.moving, { y, h:lh } = box(mv.lane);
+    g.lineWidth = 3; g.strokeStyle = pink;
+    roundRectPath(g, X(mv.seg.at), y + 2, Math.max(6, X(segEnd(mv.seg)) - X(mv.seg.at)), lh - 4, 8); g.stroke();
+    if (mv.lane === 0){ const bx = X(dropBoundary(mv.seg, mv.dropT)); g.fillStyle = pink; g.fillRect(bx - 2, y - 2, 4, lh + 4); }
+  }
   // playhead
   const px = X(rec.state === 'recording' ? rec.recordAt + rec.live.length * 1024 / (actx ? actx.sampleRate : 48000) : state.playhead1);
   g.fillStyle = pink; g.fillRect(px - 1, RULER - 4, 2, hh - RULER + 4);
@@ -1807,32 +1992,84 @@ function setPlayhead1(t){
   drawEditor(); edReadouts();
 }
 
-/* ---------- touch: tap to move, drag to select, tap a layer to pick it ---------- */
+/* ---------- touch: tap to move the playhead, drag to select, hold then drag to move a clip, double-tap a clip to delete it ---------- */
+function reorderSeg(seg, dropT){
+  const lane = state.layers[0], rest = lane.segs.filter((x) => x !== seg);
+  let idx = rest.findIndex((x) => x.at + segLen(x) / 2 > dropT); if (idx < 0) idx = rest.length;
+  rest.splice(idx, 0, seg); rest.forEach((x, i) => { x.at = i; });
+  lane.segs = rest; ripple(lane);
+}
+function dropBoundary(seg, dropT){
+  const rest = state.layers[0].segs.filter((x) => x !== seg), next = rest.find((x) => x.at + segLen(x) / 2 > dropT);
+  return next ? next.at : rest.reduce((d, x) => Math.max(d, segEnd(x)), 0);
+}
+let clipToDelete = null;
+function askDeleteClip(lane, seg){
+  clipToDelete = { lane, seg };
+  $('#clipText').textContent = 'The clip from ' + fmtT(seg.at) + ' to ' + fmtT(segEnd(seg)) + ' (' + fmtS(segLen(seg)) + ')' + (state.layers.length > 1 ? ' on layer ' + (lane + 1) : '') + '.';
+  $('#clipSheet').hidden = false; $('#clipDelete').focus();
+}
+$('#clipCancel').addEventListener('click', () => { $('#clipSheet').hidden = true; clipToDelete = null; });
+$('#clipSheet').addEventListener('click', (e) => { if (e.target === $('#clipSheet')){ $('#clipSheet').hidden = true; clipToDelete = null; } });
+$('#clipDelete').addEventListener('click', () => {
+  if (!clipToDelete) return;
+  const layer = state.layers[clipToDelete.lane];
+  layer.segs = layer.segs.filter((x) => x !== clipToDelete.seg); ripple(layer);
+  $('#clipSheet').hidden = true; clipToDelete = null; state.sel1 = null;
+  state.playhead1 = Math.min(state.playhead1, songDur());
+  setStatus($('#status1'), 'Clip deleted.', 'ok');
+  renderClips();
+});
 {
-  let d = null;
+  let d = null, lastTap = null;
+  const HOLD = 420;
   const tAt = (e) => { const r = edCanvas.getBoundingClientRect(); return clamp(ed.viewStart + ((e.clientX - r.left - 8) / (r.width - 16)) * edSpan(), 0, songDur()); };
   const laneAt = (e) => { const r = edCanvas.getBoundingClientRect(), box = laneBox(r.height), y = e.clientY - r.top; for (let i = 0; i < state.layers.length; i++){ const b = box(i); if (y >= b.y - LANE_PAD && y <= b.y + b.h + LANE_PAD) return i; } return y < RULER ? 0 : state.layers.length - 1; };
   edCanvas.addEventListener('pointerdown', (e) => {
-    if (rec.state !== 'idle') return;
-    d = { t0:tAt(e), x:e.clientX, moved:false, lane:laneAt(e) };
-    state.activeLayer = d.lane;
+    if (rec.state !== 'idle' || paint.busy) return;
+    const t0 = tAt(e), lane = laneAt(e);
+    d = { t0, x:e.clientX, moved:false, lane, seg:segAt(state.layers[lane], t0), mode:null, timer:0 };
+    state.activeLayer = lane;
     try { edCanvas.setPointerCapture(e.pointerId); } catch (_) {}
+    if (d.seg) d.timer = setTimeout(() => {
+      if (!d || d.moved) return;
+      d.mode = 'move'; d.origAt = d.seg.at; state.sel1 = null;
+      state.moving = { seg:d.seg, lane:d.lane, dropT:d.t0 };
+      if (navigator.vibrate) navigator.vibrate(12);
+      drawEditor();
+    }, HOLD);
   });
   edCanvas.addEventListener('pointermove', (e) => {
     if (!d) return;
-    if (!d.moved && Math.abs(e.clientX - d.x) < 6) return;
-    d.moved = true;
     const t = tAt(e);
+    if (d.mode === 'move'){
+      if (d.lane === 0) state.moving.dropT = t; else d.seg.at = Math.max(0, d.origAt + (t - d.t0));
+      drawEditor(); return;
+    }
+    if (!d.moved && Math.abs(e.clientX - d.x) < 6) return;
+    d.moved = true; clearTimeout(d.timer);
     state.sel1 = { layer:d.lane, a:Math.min(d.t0, t), b:Math.max(d.t0, t) };
     drawEditor(); edReadouts();
   });
-  const up = () => {
+  const up = (e) => {
     if (!d) return;
-    if (!d.moved){ state.sel1 = null; setPlayhead1(d.t0); }
-    else if (state.sel1 && state.sel1.b - state.sel1.a < 0.05) state.sel1 = null;
+    clearTimeout(d.timer);
+    if (d.mode === 'move'){
+      if (d.lane === 0) reorderSeg(d.seg, state.moving.dropT); else ripple(state.layers[d.lane]);
+      state.moving = null; d = null;
+      setStatus($('#status1'), 'Clip moved.', 'ok');
+      renderClips(); return;
+    }
+    if (!d.moved && e.type === 'pointerup'){
+      const now = performance.now();
+      if (lastTap && d.seg && lastTap.seg === d.seg && now - lastTap.t < 350){ lastTap = null; const x = d; d = null; askDeleteClip(x.lane, x.seg); drawEditor(); edReadouts(); return; }
+      lastTap = { t:now, seg:d.seg };
+      state.sel1 = null; setPlayhead1(d.t0);
+    } else if (state.sel1 && state.sel1.b - state.sel1.a < 0.05) state.sel1 = null;
     d = null; drawEditor(); edReadouts();
   };
   edCanvas.addEventListener('pointerup', up); edCanvas.addEventListener('pointercancel', up);
+  edCanvas.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 $('#edPos').addEventListener('input', (e) => { state.sel1 = null; setPlayhead1(+e.target.value); });
 $('#edZoomIn').addEventListener('click', () => { state.zoom1 = Math.min(5, state.zoom1 + 1); ed.viewStart = Math.max(0, state.playhead1 - edSpan() * 0.3); drawEditor(); });
@@ -1889,9 +2126,9 @@ $('#edSaveSfx').addEventListener('click', async () => {
 
 /* ---------- playback: every layer from the playhead ---------- */
 const edPlayState = { playing:false, nodes:[], raf:0 };
-function scheduleSong(c, from, dest, skipLayer){
+function scheduleSong(c, from, dest, skipLayer, onlyLayer){
   const nodes = [], t0 = c.currentTime + 0.05;
-  state.layers.forEach((l, li) => { if (li === skipLayer) return; l.segs.forEach((s) => {
+  state.layers.forEach((l, li) => { if (li === skipLayer || (onlyLayer != null && li !== onlyLayer)) return; l.segs.forEach((s) => {
     if (segEnd(s) <= from) return;
     const off = Math.max(0, from - s.at), src = c.createBufferSource();
     src.buffer = prepSrc(s.src).buffer; src.connect(dest);
@@ -1900,17 +2137,24 @@ function scheduleSong(c, from, dest, skipLayer){
   }); });
   return { nodes, t0 };
 }
-function edPlay(){
+function edPlay(fxNode, fxLane){
   edStop(true);
   const c = ctx(), dur = songDur(); if (!dur) return;
   let from = state.playhead1; if (from >= dur - 0.05) from = 0;
   const bus = c.createGain(); bus.gain.value = 1 / Math.sqrt(state.layers.length); bus.connect(c.destination);
-  const { nodes, t0 } = scheduleSong(c, from, bus, -1);
-  Object.assign(edPlayState, { playing:true, nodes, bus });
+  let nodes, t0;
+  if (fxNode){
+    // the lane you're painting goes through a live copy of the voice engine so you hear the pad while you hold it
+    fxNode.connect(bus);
+    const a = scheduleSong(c, from, bus, fxLane), b = scheduleSong(c, from, fxNode, -1, fxLane);
+    nodes = a.nodes.concat(b.nodes); t0 = a.t0;
+  } else ({ nodes, t0 } = scheduleSong(c, from, bus, -1));
+  Object.assign(edPlayState, { playing:true, nodes, bus, from, t0, fxNode:fxNode || null });
   $('#edPlay').textContent = 'Pause';
   const loop = () => {
     const t = from + Math.max(0, c.currentTime - t0);
-    if (t >= dur){ state.playhead1 = 0; edStop(); drawEditor(); edReadouts(); return; }
+    if (paint.on){ paint.b = Math.min(t, paint.limit); if (t >= paint.limit){ state.playhead1 = paint.limit; edStop(); drawEditor(); edReadouts(); return; } }
+    if (t >= dur){ state.playhead1 = paint.on ? dur : 0; edStop(); drawEditor(); edReadouts(); return; }
     state.playhead1 = t;
     if (state.zoom1){ const span = edSpan(); if (t > ed.viewStart + span * 0.85) ed.viewStart = t - span * 0.3; }
     drawEditor(); edReadouts(); edPlayState.raf = requestAnimationFrame(loop);
@@ -1920,6 +2164,7 @@ function edPlay(){
 function edStop(keepLabel){
   edPlayState.nodes.forEach((n) => { try { n.stop(); } catch (e) {} });
   if (edPlayState.bus){ try { edPlayState.bus.disconnect(); } catch (e) {} }
+  if (edPlayState.fxNode){ try { edPlayState.fxNode.disconnect(); } catch (e) {} edPlayState.fxNode = null; }
   edPlayState.nodes = []; edPlayState.bus = null; cancelAnimationFrame(edPlayState.raf);
   edPlayState.playing = false; if (!keepLabel) $('#edPlay').textContent = 'Play';
 }
@@ -2042,7 +2287,7 @@ function drawTimeline(){
   }
   // wave background
   const bx = Math.max(0, x0), bw = Math.min(w, x1) - bx;
-  if (bw > 0){ roundRectPath(g, x0, top, x1 - x0, wh, 12); g.fillStyle = cssVar('--wave-bg', '#c7dbff'); g.fill(); }
+  if (bw > 0){ roundRectPath(g, x0, top, x1 - x0, wh, 12); g.fillStyle = cssVar('--wave-bg', '#1d1631'); g.fill(); }
   // blob of the visible part
   const col = 3, pts = [];
   for (let x = Math.max(0, Math.floor(x0)); x <= Math.min(w, x1); x += col){
@@ -2051,7 +2296,7 @@ function drawTimeline(){
     let pk = 0; for (let i = Math.max(0, a); i < b; i += stride){ const v = Math.abs(j.data[i]); if (v > pk) pk = v; }
     pts.push([x, Math.max(1.2, (pk / j.peak) * amp)]);
   }
-  if (pts.length > 1){ blobPath(g, pts, mid); g.fillStyle = cssVar('--wave-fill', '#1e3a8a'); g.fill(); }
+  if (pts.length > 1){ blobPath(g, pts, mid); g.fillStyle = cssVar('--wave-fill', '#a78bfa'); g.fill(); }
   // where effect pads were on
   g.fillStyle = cssVar('--tuned', '#ec4899');
   j.fx.forEach(([a, b]) => { const xa = tlX(a) - sl, xb = tlX(b) - sl; if (xb > 0 && xa < w) g.fillRect(xa, top + wh - 7, Math.max(2, xb - xa), 4); });
@@ -2063,11 +2308,11 @@ function drawTimeline(){
     g.fillRect(xa, top, xb - xa, wh);
   });
   // take boundaries
-  g.setLineDash([4, 4]); g.strokeStyle = 'rgba(11,26,74,.55)'; g.lineWidth = 1;
+  g.setLineDash([4, 4]); g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1;
   j.bounds.forEach((bt, i) => {
     const x = tlX(bt) - sl; if (x < -40 || x > w + 2) return;
     if (i > 0){ g.beginPath(); g.moveTo(x + 0.5, top + 4); g.lineTo(x + 0.5, top + wh - 4); g.stroke(); }
-    g.fillStyle = 'rgba(11,26,74,.75)'; g.font = '600 10px "JetBrains Mono", ui-monospace, monospace'; g.fillText(String(i + 1).padStart(2, '0'), x + 5, top + wh - 8);
+    g.fillStyle = 'rgba(243,238,251,.8)'; g.font = '600 10px "JetBrains Mono", ui-monospace, monospace'; g.fillText(String(i + 1).padStart(2, '0'), x + 5, top + wh - 8);
   });
   g.setLineDash([]);
   // playhead
@@ -3353,30 +3598,45 @@ $('#blendSw').addEventListener('change', (e) => {
   state.blend = e.target.checked; scheduleAutosave();
 });
 function renderPlan(){
-  $('#pPlan').replaceChildren(lib.premium
-    ? h('div', { class:'plan-row' }, h('span', {}, h('b', {}, 'Premium'), ' · $4.99 a month (test)'), h('button', { type:'button', class:'linkish', onclick:() => { lib.premium = false; saveLib(); syncPremiumUI(); renderProfile(); } }, 'End Premium'))
-    : h('div', { class:'plan-row' }, h('span', {}, h('b', {}, 'Free'), ' · ads after purchases and saves'), h('button', { type:'button', class:'btn small primary', onclick:() => openPremium('') }, 'Upgrade')));
+  $('#pPlan').replaceChildren(...(lib.premium
+    ? [h('span', { class:'chip-state good' }, 'Premium'), h('button', { type:'button', class:'linkish', onclick:() => { lib.premium = false; saveLib(); syncPremiumUI(); renderProfile(); } }, 'End')]
+    : [h('span', { class:'chip-state' }, 'Free'), h('button', { type:'button', class:'btn small primary', onclick:() => openPremium('') }, 'Upgrade')]));
 }
+function renderProfileHead(){
+  const pr = lib.profile;
+  $('#pHeadAvatar').replaceChildren(avatar({ name:pr.name || 'You', color:'#8b5cf6', photo:pr.photo }));
+  $('#pHeadName').textContent = pr.name || 'Your name';
+  $('#pHeadBadge').replaceChildren(...(lib.verify.status === 'verified' ? [badge()] : []));
+  $('#pHeadHandle').textContent = '@' + (pr.handle || 'username');
+  $('#pHeadBio').textContent = pr.bio || ''; $('#pHeadBio').hidden = !pr.bio;
+  $('#pStatSongs').textContent = lib.songs.length;
+  $('#pStatSounds').textContent = lib.sfx.filter((x) => x.source === 'take' || x.source === 'file').length;
+  $('#pStatFollowing').textContent = lib.follows.length;
+}
+function setEditOpen(open){ $('#pEdit').hidden = !open; $('#pEditBtn').setAttribute('aria-expanded', open ? 'true' : 'false'); $('#pEditBtn').textContent = open ? 'Close' : 'Edit'; if (!open) renderProfileHead(); }
+$('#pEditBtn').addEventListener('click', () => setEditOpen($('#pEdit').hidden));
+$('#pEditDone').addEventListener('click', () => { setEditOpen(false); window.scrollTo({ top:0, behavior:'smooth' }); });
 function renderVerify(){
-  const v = lib.verify, box = $('#pVerify');
-  if (v.status === 'verified'){ box.replaceChildren(h('p', { class:'summary' }, badge(), ' Your account is verified.')); return; }
-  const intro = h('p', { class:'hint' }, 'A verified badge ', badge(), ' shows people this account is really you, so no one can pretend to be you. Usernames are one per person.');
+  const v = lib.verify, box = $('#pVerify'), form = $('#pVerifyForm');
+  form.hidden = true;
+  if (v.status === 'verified'){ box.replaceChildren(badge(), h('span', { class:'chip-state good' }, 'Verified')); return; }
   if (v.status === 'pending'){
-    box.replaceChildren(intro, h('p', { class:'summary' }, 'Request sent with ', h('span', { class:'mono', text:v.link }), '.'),
-      h('p', { class:'hint' }, 'In the finished app, a person checks your link and turns on your badge. In this preview no one reviews requests, so the badge stays off.'),
-      h('button', { type:'button', class:'linkish', onclick:() => { lib.verify = { status:'none', link:'' }; saveLib(); renderVerify(); } }, 'Cancel request'));
+    box.replaceChildren(h('span', { class:'chip-state' }, 'Pending'), h('button', { type:'button', class:'linkish', onclick:() => { lib.verify = { status:'none', link:'' }; saveLib(); renderVerify(); } }, 'Cancel'));
     return;
   }
-  const link = h('input', { type:'url', id:'pVerifyLink', class:'text', maxlength:'200', placeholder:'https://… a profile that proves it\'s you' });
+  const get = h('button', { type:'button', class:'btn small' }, 'Get verified');
+  get.addEventListener('click', () => { form.hidden = !form.hidden; if (!form.hidden) $('#pVerifyLink').focus(); });
+  box.replaceChildren(get);
+  const link = h('input', { type:'url', id:'pVerifyLink', class:'text', maxlength:'200', placeholder:'Link to your Instagram, TikTok or YouTube', 'aria-label':'Link to a profile of yours on another site' });
   const note = h('p', { class:'hint', role:'status' });
-  const send = h('button', { type:'button', class:'btn small primary' }, 'Request verification');
+  const send = h('button', { type:'button', class:'btn small primary', style:'align-self:flex-start' }, 'Send request');
   send.addEventListener('click', () => {
     const url = link.value.trim();
-    if (!lib.profile.name.trim() || !lib.profile.handle.trim()){ note.textContent = 'Add your name and username above first.'; return; }
-    if (!/^https?:\/\/\S+\.\S+/.test(url)){ note.textContent = 'Paste a full link, starting with https://, to a profile of yours on another site (Instagram, TikTok, YouTube…).'; return; }
+    if (!lib.profile.name.trim() || !lib.profile.handle.trim()){ note.textContent = 'Add your name and username first (tap Edit at the top).'; return; }
+    if (!/^https?:\/\/\S+\.\S+/.test(url)){ note.textContent = 'Paste a full link that starts with https://'; return; }
     lib.verify = { status:'pending', link:url }; saveLib(); renderVerify();
   });
-  box.replaceChildren(intro, h('label', { class:'label', for:'pVerifyLink' }, 'Link to your profile elsewhere'), link, send, note);
+  form.replaceChildren(link, send, note);
 }
 const ADS = [
   { title:'Go Premium', text:'AI Blend makes your voice sit right in the mix, you can sell your sounds, and these ads go away.', cta:'See Premium', act:() => openPremium('') },
@@ -3423,11 +3683,12 @@ function renderProfile(){
   const pr = lib.profile;
   $('#pName').value = pr.name; $('#pHandle').value = pr.handle; $('#pBio').value = pr.bio;
   paintMyAvatar();
+  renderProfileHead();
   $('#pSwitches').replaceChildren(
-    switchEl('swPublic', 'Public account', 'Anyone can find your profile on Discover. Off: only people you approve.', pr.isPublic, (v) => { pr.isPublic = v; saveLib(); }),
-    switchEl('swPost', 'Post my new songs', 'New songs you save start out public.', pr.postSongs, (v) => { pr.postSongs = v; saveLib(); }),
-    switchEl('swSaves', 'Let people save my songs', 'New songs start with saving allowed.', pr.allowSaves, (v) => { pr.allowSaves = v; saveLib(); }),
-    switchEl('swSell', 'Sell my sound effects', lib.premium ? 'Sound effects marked for sale can be bought on Discover.' : 'Needs Premium. Turn it on to see the upgrade.', pr.sellSfx && lib.premium, (v) => {
+    switchEl('swPublic', 'Public account', null, pr.isPublic, (v) => { pr.isPublic = v; saveLib(); }),
+    switchEl('swPost', 'Post my new songs', null, pr.postSongs, (v) => { pr.postSongs = v; saveLib(); }),
+    switchEl('swSaves', 'Let people save my songs', null, pr.allowSaves, (v) => { pr.allowSaves = v; saveLib(); }),
+    switchEl('swSell', h('span', {}, 'Sell my sounds ', lib.premium ? null : h('span', { class:'tag muted' }, 'Premium')), null, pr.sellSfx && lib.premium, (v) => {
       if (v && !lib.premium){ renderProfile(); openPremium('Selling sound effects needs Premium.'); return; }
       pr.sellSfx = v; saveLib(); renderProfile();
     }));
@@ -3473,6 +3734,7 @@ function renderProfile(){
 $('#pName').addEventListener('input', (e) => { lib.profile.name = e.target.value; paintMyAvatar(); saveLib(); });
 function paintMyAvatar(){
   const pr = lib.profile;
+  if ($('#pHeadAvatar')) renderProfileHead();
   $('#pAvatar').replaceChildren(avatar({ name:pr.name || 'You', color:'#8b5cf6', photo:pr.photo }));
   $('#pPhotoRemove').hidden = !pr.photo;
   $('#pPhotoLabel').firstChild.textContent = pr.photo ? 'Change photo' : 'Add photo';
@@ -3517,7 +3779,7 @@ function setTab(sec){
 }
 function showSection(sec){
   if (rec.state !== 'idle' || state.busy) return;
-  if (sec === 'create'){ showPage(0); return; }
+  if (sec === 'create'){ if (state.section === 'create' && state.page > 0) return; showPage(0); return; }
   stopAllPlayback(); if (state.page === 2) closeEditor();
   state.section = sec;
   [0, 1, 2, 3].forEach((i) => { $('#page' + i).hidden = true; });
@@ -3582,10 +3844,11 @@ const TOURS = {
   ],
   p1:[
     { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
-    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to move the playhead, drag across it to pick a part, then Split, Duplicate or Delete. Record again and it continues from the playhead. + Layer stacks up to 4 layers.' },
-    { sel:'#pads', title:'Voice effects', text:'Tap a pad to turn it on or off while you sing. Hold one and slide up for more, down for less. They change your voice only.' },
+    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to move the playhead. Drag across it to pick a part, then Duplicate or Delete it. Split cuts at the playhead, and recording again continues from there. Double-tap a clip to delete it. Hold a clip, then drag, to move it. + Layer stacks up to 4 layers; the other layers play while you record.' },
+    { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
+    { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#presets', title:'Presets', text:'Tap an empty slot to save the pads you like. Tap it later to bring them back; while it\'s selected, your changes save into it. Hold one to give it a name.' },
-    { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to notes and vibe.' }
+    { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to step 2, Adjust and edit.' }
   ],
   p2:[
     { sel:'.tl-card', title:'Your song timeline', text:'Scroll through your song. Tap the wave, then + to pin a note for the AI, like "beat drops here". Add duration to make a note cover a whole part.' },
@@ -3608,18 +3871,19 @@ const TOURS = {
     { sel:'#dList', title:'Follow and get sounds', text:'Follow singers, play their songs, and get sound effects. Paid sounds are test purchases for now, so no money moves. A purple check means the account is verified.' }
   ],
   profile:[
-    { sel:'#pMe', title:'Your profile', text:'Your photo, name and username. It\'s saved on this device.' },
+    { sel:'#pMe', title:'Your profile', text:'Your photo, name, username and counts. Tap Edit to change them. It\'s saved on this device.' },
     { sel:'#pAlbumHead', title:'Your album', text:'Everything you made and saved: songs, sound effects, and what you picked up on Discover. Tap one to play it.' },
-    { sel:'#pPlanHead', title:'Premium', text:'Premium adds AI Blend, lets you sell your sound effects (you keep 85%), and removes ads. Upgrades are test upgrades for now.' },
-    { sel:'#pVerifyHead', title:'Verified badge', text:'Ask for a badge that shows this account is really you, so no one can pretend to be you.' },
-    { sel:'#pCtlHead', title:'Privacy and selling', text:'Choose whether people can find you, see your songs, and buy your sounds.' },
+    { sel:'#pPlanRow', title:'Premium', text:'Premium adds AI Blend, lets you sell your sound effects (you keep 85%, the app keeps 15%), and removes ads. Upgrades are test upgrades for now.' },
+    { sel:'#pVerifyRow', title:'Verified badge', text:'Ask for a purple check that shows this account is really you, so no one can pretend to be you. Usernames are one per person.' },
+    { sel:'#pSwitches', title:'Privacy and selling', text:'Public account: people can find you on Discover. Post my new songs: songs you save start out public. Let people save my songs: others can keep a copy. Sell my sounds: your sound effects can be bought (Premium).' },
+    { sel:'.manage', title:'Manage songs and sounds', text:'Make each song or sound public or private, set prices, upload sound effects, or delete them.' },
     { sel:'#pEarnHead', title:'Earnings', text:'Your sales show here once real payments are connected.' },
     { sel:'#helpBtn', title:'Need help?', text:'Tap here any time to see all the tutorials again.' }
   ]
 };
 const TOUR_SUMMARY = {
-  p2:{ sel:null, title:'Notes and vibe', text:'After you record, pin notes on your song for the AI, describe the vibe, name artists you like, and generate. The music is built around your voice.' },
-  p3:{ sel:null, title:'Listen and save', text:'Play your song, regenerate for a new version, add sound effects, give it an album photo, and save it to your songs, your phone, or Drafts.' }
+  p2:{ sel:null, title:'Adjust and edit', text:'After you record, pin notes on your song for the AI, describe the vibe, name artists you like, and generate. The music is built around your voice.' },
+  p3:{ sel:null, title:'Generate and finish', text:'Play your song, regenerate for a new version, add sound effects, give it an album photo, and save it to your songs, your phone, or Drafts.' }
 };
 const pageKey = () => state.section === 'create' ? ['home', 'p1', 'p2', 'p3'][state.page] : state.section;
 function goToKey(k){ if (k === 'home') showPage(0); else if (k === 'p1') showPage(1); else if (k === 'p2') showPage(2); else if (k === 'p3') showPage(3); else showSection(k); }
@@ -3713,7 +3977,7 @@ let coverTarget = null;
 function renderHome(){
   const doc = projectDoc(), work = hasWork(doc);
   $('#continueCard').hidden = !work;
-  if (work) $('#continueMeta').textContent = fmt(songDur()) + ' recorded · ' + ['', 'recording', 'notes and vibe', 'listen and save'][state.workPage || 1];
+  if (work) $('#continueMeta').textContent = fmt(songDur()) + ' recorded · ' + ['', 'record and cut', 'adjust and edit', 'generate and finish'][state.workPage || 1];
   renderDrafts();
   const songs = lib.songs;
   $('#homeLibrary').replaceChildren(...(songs.length ? songs.map((s) => {
@@ -3854,11 +4118,13 @@ loadLib().catch(() => {}).then(async () => {
   try {
     const cur = await store.get('project:current');
     if (hasWork(cur)){
-      await loadProject(cur, $('#status1'), true);
+      $('#bootText').textContent = 'Loading your song…';
+      await loadProject(cur, null, true);
       setStatus($('#status1'), '');
     }
   } catch (err){ setStatus($('#status1'), 'Your last song couldn\'t be restored: ' + (err.message || err) + '.', 'error'); }
   restoring = false;
+  $('#bootCover').hidden = true;
   if (!needsProfile()) showPage(0);
 });
 })();
