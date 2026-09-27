@@ -96,6 +96,12 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .ed-tools .btn.small:active:not(:disabled){background:var(--surface-2)}
 .ed-tools .btn.small:disabled{opacity:.4}
 .editor .tl-bar[hidden]{display:none}
+.layer-vol{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.layer-vol[hidden]{display:none}
+.lv-label{font-weight:700;font-size:13px;white-space:nowrap}
+.layer-vol input{flex:1;accent-color:var(--accent-b);height:28px;margin:0;min-width:0}
+.lv-val{font-size:12px;color:var(--muted);min-width:40px;text-align:right}
+.recording .layer-vol{display:none!important}
 .ed-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .danger-link{color:var(--err)}
 .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
@@ -551,6 +557,11 @@ legend{padding:0}
         <button type="button" id="edLayer" class="btn small">+ Layer</button>
       </div>
       <p id="edHint" class="hint" hidden></p>
+      <div id="layerVol" class="layer-vol" hidden>
+        <span id="lvLabel" class="lv-label">Layer 1</span>
+        <input type="range" id="lvRange" min="0" max="150" step="1" value="100" aria-label="Layer volume">
+        <span id="lvVal" class="lv-val mono">100%</span>
+      </div>
       <div class="ed-links">
         <button type="button" id="edSaveSfx" class="linkish" hidden>Save selection as a sound effect</button>
         <button type="button" id="edRemoveLayer" class="linkish danger-link" hidden>Remove layer</button>
@@ -2111,16 +2122,16 @@ function segAt(layer, t){ return layer.segs.find((s) => s.at - 0.001 <= t && t <
 // mono audio of part of a layer (or of every layer when layer is null)
 function renderRange(layer, a, b, sr){
   const out = new Float32Array(Math.max(1, Math.ceil((b - a) * sr)));
-  (layer ? [layer] : state.layers).forEach((l) => l.segs.forEach((s) => {
+  (layer ? [layer] : state.layers).forEach((l) => { const lvol = layer ? 1 : (l.vol == null ? 1 : l.vol); l.segs.forEach((s) => {
     const s0 = Math.max(a, s.at), s1 = Math.min(b, segEnd(s)); if (s1 <= s0) return;
     const buf = prepSrc(s.src).buffer, d = buf.getChannelData(0), r = buf.sampleRate / sr;
     const from = s.start + (s0 - s.at), o = Math.floor((s0 - a) * sr), n = Math.floor((s1 - s0) * sr), fade = Math.min(Math.floor(0.008 * sr), n >> 1);
     for (let i = 0; i < n && o + i < out.length; i++){
       let v = d[Math.floor(from * buf.sampleRate + i * r)] || 0;
       if (i < fade) v *= i / fade; else if (i > n - fade) v *= (n - i) / fade;
-      out[o + i] += v;
+      out[o + i] += v * lvol;
     }
-  }));
+  }); });
   return out;
 }
 
@@ -2179,7 +2190,7 @@ function drawEditor(){
         const i0 = Math.floor((s.start + a - s.at) * sr), i1 = Math.min(d.length, Math.ceil((s.start + b - s.at) * sr)), stride = Math.max(1, Math.floor((i1 - i0) / 300));
         for (let i = i0; i < i1; i += stride){ const v = Math.abs(d[i]); if (v > pk) pk = v; }
       }
-      pts.push([x, any ? Math.max(1, (pk / gpk) * amp) : 0]);
+      pts.push([x, any ? Math.max(1, Math.min(1, (pk / gpk) * (layer.vol == null ? 1 : layer.vol)) * amp) : 0]);
     }
     if (pts.length > 1){ blobPath(g, pts, mid); g.fillStyle = waveFill; g.fill(); }
     // gold strips where effects are on, with the effect's name; tap one to change or remove it
@@ -2268,7 +2279,11 @@ function edReadouts(){
   $('#edSplit').disabled = !segAt(layer, state.playhead1);
   $('#edZoomIn').disabled = state.span1 !== Infinity && edSpan() <= 0.051; $('#edZoomOut').disabled = state.span1 === Infinity || !has;
   $('#edDup').disabled = !(sel || segAt(layer, state.playhead1));
-  $('#edDel').disabled = !sel;
+  const al = state.layers[state.activeLayer];
+  const emptyLayer = !sel && state.layers.length > 1 && al && !al.segs.length;
+  $('#edDel').disabled = !sel && !emptyLayer;
+  $('#layerVol').hidden = state.layers.length < 2 || !al || !al.segs.length;
+  if (al){ const v = Math.round((al.vol == null ? 1 : al.vol) * 100); $('#lvLabel').textContent = 'Layer ' + (state.activeLayer + 1); $('#lvRange').value = v; $('#lvVal').textContent = v + '%'; }
   $('#edDel').textContent = 'Delete'; $('#edDel').setAttribute('aria-label', sel ? 'Delete ' + fmtS(sel.b - sel.a) : 'Delete');
   $('#edLayer').disabled = state.layers.length >= MAX_LAYERS || !has;
   $('#edSaveSfx').hidden = !sel;
@@ -2381,8 +2396,8 @@ $('#fxSave').addEventListener('click', async () => {
 
 /* ---------- undo and redo ---------- */
 const hist = { stack:[], idx:-1, muted:false };
-const snapLayers = () => state.layers.map((l) => ({ id:l.id, segs:l.segs.map((x) => Object.assign({}, x)) }));
-const snapKey = (sn) => sn.map((l) => l.id + ':' + l.segs.map((x) => [x.id, x.src.id, x.start.toFixed(4), x.end.toFixed(4), x.at.toFixed(4)].join('/')).join(',')).join('|');
+const snapLayers = () => state.layers.map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((x) => Object.assign({}, x)) }));
+const snapKey = (sn) => sn.map((l) => l.id + 'v' + (l.vol == null ? 1 : l.vol) + ':' + l.segs.map((x) => [x.id, x.src.id, x.start.toFixed(4), x.end.toFixed(4), x.at.toFixed(4)].join('/')).join(',')).join('|');
 function resetHist(){ hist.stack = []; hist.idx = -1; updHistBtns(); }
 function pushHist(){
   if (hist.muted) return;
@@ -2397,7 +2412,7 @@ function goHist(to){
   if (to < 0 || to >= hist.stack.length || rec.state !== 'idle' || paint.busy) return;
   stopAllPlayback();
   hist.idx = to;
-  state.layers = hist.stack[to].sn.map((l) => ({ id:l.id, segs:l.segs.map((x) => Object.assign({}, x)) }));
+  state.layers = hist.stack[to].sn.map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((x) => Object.assign({}, x)) }));
   state.activeLayer = Math.min(state.activeLayer, state.layers.length - 1); state.sel1 = null;
   state.playhead1 = Math.min(state.playhead1, songDur());
   hist.muted = true; try { renderClips(); } finally { hist.muted = false; }
@@ -2626,12 +2641,28 @@ $('#edDup').addEventListener('click', () => {
   renderClips();
 });
 $('#edDel').addEventListener('click', () => {
-  const sel = state.sel1; if (!sel) return;
+  const sel = state.sel1;
+  // an empty layer: tap it, then Delete removes the layer
+  if (!sel){
+    const li = state.activeLayer, l = state.layers[li];
+    if (state.layers.length < 2 || !l || l.segs.length) return;
+    state.layers.splice(li, 1); state.activeLayer = Math.max(0, li - 1);
+    if (li === 0) ripple(state.layers[0]);
+    setStatus($('#status1'), 'Layer ' + (li + 1) + ' removed.', 'ok');
+    renderClips(); return;
+  }
   removeRange(state.layers[sel.layer], sel.a, sel.b);
   state.sel1 = null; state.playhead1 = Math.min(sel.a, songDur());
   setStatus($('#status1'), 'Deleted ' + fmtT(sel.a) + '–' + fmtT(sel.b) + (sel.layer === 0 ? '. The rest moved up to close the gap.' : ' from layer ' + (sel.layer + 1) + '.'), 'ok');
   renderClips();
 });
+$('#lvRange').addEventListener('input', (e) => {
+  const l = state.layers[state.activeLayer]; if (!l) return;
+  l.vol = +e.target.value / 100; $('#lvVal').textContent = e.target.value + '%';
+  const g = edPlayState.gains && edPlayState.gains[state.activeLayer]; if (g) g.gain.value = l.vol;
+  drawEditor();
+});
+$('#lvRange').addEventListener('change', () => { renderClips(); });
 $('#edLayer').addEventListener('click', () => {
   if (state.layers.length >= MAX_LAYERS) return;
   state.layers.push({ id:nextId++, segs:[] });
@@ -2660,15 +2691,17 @@ $('#edSaveSfx').addEventListener('click', async () => {
 /* ---------- playback: every layer from the playhead ---------- */
 const edPlayState = { playing:false, nodes:[], raf:0 };
 function scheduleSong(c, from, dest, skipLayer, onlyLayer){
-  const nodes = [], t0 = c.currentTime + 0.05;
-  state.layers.forEach((l, li) => { if (li === skipLayer || (onlyLayer != null && li !== onlyLayer)) return; l.segs.forEach((s) => {
+  const nodes = [], t0 = c.currentTime + 0.05, gains = [];
+  state.layers.forEach((l, li) => { if (li === skipLayer || (onlyLayer != null && li !== onlyLayer)) return;
+    const lg = c.createGain(); lg.gain.value = l.vol == null ? 1 : l.vol; lg.connect(dest); gains[li] = lg;
+    l.segs.forEach((s) => {
     if (segEnd(s) <= from) return;
     const off = Math.max(0, from - s.at), src = c.createBufferSource();
-    src.buffer = prepSrc(s.src).buffer; src.connect(dest);
+    src.buffer = prepSrc(s.src).buffer; src.connect(lg);
     src.start(t0 + Math.max(0, s.at - from), s.start + off, segLen(s) - off);
     nodes.push(src);
   }); });
-  return { nodes, t0 };
+  return { nodes, t0, gains };
 }
 function edPlay(fxNode, fxLane){
   edStop(true); state.cursorOn = true;
@@ -2680,8 +2713,8 @@ function edPlay(fxNode, fxLane){
     // the lane you're painting goes through a live copy of the voice engine so you hear the pad while you hold it
     fxNode.connect(bus);
     const a = scheduleSong(c, from, bus, fxLane), b = scheduleSong(c, from, fxNode, -1, fxLane);
-    nodes = a.nodes.concat(b.nodes); t0 = a.t0;
-  } else ({ nodes, t0 } = scheduleSong(c, from, bus, -1));
+    nodes = a.nodes.concat(b.nodes); t0 = a.t0; edPlayState.gains = Object.assign([], a.gains, b.gains);
+  } else { const r = scheduleSong(c, from, bus, -1); nodes = r.nodes; t0 = r.t0; edPlayState.gains = r.gains; }
   Object.assign(edPlayState, { playing:true, nodes, bus, from, t0, fxNode:fxNode || null });
   // if the phone kept the audio asleep, time doesn't move: start the audio fresh and ask for one more tap
   const ct0 = c.currentTime, token = edPlayState.token = (edPlayState.token || 0) + 1;
@@ -2785,7 +2818,7 @@ $('#toStep2').addEventListener('click', async () => {
 let joinedCache = null;
 function invalidateJoined(){ joinedCache = null; }
 function joined(){
-  const key = state.key + '#' + state.layers.map((l) => l.segs.map((s) => s.id + ':' + s.start.toFixed(3) + ':' + s.end.toFixed(3) + '@' + s.at.toFixed(3)).join(',')).join('|');
+  const key = state.key + '#' + state.layers.map((l) => (l.vol == null ? 1 : l.vol) + '~' + l.segs.map((s) => s.id + ':' + s.start.toFixed(3) + ':' + s.end.toFixed(3) + '@' + s.at.toFixed(3)).join(',')).join('|');
   if (joinedCache && joinedCache.key === key) return joinedCache;
   const sr = ctx().sampleRate, dur = songDur(), data = renderRange(null, 0, dur, sr), fx = [];
   const bounds = state.layers[0].segs.map((s) => s.at);
@@ -4151,7 +4184,7 @@ function projectDoc(){
   const r = state.result;
   return {
     v:1, saved:Date.now(), key:state.key, keyFrom:state.keyFrom, blend:state.blend, page:state.page || state.workPage || 1,
-    layers:state.layers.map((l) => ({ id:l.id, segs:l.segs.map((s) => ({ id:s.id, src:s.src.id, start:s.start, end:s.end, at:s.at })) })),
+    layers:state.layers.map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((s) => ({ id:s.id, src:s.src.id, start:s.start, end:s.end, at:s.at })) })),
     activeLayer:state.activeLayer, playhead1:state.playhead1,
     markers:state.markers.filter((m) => m.text.trim()).map((m) => ({ id:m.id, t:m.t, end:m.end, text:m.text })),
     sfx2:state.sfx2.map((p) => ({ itemId:p.item.id, name:p.name, at:p.at })),
@@ -4185,7 +4218,7 @@ async function loadProject(doc, statusEl, landHome){
       srcs[s.src] = { id:s.src, raw:d.raw, sr:d.sr, events:d.events, hist:d.hist, segs:fxSegments(d.events, d.raw.length, d.sr), key:null, buffer:null };
     }
     state.key = doc.key || '60:chromatic'; state.keyFrom = doc.keyFrom || null; state.blend = doc.blend !== false;
-    state.layers = (doc.layers || []).map((l) => ({ id:l.id, segs:l.segs.map((s) => ({ id:s.id, src:srcs[s.src], start:s.start, end:s.end, at:s.at })) }));
+    state.layers = (doc.layers || []).map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((s) => ({ id:s.id, src:srcs[s.src], start:s.start, end:s.end, at:s.at })) }));
     if (!state.layers.length) state.layers = [{ id:nextId++, segs:[] }];
     state.activeLayer = Math.min(doc.activeLayer || 0, state.layers.length - 1);
     state.playhead1 = doc.playhead1 || 0; state.sel1 = null;
@@ -4709,7 +4742,7 @@ const TOURS = {
   ],
   p1:[
     { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
-    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it. Drag its pink handles inward to trim it: whatever you pull past is cut off when you let go (undo brings it back), then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end of the audio to record more there, or add audio from a file or your camera roll. Double-tap a clip to delete it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Tap + to zoom in closer and closer; − zooms out to the whole song. + Layer stacks up to 4 layers; the other layers play while you record.' },
+    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it. Drag its pink handles inward to trim it: whatever you pull past is cut off when you let go (undo brings it back), then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end of the audio to record more there, or add audio from a file or your camera roll. Double-tap a clip to delete it. With more than one layer, tap a layer to change its volume with the slider under the wave; tap an empty layer and press Delete to remove it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Tap + to zoom in closer and closer; − zooms out to the whole song. + Layer stacks up to 4 layers; the other layers play while you record.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does, and slide up or down to hear it get stronger or weaker.' },
