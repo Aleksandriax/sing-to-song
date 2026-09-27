@@ -246,7 +246,7 @@ body:not(.recording) #recTime{display:none}
 .painting .pads{opacity:.6}
 .preset.preset-trash{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.45);color:#f87171}
 .preset-trash svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;display:block}
-.danger-fill{border-color:transparent;background:var(--err);color:#fff}
+.danger-fill,.btn.danger-fill{border-color:transparent;background:#ef4444;color:#fff}
 .boot-cover{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--muted);font-size:14px}
 .boot-cover svg{width:56px;height:56px}
 .prof-head{cursor:pointer}
@@ -541,6 +541,16 @@ legend{padding:0}
 .pick-bar[hidden]{display:none}
 #sfxLib .item{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .pick-text{font-size:13px;color:#e7cf9f}
+.pick-layers{display:flex;flex-wrap:wrap;gap:6px}
+.pick-layers:empty{display:none}
+.pick-chip{appearance:none;display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 12px 0 9px;border-radius:99px;border:1px solid rgba(251,191,36,.35);background:transparent;color:#e7cf9f;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.pick-chip .dot{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;display:grid;place-items:center;flex:none}
+.pick-chip.box .dot{border-radius:5px}
+.pick-chip[aria-pressed="true"]{background:#fbbf24;border-color:#fbbf24;color:#241a05}
+.pick-chip[aria-pressed="true"] .dot::after{content:"";width:6px;height:6px;border-radius:inherit;background:currentColor}
+.tl-pick .tl-grip::after{content:"";position:absolute;left:1px;top:50%;width:24px;height:24px;margin-top:-12px;border-radius:50%;background:#fbbf24;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.tl-pick .tl-grip{width:28px;height:124px;top:0;margin-top:-2px}
+.tl-pick .tl-grip.l{left:-15px}.tl-pick .tl-grip.r{right:-15px}
 .tl-box{position:absolute;top:26px;height:124px;border:2.5px solid var(--accent-b);border-radius:12px;background:rgba(236,72,153,.1);cursor:grab;touch-action:none;box-shadow:0 0 18px rgba(236,72,153,.35);z-index:1}
 .tl-grip{position:absolute;top:50%;width:26px;height:56px;margin-top:-28px;cursor:ew-resize;touch-action:none}
 .tl-grip.l{left:-14px}.tl-grip.r{right:-14px}
@@ -780,7 +790,8 @@ legend{padding:0}
         </div>
       </div>
       <div id="pickBar" class="pick-bar" hidden>
-        <span class="pick-text">Slide and stretch the gold box over the part you want. <span id="pickLen" class="mono"></span></span>
+        <span class="pick-text">Slide the gold box over the part you want, then drag its round knobs to trim it to the exact spot. <span id="pickLen" class="mono"></span></span>
+        <div id="pickLayers" class="pick-layers" role="group" aria-label="Which layers to use"></div>
         <div class="actions"><button type="button" id="pickCancel" class="btn small">Cancel</button><button type="button" id="pickUse" class="btn small primary">Use this part</button></div>
       </div>
       <button type="button" id="addNoteBtn" class="btn">+ Add a note at 0:00.0</button>
@@ -3320,6 +3331,9 @@ $('#toStep2').addEventListener('click', async () => {
    Step 2: timeline with notes
    ========================================================= */
 let joinedCache = null;
+/* make a sound effect from part of your song (set up here; the controls are further down) */
+const pick = { on:false, a:0, b:0, layers:null };   // layers: null = the whole song, or which layers to take it from
+const pickHas = (li) => !pick.layers || pick.layers.includes(li);
 function invalidateJoined(){ joinedCache = null; }
 function joined(){
   const key = state.key + '#' + state.layers.map((l) => (l.vol == null ? 1 : l.vol) + '~' + l.segs.map((s) => s.id + ':' + s.start.toFixed(3) + ':' + s.end.toFixed(3) + '@' + s.at.toFixed(3) + 'f' + (s.fadeIn || 0) + '/' + (s.fadeOut || 0)).join(',')).join('|');
@@ -3365,6 +3379,8 @@ function drawTimeline(){
     g.fillStyle = major ? muted : faint; g.fillRect(x, major ? 12 : 17, 1, major ? 10 : 5);
     if (major) g.fillText(fmt(t), x + 3, 10);
   }
+  if (pick.on && state.layers.length > 1) drawPickLanes(g, w, top, wh, sl, pps, x0, x1);
+  else {
   // the same look as step 1: each section is its own rounded block, purple-to-pink wave, gold effect strips
   const edges = j.bounds.concat([j.dur]), blocks = [];
   for (let i = 0; i < edges.length - 1; i++){
@@ -3385,6 +3401,7 @@ function drawTimeline(){
   g.fillStyle = cssVar('--tuned', '#fbbf24');
   j.fx.forEach(([a, b]) => { const xa = tlX(a) - sl, xb = tlX(b) - sl; if (xb > 0 && xa < w){ roundRectPath(g, xa, top + wh - 13, Math.max(3, xb - xa), 5, 2.5); g.fill(); } });
   g.restore();
+  }
   // notes that cover a section: outlined boxes (the selected one is the box you can slide)
   state.markers.forEach((m) => {
     if (m.end == null || state.selMarker === m.id) return;
@@ -4623,18 +4640,63 @@ $('#srSave').addEventListener('click', async () => {
 });
 
 /* make a sound effect from part of your song: a gold box you slide and stretch on the step 2 wave */
-const pick = { on:false, a:0, b:0 };
+function renderPickLayers(){
+  const n = state.layers.length;
+  if (n < 2){ $('#pickLayers').replaceChildren(); return; }
+  const chip = (label, on, cls, fn) => { const b = h('button', { type:'button', class:'pick-chip' + (cls ? ' ' + cls : ''), 'aria-pressed':on ? 'true' : 'false' }, h('span', { class:'dot', 'aria-hidden':'true' }), label); b.addEventListener('click', fn); return b; };
+  $('#pickLayers').replaceChildren(
+    chip('Whole song', !pick.layers, '', () => { pick.layers = null; renderPick(); }),
+    ...state.layers.map((_, li) => chip('Layer ' + (li + 1), !!pick.layers && pick.layers.includes(li), 'box', () => {
+      if (!pick.layers) pick.layers = [li];
+      else if (pick.layers.includes(li)) pick.layers = pick.layers.filter((x) => x !== li);
+      else pick.layers = pick.layers.concat(li).sort();
+      if (!pick.layers.length || pick.layers.length === n) pick.layers = null;
+      renderPick();
+    })));
+}
 function renderPick(){
   const box = $('#tlPick'); box.hidden = !pick.on; $('#pickBar').hidden = !pick.on;
   if (!pick.on) return;
   box.style.left = tlX(pick.a) + 'px'; box.style.width = Math.max(12, tlX(pick.b) - tlX(pick.a)) + 'px';
-  $('#pickLen').textContent = fmtS(pick.b - pick.a);
+  $('#pickLen').textContent = fmtT(pick.a) + ' – ' + fmtT(pick.b) + ' · ' + fmtS(pick.b - pick.a);
+  renderPickLayers(); drawTimeline();
+}
+// while picking, each layer gets its own lane so you can see what's in it (layers you didn't pick fade out)
+const layerCache = { key:null, data:[] };
+function layerData(){
+  const j = joined();
+  if (layerCache.key !== j.key){
+    layerCache.key = j.key;
+    layerCache.data = state.layers.map((l) => { const d = renderRange(l, 0, j.dur, j.sr); let pk = 0; for (let i = 0; i < d.length; i += 8) pk = Math.max(pk, Math.abs(d[i])); return { d, pk:pk || 1 }; });
+  }
+  return layerCache.data;
+}
+function drawPickLanes(g, w, top, wh, sl, pps, x0, x1){
+  const j = joined(), L = state.layers.length, gap = 4, lh = (wh - 6 - gap * (L - 1)) / L, data = layerData(), col = 3;
+  const wf = g.createLinearGradient(0, 0, w, 0); wf.addColorStop(0, '#8b5cf6'); wf.addColorStop(0.55, '#c084fc'); wf.addColorStop(1, '#ec4899');
+  const xa = Math.max(x0, -10), xb = Math.min(x1, w + 10);
+  state.layers.forEach((l, li) => {
+    const y = top + 3 + li * (lh + gap), on = pickHas(li), mid = y + lh / 2, amp = lh / 2 - 3, dd = data[li];
+    if (xb <= xa) return;
+    roundRectPath(g, xa, y, xb - xa, lh, 8); g.fillStyle = cssVar('--wave-bg', '#1d1631'); g.fill(); g.lineWidth = 1; g.strokeStyle = on ? 'rgba(251,191,36,.45)' : 'rgba(167,139,250,.2)'; g.stroke();
+    g.save(); g.beginPath(); g.rect(xa, y, xb - xa, lh); g.clip(); g.globalAlpha = on ? 1 : 0.25;
+    const pts = [];
+    for (let x = Math.max(0, Math.floor(x0)); x <= Math.min(w, x1); x += col){
+      const t = (x + sl - TL_PAD) / pps, a = Math.floor(t * j.sr), b = Math.min(dd.d.length, Math.floor((t + col / pps) * j.sr));
+      const stride = Math.max(1, Math.floor((b - a) / 300));
+      let pk = 0; for (let i = Math.max(0, a); i < b; i += stride){ const v = Math.abs(dd.d[i]); if (v > pk) pk = v; }
+      pts.push([x, Math.max(0.5, (pk / dd.pk) * amp)]);
+    }
+    if (pts.length > 1){ blobPath(g, pts, mid); g.fillStyle = wf; g.fill(); }
+    g.restore();
+    g.fillStyle = on ? '#f3eefb' : 'rgba(243,238,251,.45)'; g.font = '700 10px "Figtree", system-ui, sans-serif'; g.fillText('Layer ' + (li + 1), Math.max(xa, 0) + 6, y + 12);
+  });
 }
 $('#srFromSong').addEventListener('click', () => {
   if (!state.clips.length) return;
   srStopRec(true); srStopPrev(); $('#srSheet').hidden = true;
   const dur = joined().dur;
-  pick.a = Math.min(state.playhead2, Math.max(0, dur - 1)); pick.b = Math.min(dur, pick.a + 2); pick.on = true;
+  pick.a = Math.min(state.playhead2, Math.max(0, dur - 1)); pick.b = Math.min(dur, pick.a + 2); pick.on = true; pick.layers = null;
   renderPick(); setPlayhead2(pick.a, true);
   $('.tl-card').scrollIntoView({ block:'center', behavior:'smooth' });
 });
@@ -4655,7 +4717,13 @@ $('#srFromSong').addEventListener('click', () => {
 }
 $('#pickCancel').addEventListener('click', () => { pick.on = false; renderPick(); $('#srSheet').hidden = false; });
 $('#pickUse').addEventListener('click', () => {
-  const sr = ctx().sampleRate, data = renderRange(null, pick.a, pick.b, sr);
+  const sr = ctx().sampleRate;
+  let data;
+  if (!pick.layers) data = renderRange(null, pick.a, pick.b, sr);
+  else {
+    data = null;
+    pick.layers.forEach((li) => { const l = state.layers[li], v = l.vol == null ? 1 : l.vol, d = renderRange(l, pick.a, pick.b, sr); if (!data) data = new Float32Array(d.length); for (let i = 0; i < d.length && i < data.length; i++) data[i] += d[i] * v; });
+  }
   let pk = 0; for (let i = 0; i < data.length; i++) pk = Math.max(pk, Math.abs(data[i]));
   if (pk < 0.001){ setStatus($('#status2'), 'That part is silent. Pick a part with sound in it.', 'error'); return; }
   for (let i = 0; i < data.length; i++) data[i] *= 0.9 / pk;
@@ -4663,7 +4731,7 @@ $('#pickUse').addEventListener('click', () => {
   sr2.data = data; sr2.sr = sr;
   pick.on = false; renderPick();
   $('#srTime').textContent = fmtT(data.length / sr); $('#srNote').textContent = 'Got it. Play it back, name it, then save.';
-  $('#srName').value = 'Part of my song'; $('#srPlay').hidden = false; $('#srSave').disabled = false;
+  $('#srName').value = pick.layers ? 'Layer ' + pick.layers.map((x) => x + 1).join(' + ') + ' of my song' : 'Part of my song'; $('#srPlay').hidden = false; $('#srSave').disabled = false;
   $('#srSheet').hidden = false;
 });
 
