@@ -2273,7 +2273,12 @@ function makePadEl(p){
     try { el.setPointerCapture(e.pointerId); } catch (_) {}
     if (padEditing){ if (e.target.closest('.pad-x')) boardRemove(p.id); else g = { drag:true }, el.classList.add('dragging'); return; }
     if (paint.busy) return;
-    if (paintMode()){ g = { paint:true, y:e.clientY, start:valueOf(p) }; paintStart(p); return; }
+    if (paintMode()){
+      // red line showing: a quick tap still turns the pad on or off; holding it adds the effect to your song
+      g = { pending:true, y:e.clientY, start:valueOf(p), wasOn:fx[p.id].on };
+      const me = g; g.timer = setTimeout(() => { if (g === me && me.pending){ me.pending = false; me.paint = true; paintStart(p); } }, 300);
+      return;
+    }
     const s = fx[p.id];
     g = { y:e.clientY, t:performance.now(), moved:false, wasOn:s.on, start:valueOf(p) };
     if (!s.on){ s.on = true; paintPad(p); pushPads(); padEdited(false); }
@@ -2288,6 +2293,7 @@ function makePadEl(p){
       return;
     }
     const dy = g.y - e.clientY;
+    if (g.pending && Math.abs(dy) >= 6){ clearTimeout(g.timer); g.pending = false; g.paint = true; paintStart(p); }
     if (g.paint){ if (Math.abs(dy) >= 6){ adjust(p, g.start, dy); paintPad(p); paintAdjust(p); } return; }
     if (!g.moved && Math.abs(dy) < 6) return;
     g.moved = true; adjust(p, g.start, dy); paintPad(p); pushPads(); padEdited(false);
@@ -2295,6 +2301,11 @@ function makePadEl(p){
   const up = () => {
     if (!g) return;
     if (g.drag){ g = null; el.classList.remove('dragging'); saveBoardOrder(); return; }
+    if (g.pending){
+      clearTimeout(g.timer); const s = fx[p.id]; s.on = !g.wasOn; g = null;
+      if (s.on) countFxUse(p.id);
+      paintPad(p); pushPads(); padEdited(true, p.name + (s.on ? ' on' : ' off')); return;
+    }
     if (g.paint){ g = null; paintEnd(p); return; }
     const s = fx[p.id];
     if (!g.moved){
@@ -6883,7 +6894,7 @@ const TOURS = {
     { sel:'.editor', title:'Your wave', text:'Tap the wave to place the red line, or drag its round handle. Slide to scroll. Spread two fingers to zoom in, pinch to zoom out, or use + and −. The round button on the left, next to the layer you tapped, jumps the red line to that layer\'s start. Tap outside the wave to hide the red line.' },
     { sel:'.editor', title:'Edit a part', text:'Tap a part to select it. Drag its pink handles in to trim, or back out to bring trimmed audio back. Then Duplicate, Delete, Split at the red line, or Fade its start and end. Hold a part and drag to move it, even onto another layer. Double-tap a part to delete it.' },
     { sel:'.editor', title:'Layers', text:'+ Layer stacks up to 4 layers, and the new one records from the red line while the others play. Tap a layer to set its volume. Tap an empty layer and press Delete to remove it. The + at the end of your audio records more there or adds audio from a file or your camera roll.' },
-    { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where an effect should start (or select a part), then hold a pad. Tap a gold effect strip to change it or remove it.' },
+    { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where an effect should start (or select a part), then hold a pad to add it to your song. A quick tap still just turns a pad on or off. Tap a gold effect strip to change it or remove it.' },
     { sel:'#pads', title:'Add all your effects', text:'After you record, turn on the pads you want (or tap a preset), then hold the gold "Hold to add all your effects" button. Your song plays and every effect you have on goes in from the red line until you let go. If you selected a part, it stops at the end of the part.' },
     { sel:'.fx-tools', title:'Edit, add and your library', text:'Edit lets you drag your pads into any order, or tap the red x to take one off. Add effects (in Edit) shows what\'s trending, more effects and the basics: + puts one on your pads, the flag saves it. Effects library is yours: Created (effects you mixed yourself) and Saved. On uses an effect right now, even while you record.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
