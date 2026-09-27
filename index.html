@@ -205,7 +205,11 @@ body:not(.recording) #recTime{display:none}
 .recording .presets .preset{min-height:44px}
 .recording .pad{aspect-ratio:auto;height:max(56px,calc((100dvh - 246px - var(--edh,84px) - env(safe-area-inset-top) - env(safe-area-inset-bottom)) / 4))}
 .recording.rec-live #status1{display:none}
-.rec-done{min-width:96px}
+.rec-done{min-width:84px}
+.rec-hist{display:flex;gap:6px}
+.rec-hist[hidden]{display:none}
+.recording:not(.rec-live) .recorder{gap:10px;flex-wrap:nowrap}
+.recording:not(.rec-live) .rec-hist .icon-btn{width:40px;height:40px}
 .recording #status1.ok{display:none}
 .recording:not(.rec-live) #recTime{font-size:18px}
 .painting .editor,.painting .pads,.painting .ed-tools{pointer-events:none}
@@ -516,6 +520,10 @@ legend{padding:0}
     <div class="recorder">
       <button type="button" id="recBtn" class="rec" aria-label="Start recording" aria-pressed="false"><span class="rec-core"></span></button>
       <div id="recTime" class="rec-time mono">0:00</div>
+      <div id="recHist" class="rec-hist" hidden>
+        <button type="button" id="recUndo" class="icon-btn" aria-label="Undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+        <button type="button" id="recRedo" class="icon-btn" aria-label="Redo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
+      </div>
       <button type="button" id="recDone" class="btn primary rec-done" hidden>Done</button>
       <div id="recHint" class="rec-hint sr-only">Tap to start, tap again to stop. Or hold, then release.</div>
     </div>
@@ -1423,7 +1431,8 @@ function setRecUI(){
   if (rec.state !== 'idle' || cd.on) state.recView = true;
   document.body.classList.toggle('rec-live', rec.state !== 'idle' || cd.on);
   $('#recDone').hidden = !(state.recView && rec.state === 'idle' && !cd.on);
-  if (state.recView && rec.state === 'idle' && !cd.on) recTime.textContent = fmt(songDur()) + ' recorded';
+  $('#recHist').hidden = $('#recDone').hidden;
+  if (state.recView && rec.state === 'idle' && !cd.on) recTime.textContent = fmt(songDur());
   if (busy !== document.body.classList.contains('recording')){
     document.body.classList.toggle('recording', busy);
     if (busy) window.scrollTo(0, 0);
@@ -2254,7 +2263,7 @@ function edReadouts(){
   const dur = songDur();
   $('#edTime').textContent = fmtT(state.playhead1) + ' / ' + fmtT(dur) + (dur > MAX_SEC ? ' (over 10:00)' : '');
   const layer = state.layers[state.activeLayer], sel = state.sel1, has = dur > 0;
-  if (state.recView && rec.state === 'idle' && !cd.on) recTime.textContent = fmt(dur) + ' recorded';
+  if (state.recView && rec.state === 'idle' && !cd.on) recTime.textContent = fmt(dur);
   $('.ed-tools').hidden = !has; $('.editor .tl-bar').hidden = !has && hist.idx <= 0;
   $('#edSplit').disabled = !segAt(layer, state.playhead1);
   $('#edZoomIn').disabled = state.span1 !== Infinity && edSpan() <= 0.051; $('#edZoomOut').disabled = state.span1 === Infinity || !has;
@@ -2383,7 +2392,7 @@ function pushHist(){
   if (hist.stack.length > 80) hist.stack.shift();
   hist.idx = hist.stack.length - 1; updHistBtns();
 }
-function updHistBtns(){ const u = $('#edUndo'), r = $('#edRedo'); if (!u) return; u.disabled = hist.idx <= 0; r.disabled = hist.idx >= hist.stack.length - 1; }
+function updHistBtns(){ const u = $('#edUndo'), r = $('#edRedo'); if (!u) return; u.disabled = $('#recUndo').disabled = hist.idx <= 0; r.disabled = $('#recRedo').disabled = hist.idx >= hist.stack.length - 1; }
 function goHist(to){
   if (to < 0 || to >= hist.stack.length || rec.state !== 'idle' || paint.busy) return;
   stopAllPlayback();
@@ -2394,6 +2403,8 @@ function goHist(to){
   hist.muted = true; try { renderClips(); } finally { hist.muted = false; }
   updHistBtns();
 }
+$('#recUndo').addEventListener('click', () => goHist(hist.idx - 1));
+$('#recRedo').addEventListener('click', () => goHist(hist.idx + 1));
 $('#edUndo').addEventListener('click', () => { goHist(hist.idx - 1); setStatus($('#status1'), 'Undone.', ''); });
 $('#edRedo').addEventListener('click', () => { goHist(hist.idx + 1); setStatus($('#status1'), 'Redone.', ''); });
 
