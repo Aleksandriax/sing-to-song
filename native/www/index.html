@@ -433,6 +433,21 @@ body:not(.recording) #recTime{display:none}
 .pad-harm .pad-sub{text-align:center}
 .pad-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:-6px}
 .fx-tools{display:flex;gap:8px;align-items:center}
+/* artist suggestions and what the app takes from each */
+.artist-box{position:relative}
+.artist-suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 34px rgba(0,0,0,.45);overflow:hidden;max-height:300px;overflow-y:auto}
+.artist-suggest[hidden]{display:none}
+.artist-opt{appearance:none;display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;padding:10px 14px;border:0;background:transparent;color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.artist-opt + .artist-opt{border-top:1px solid var(--line)}
+.artist-opt b{font-size:15px}
+.artist-opt span{font-size:12px;color:var(--muted)}
+.artist-opt.act,.artist-opt:hover{background:var(--surface-2)}
+.artist-chips{display:flex;flex-wrap:wrap;gap:6px}
+.artist-chips:empty{display:none}
+.a-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:99px;font-size:12.5px;background:color-mix(in srgb,#22c55e 14%,var(--surface-2));border:1px solid color-mix(in srgb,#22c55e 45%,transparent)}
+.a-chip .ic{width:14px;height:14px;color:#4ade80;stroke-width:3}
+.a-chip.no{background:var(--surface-2);border-color:var(--line);color:var(--muted)}
+.artist-note{font-size:12px;color:var(--muted);flex-basis:100%;margin:0}
 .fx-tools .btn[aria-pressed="true"]{background:#fbbf24;border-color:#fbbf24;color:#241a05}
 .switch.mon-switch{font-size:14px;gap:10px;margin-left:auto}
 /* edit the pad board: drag to move, x to remove */
@@ -920,7 +935,11 @@ legend{padding:0}
       <label class="sr-only" for="vibe">Describe the music you want</label>
       <textarea id="vibe" rows="3" maxlength="300" placeholder="Describe the music: dreamy piano ballad, 80s synths, soft strings…"></textarea>
       <label class="sr-only" for="artists">Artists you like</label>
-      <input id="artists" class="text" type="text" maxlength="200" placeholder="Artists you like">
+      <div class="artist-box">
+        <input id="artists" class="text" type="text" maxlength="200" placeholder="Artists you like, like Taylor Swift, Drake" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="artistSuggest">
+        <div id="artistSuggest" class="artist-suggest" role="listbox" hidden></div>
+      </div>
+      <div id="artistChips" class="artist-chips" aria-live="polite"></div>
       <div class="ref-box">
         <div class="ref-pick">
           <label class="ref-tile file-pick"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5.5l10-2.2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>Upload a song file<input id="refFile" class="sr-only" type="file" accept="audio/*,video/*"></label>
@@ -4083,26 +4102,176 @@ $('#tlPlay').addEventListener('click', () => { if (tl.playing) tlStop(); else { 
 /* =========================================================
    Vibe: artist styles, keyword reader, Claude arranger
    ========================================================= */
-const ARTIST_STYLES = {
-  'the weeknd':'synth 80s dark', 'weeknd':'synth 80s dark', 'daft punk':'electronic dance fast', 'billie eilish':'dark slow moody',
-  'ed sheeran':'acoustic', 'taylor swift':'upbeat', 'adele':'ballad slow', 'drake':'dark moody', 'dua lipa':'dance upbeat 80s',
-  'lana del rey':'dreamy slow sad', 'bon iver':'folk acoustic slow', 'mumford':'folk acoustic fast', 'calvin harris':'dance electronic',
-  'avicii':'dance electronic upbeat', 'bruno mars':'upbeat', 'frank ocean':'slow dreamy', 'sza':'slow moody', 'kanye':'dark',
-  'post malone':'moody', 'coldplay':'dreamy', 'm83':'synth 80s dreamy', 'tame impala':'dreamy synth', 'phoebe bridgers':'folk sad',
-  'bad bunny':'dance upbeat', 'beyonce':'upbeat', 'beyoncé':'upbeat', 'olivia rodrigo':'upbeat', 'arctic monkeys':'dark',
-  'radiohead':'moody', 'kendrick':'dark', 'justin bieber':'upbeat', 'harry styles':'upbeat 80s', 'lorde':'dark synth',
-  'sam smith':'ballad slow', 'lady gaga':'dance synth', 'michael jackson':'dance upbeat 80s', 'prince':'synth 80s',
-  'norah jones':'acoustic slow', 'jack johnson':'acoustic', 'the 1975':'synth 80s', 'chvrches':'synth electronic', 'rihanna':'dance',
-  'ariana grande':'upbeat', 'khalid':'slow moody', 'hozier':'folk dark', 'zach bryan':'folk acoustic', 'fleetwood mac':'acoustic 80s'
-};
+/* Artists the app knows: each becomes style words (tempo, mood, instruments) for the music.
+   It never copies their songs, recordings or voice. */
+const ARTISTS = [
+  { name:"Taylor Swift", style:"upbeat guitar" },
+  { name:"Ariana Grande", style:"upbeat dance" },
+  { name:"Dua Lipa", style:"dance upbeat 80s synth" },
+  { name:"Olivia Rodrigo", style:"upbeat guitar" },
+  { name:"Billie Eilish", style:"dark slow moody piano" },
+  { name:"Harry Styles", style:"upbeat 80s guitar" },
+  { name:"Ed Sheeran", style:"acoustic guitar" },
+  { name:"Justin Bieber", style:"upbeat dance" },
+  { name:"Bruno Mars", style:"upbeat groovy dance" },
+  { name:"Lady Gaga", style:"dance synth" },
+  { name:"Katy Perry", style:"upbeat dance" },
+  { name:"Sabrina Carpenter", style:"upbeat groovy" },
+  { name:"Chappell Roan", style:"synth 80s upbeat" },
+  { name:"Doja Cat", style:"dance groovy beat" },
+  { name:"Miley Cyrus", style:"upbeat 80s" },
+  { name:"Selena Gomez", style:"dance moody" },
+  { name:"Charli XCX", style:"electronic dance synth" },
+  { name:"Lorde", style:"dark synth moody" },
+  { name:"Adele", style:"ballad slow piano" },
+  { name:"Sam Smith", style:"ballad slow piano" },
+  { name:"Lewis Capaldi", style:"ballad slow piano" },
+  { name:"Shawn Mendes", style:"acoustic guitar upbeat" },
+  { name:"Camila Cabello", style:"upbeat dance" },
+  { name:"Rihanna", style:"dance moody" },
+  { name:"Beyoncé", style:"upbeat dance" },
+  { name:"Lizzo", style:"upbeat groovy" },
+  { name:"Coldplay", style:"dreamy piano strings" },
+  { name:"Imagine Dragons", style:"dark upbeat" },
+  { name:"OneRepublic", style:"piano upbeat" },
+  { name:"Maroon 5", style:"upbeat groovy" },
+  { name:"Michael Jackson", style:"dance upbeat 80s groovy" },
+  { name:"Whitney Houston", style:"ballad piano strings" },
+  { name:"Mariah Carey", style:"ballad piano" },
+  { name:"Madonna", style:"dance 80s synth" },
+  { name:"Tate McRae", style:"dance moody" },
+  { name:"Gracie Abrams", style:"slow acoustic sad" },
+  { name:"Benson Boone", style:"ballad piano" },
+  { name:"Teddy Swims", style:"ballad slow piano" },
+  { name:"Sia", style:"ballad piano" },
+  { name:"Halsey", style:"dark synth" },
+  { name:"Hozier", style:"folk dark acoustic" },
+  { name:"Noah Kahan", style:"folk acoustic guitar" },
+  { name:"Zach Bryan", style:"folk acoustic country" },
+  { name:"Morgan Wallen", style:"country guitar upbeat" },
+  { name:"Luke Combs", style:"country guitar" },
+  { name:"Kacey Musgraves", style:"country dreamy acoustic" },
+  { name:"Dolly Parton", style:"country acoustic upbeat" },
+  { name:"Chris Stapleton", style:"country guitar slow" },
+  { name:"Mumford & Sons", style:"folk acoustic fast" },
+  { name:"The Lumineers", style:"folk acoustic" },
+  { name:"Bon Iver", style:"folk slow dreamy" },
+  { name:"Phoebe Bridgers", style:"folk sad slow" },
+  { name:"Norah Jones", style:"acoustic slow piano" },
+  { name:"Jack Johnson", style:"acoustic guitar chill" },
+  { name:"John Mayer", style:"acoustic guitar chill" },
+  { name:"Fleetwood Mac", style:"acoustic 80s" },
+  { name:"The Beatles", style:"upbeat guitar piano" },
+  { name:"Elton John", style:"piano upbeat" },
+  { name:"Queen", style:"piano epic" },
+  { name:"Stevie Wonder", style:"groovy upbeat piano" },
+  { name:"Marvin Gaye", style:"groovy slow" },
+  { name:"The Weeknd", style:"synth 80s dark" },
+  { name:"SZA", style:"slow moody" },
+  { name:"Frank Ocean", style:"slow dreamy" },
+  { name:"Daniel Caesar", style:"slow dreamy guitar" },
+  { name:"H.E.R.", style:"slow moody guitar" },
+  { name:"Khalid", style:"slow moody" },
+  { name:"Giveon", style:"slow dark ballad" },
+  { name:"Brent Faiyaz", style:"slow moody dreamy" },
+  { name:"Summer Walker", style:"slow moody" },
+  { name:"Usher", style:"dance groovy" },
+  { name:"Alicia Keys", style:"piano ballad" },
+  { name:"Chris Brown", style:"dance groovy" },
+  { name:"Jhené Aiko", style:"chill dreamy slow" },
+  { name:"Steve Lacy", style:"groovy dreamy guitar" },
+  { name:"Drake", style:"dark moody beat" },
+  { name:"Kendrick Lamar", style:"dark beat" },
+  { name:"Kanye West", style:"dark beat" },
+  { name:"Travis Scott", style:"dark dreamy beat" },
+  { name:"J. Cole", style:"chill piano beat" },
+  { name:"Post Malone", style:"moody guitar" },
+  { name:"Future", style:"dark beat" },
+  { name:"Lil Baby", style:"dark beat" },
+  { name:"Metro Boomin", style:"dark beat synth" },
+  { name:"Tyler, the Creator", style:"groovy synth" },
+  { name:"Juice WRLD", style:"moody dreamy beat guitar" },
+  { name:"XXXTentacion", style:"dark sad" },
+  { name:"Eminem", style:"dark beat piano" },
+  { name:"Nicki Minaj", style:"dance upbeat beat" },
+  { name:"Cardi B", style:"upbeat beat" },
+  { name:"Megan Thee Stallion", style:"upbeat beat" },
+  { name:"Doechii", style:"groovy beat" },
+  { name:"21 Savage", style:"dark beat" },
+  { name:"Lil Uzi Vert", style:"upbeat synth beat" },
+  { name:"Mac Miller", style:"chill dreamy" },
+  { name:"Childish Gambino", style:"groovy" },
+  { name:"Playboi Carti", style:"dark synth beat" },
+  { name:"Don Toliver", style:"dreamy moody beat" },
+  { name:"Bad Bunny", style:"dance upbeat beat" },
+  { name:"Karol G", style:"dance upbeat" },
+  { name:"J Balvin", style:"dance" },
+  { name:"Rosalía", style:"dance dark" },
+  { name:"Peso Pluma", style:"guitar upbeat" },
+  { name:"Shakira", style:"dance upbeat" },
+  { name:"BTS", style:"dance upbeat synth" },
+  { name:"BLACKPINK", style:"dance dark synth" },
+  { name:"NewJeans", style:"dreamy dance" },
+  { name:"Stray Kids", style:"dark dance" },
+  { name:"TWICE", style:"upbeat dance" },
+  { name:"Daft Punk", style:"electronic dance fast 80s" },
+  { name:"Calvin Harris", style:"dance electronic" },
+  { name:"Avicii", style:"dance electronic upbeat" },
+  { name:"David Guetta", style:"dance electronic" },
+  { name:"Skrillex", style:"electronic dark fast" },
+  { name:"Marshmello", style:"electronic upbeat" },
+  { name:"Fred again..", style:"electronic dance dreamy" },
+  { name:"Kygo", style:"chill electronic dreamy" },
+  { name:"Flume", style:"electronic dreamy synth" },
+  { name:"Disclosure", style:"dance groovy electronic" },
+  { name:"ODESZA", style:"dreamy electronic strings" },
+  { name:"M83", style:"synth 80s dreamy" },
+  { name:"Tame Impala", style:"dreamy synth" },
+  { name:"CHVRCHES", style:"synth electronic" },
+  { name:"The 1975", style:"synth 80s" },
+  { name:"Glass Animals", style:"dreamy groovy synth" },
+  { name:"Lana Del Rey", style:"dreamy slow sad strings" },
+  { name:"Mitski", style:"sad dark guitar" },
+  { name:"Cigarettes After Sex", style:"dreamy slow" },
+  { name:"Beach House", style:"dreamy slow synth" },
+  { name:"Clairo", style:"chill dreamy" },
+  { name:"Rex Orange County", style:"chill piano upbeat" },
+  { name:"Laufey", style:"slow piano strings" },
+  { name:"Arctic Monkeys", style:"dark guitar" },
+  { name:"Radiohead", style:"moody dark" },
+  { name:"Nirvana", style:"dark guitar fast" },
+  { name:"Paramore", style:"upbeat guitar" },
+  { name:"Linkin Park", style:"dark" },
+  { name:"Green Day", style:"fast guitar" },
+  { name:"Foo Fighters", style:"guitar fast" },
+  { name:"Red Hot Chili Peppers", style:"groovy guitar" },
+  { name:"The Killers", style:"synth 80s upbeat" },
+  { name:"Twenty One Pilots", style:"dark synth beat" },
+  { name:"Prince", style:"synth 80s groovy" },
+  { name:"Hans Zimmer", style:"epic strings cinematic dark" },
+  { name:"Ludovico Einaudi", style:"piano slow calm" },
+  { name:"Joe Hisaishi", style:"piano strings dreamy" },
+  { name:"Enya", style:"dreamy ethereal" },
+  { name:"Kali Uchis", style:"dreamy groovy" },
+  { name:"Djo", style:"synth 80s dreamy" },
+  { name:"Wallows", style:"upbeat guitar" },
+  { name:"Arctic Lake", style:"dreamy slow" },
+  { name:"Sufjan Stevens", style:"folk acoustic sad" }
+];
+const artistKey = (t) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ' ').trim().replace(/^the /, '');
+ARTISTS.forEach((x) => { x.key = artistKey(x.name); });
+function findArtist(text){
+  const k = artistKey(text); if (k.length < 2) return null;
+  return ARTISTS.find((x) => x.key === k) || (k.length >= 4 ? ARTISTS.find((x) => x.key.startsWith(k) || k.startsWith(x.key + ' ') || k === x.key) : null) || null;
+}
+// the style words, said the way a person would
+const STYLE_SAY = { slow:'slow', ballad:'ballad', sad:'sad', upbeat:'upbeat', dance:'dance beat', fast:'fast', groovy:'groovy', chill:'chill', calm:'calm', acoustic:'acoustic',
+  folk:'folk', country:'country', guitar:'guitar', piano:'piano', strings:'strings', synth:'synths', '80s':'80s', electronic:'electronic', dreamy:'dreamy', ethereal:'airy',
+  dark:'dark', moody:'moody', beat:'drums', epic:'epic', cinematic:'cinematic' };
+const sayStyle = (style) => style.split(' ').map((w) => STYLE_SAY[w] || w).join(', ');
+function artistItems(){ return $('#artists').value.split(/[,;\n]/).map((x) => x.trim()).filter((x) => x.length >= 2); }
 function artistHints(){
-  const items = $('#artists').value.toLowerCase().split(/[,;\n]| and | & /).map((s) => s.trim()).filter((s) => s.length >= 2);
-  const out = [];
-  for (const it of items){
-    const key = Object.keys(ARTIST_STYLES).find((k) => it.includes(k) || (it.length >= 4 && k.includes(it)));
-    out.push({ name:it, style:key ? ARTIST_STYLES[key] : null });
-  }
-  return out;
+  return artistItems().map((it) => { const a = findArtist(it); return { name:a ? a.name : it, style:a ? a.style : null }; });
 }
 const MOOD_RULES = [
   { label:'Slow / sad', words:['slow','ballad','sad','melancholy','mellow','calm','chill','sleepy','heartbreak','lullaby'],
@@ -4329,7 +4498,43 @@ function refreshMood(){
 }
 let keyTypeT = 0;
 $('#vibe').addEventListener('input', () => { refreshMood(); clearTimeout(keyTypeT); keyTypeT = setTimeout(() => { if (!state.busy) refreshSongKey(); }, 700); });
-$('#artists').addEventListener('input', refreshMood);
+$('#artists').addEventListener('input', () => { refreshMood(); renderArtistUI(); });
+// suggestions for the name you're typing now (after the last comma), and chips for what the app understood
+let artistAct = -1;
+function currentArtistPart(){ const v = $('#artists').value, i = v.lastIndexOf(','); return { head:i >= 0 ? v.slice(0, i + 1) : '', part:(i >= 0 ? v.slice(i + 1) : v).trim() }; }
+function renderArtistUI(){
+  const { part } = currentArtistPart(), k = artistKey(part), box = $('#artistSuggest');
+  const matches = k.length >= 1 && document.activeElement === $('#artists')
+    ? ARTISTS.filter((x) => x.key.startsWith(k) || x.key.split(' ').some((w) => w.startsWith(k))).filter((x) => x.key !== k).slice(0, 6) : [];
+  artistAct = Math.min(artistAct, matches.length - 1);
+  box.replaceChildren(...matches.map((x, i) => {
+    const o = h('button', { type:'button', class:'artist-opt' + (i === artistAct ? ' act' : ''), role:'option', 'aria-selected':i === artistAct ? 'true' : 'false' }, h('b', { text:x.name }), h('span', { text:sayStyle(x.style) }));
+    o.addEventListener('pointerdown', (e) => { e.preventDefault(); pickArtist(x); });
+    return o;
+  }));
+  box.hidden = !matches.length; $('#artists').setAttribute('aria-expanded', matches.length ? 'true' : 'false');
+  let hints = artistHints();
+  if (matches.length && hints.length && !findArtist(part)) hints = hints.slice(0, -1);   // still typing this one
+  $('#artistChips').replaceChildren(...hints.map((x) => x.style
+      ? h('span', { class:'a-chip', title:'The app uses this as style: ' + sayStyle(x.style) }, icon('check'), h('b', { text:x.name }), ' ' + sayStyle(x.style))
+      : h('span', { class:'a-chip no' }, '"' + x.name + '" isn\'t in the list, so the app can\'t use it' + (sampleFn && !aiBlocked ? ' (Claude still reads it)' : '') + '. Describe the sound above instead.')),
+    ...(hints.length ? [h('p', { class:'artist-note', text:'Each artist becomes style for your music: tempo, mood and instruments. The app never copies their songs, recordings or voice.' })] : []));
+}
+function pickArtist(x){
+  const { head } = currentArtistPart();
+  $('#artists').value = (head ? head + ' ' : '') + x.name + ', ';
+  artistAct = -1; refreshMood(); renderArtistUI(); scheduleAutosave();
+  $('#artists').focus();
+}
+$('#artists').addEventListener('focus', renderArtistUI);
+$('#artists').addEventListener('blur', () => setTimeout(() => { $('#artistSuggest').hidden = true; $('#artists').setAttribute('aria-expanded', 'false'); }, 120));
+$('#artists').addEventListener('keydown', (e) => {
+  const opts = [...$('#artistSuggest').querySelectorAll('.artist-opt')];
+  if ($('#artistSuggest').hidden || !opts.length) return;
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); artistAct = (artistAct + (e.key === 'ArrowDown' ? 1 : -1) + opts.length) % opts.length; renderArtistUI(); }
+  else if (e.key === 'Enter'){ e.preventDefault(); const { part } = currentArtistPart(), k = artistKey(part); const list = ARTISTS.filter((x) => x.key.startsWith(k) || x.key.split(' ').some((w) => w.startsWith(k))).filter((x) => x.key !== k); const x = list[Math.max(0, artistAct)]; if (x) pickArtist(x); }
+  else if (e.key === 'Escape'){ $('#artistSuggest').hidden = true; }
+});
 
 /* =========================================================
    Mixing
@@ -5556,7 +5761,7 @@ async function loadProject(doc, statusEl, landHome){
     state.playhead1 = doc.playhead1 || 0; state.sel1 = null;
     state.markers = (doc.markers || []).map((m) => Object.assign({ end:null }, m)); state.selMarker = null;
     state.sfx2 = (doc.sfx2 || []).map((p) => { const item = lib.sfx.find((x) => x.id === p.itemId); return item ? { id:uid('p'), item, name:p.name, at:p.at } : null; }).filter(Boolean);
-    $('#vibe').value = doc.vibe || ''; $('#songName').value = doc.songName || ''; $('#songDesc').value = doc.songDesc || ''; $('#artists').value = doc.artists || ''; $('#refLink').value = doc.refLink || ''; $('#refLink').hidden = !doc.refLink;
+    $('#vibe').value = doc.vibe || ''; $('#songName').value = doc.songName || ''; $('#songDesc').value = doc.songDesc || ''; $('#artists').value = doc.artists || ''; setTimeout(renderArtistUI); $('#refLink').value = doc.refLink || ''; $('#refLink').hidden = !doc.refLink;
     state.variation = doc.variation || 0;
     const ids = [0, ...state.layers.map((l) => l.id), ...state.clips.map((s) => s.id), ...state.markers.map((m) => m.id)].filter(Number.isFinite);
     nextId = Math.max(nextId, ...ids) + 1;
@@ -6599,7 +6804,7 @@ const TOURS = {
     { sel:'.tl-card', title:'Your song timeline', text:'Drag the red line\'s handle to move through your song. Tap the wave, then + to pin a note for the AI, like "beat drops here". Add duration to turn a note into a box over a whole part.' },
     { sel:'#sfxHead', title:'Sound effects', text:'Press Add on a sound, then drag its gold pin along your song. Tap a pin, then the trash can, to take it off. Hold a sound in the list to delete it for good. Tap + to record one, upload one, or pick part of your song, then name it and set a price to sell it (Premium).' },
     { sel:'#vibe', title:'Generation prompt', text:'Words like slow, dance, acoustic, 80s synth or dark shape the music. The key comes from your voice, or write one here, like "in A minor".' },
-    { sel:'#artists', title:'Artists you like', text:'Artists are style hints only: tempo, sound and mood. The app never copies their songs, recordings or voice.' },
+    { sel:'#artists', title:'Artists you like', text:'Start typing a name and pick it from the list. A green chip shows what the app takes from each artist: tempo, mood and instruments. Names it doesn\'t know are marked, so describe that sound in the box above instead. The app never copies their songs, recordings or voice.' },
     { sel:'.ref-box', title:'A song you like', text:'Upload a song file and the app matches its tempo and energy. A link is passed to the AI as a hint; the app can\'t open links.' },
     { sel:'.blend-panel', title:'AI Blend', text:'Premium. On: the AI polishes your voice, evens out your volume and blends the music around it. Off: it only makes music that fits your voice.' },
     { sel:'#savePlain', title:'Save without music', text:'Want just your voice? This takes your edited recording, with its effects and sound effects and no AI music, to the last step. There you name it, publish it or keep it private, and save it to your phone.' },
@@ -6763,7 +6968,7 @@ function resetProject(){
   if (state.recView){ state.recView = false; setRecUI(); }
   stopAllPlayback();
   Object.assign(state, { layers:[{ id:nextId++, segs:[] }], activeLayer:0, playhead1:0, sel1:null, zoom1:0, span1:6, markers:[], sfx2:[], selMarker:null, playhead2:0, result:null, variation:0, workPage:1 });
-  takeCount = 0; $('#vibe').value = ''; $('#songName').value = ''; $('#songDesc').value = ''; $('#songSell').checked = false; $('#songSave').checked = lib.profile.allowSaves !== false; fix.on = false; $('#artists').value = ''; $('#refLink').value = ''; $('#refLink').hidden = true; state.ref = null; $('#refInfo').textContent = ''; $('#refPlay').hidden = true; $('#refClear').hidden = true; $('#mkEditor').hidden = true;
+  takeCount = 0; $('#vibe').value = ''; $('#songName').value = ''; $('#songDesc').value = ''; $('#songSell').checked = false; $('#songSave').checked = lib.profile.allowSaves !== false; fix.on = false; $('#artists').value = ''; setTimeout(renderArtistUI); $('#refLink').value = ''; $('#refLink').hidden = true; state.ref = null; $('#refInfo').textContent = ''; $('#refPlay').hidden = true; $('#refClear').hidden = true; $('#mkEditor').hidden = true;
   resetPads(); state.keyFrom = null; setKey('60:chromatic'); rec.live = [];
   ['#status1', '#status2', '#status3'].forEach((s) => setStatus($(s), ''));
   renderClips(); renderMarkerList();
