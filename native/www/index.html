@@ -2196,7 +2196,8 @@ const EXTRA_FX = [
   { id:'x-poptune', name:'Pop tune', color:'#db2777', desc:'hard tune, stacked', combo:{ tune:1, double:0.35 } },
   { id:'x-lofi', name:'Lo-fi tape', color:'#a16207', desc:'old cassette', combo:{ radio:0.5, wobble:0.35, crush:0.15 } },
   { id:'x-alien', name:'Alien', color:'#16a34a', desc:'wobbly robot', combo:{ shift:4, vibrato:0.8, robot:0.5 } },
-  { id:'x-ghost', name:'Ghost', color:'#6366f1', desc:'far away', combo:{ reverb:1, echo:0.6, vibrato:0.3 } }
+  { id:'x-ghost', name:'Ghost reverb', color:'#6366f1', desc:'airy, far away', combo:{ reverb:1, echo:0.5, double:0.2, vibrato:0.15 } },
+  { id:'x-wet', name:'Wet vocal', color:'#0ea5e9', desc:'full studio sound', combo:{ reverb:0.4, double:0.45, echo:0.12, tune:0.3 } }
 ];
 // trending: effects other creators made, ranked by how much they're used (examples until accounts are connected)
 const TRENDING_FX = [
@@ -2219,7 +2220,8 @@ const fx = {};
 PADS.forEach((p) => { fx[p.id] = { on:false, level:0.5, idx:3, semis:5 }; });
 EXTRA_FX.concat(TRENDING_FX).forEach((p) => { fx[p.id] = { on:false, level:0.5 }; });
 fx.tune.level = 0.6; fx.echo.level = 0.4; fx.radio.level = 0.7;
-const DEFAULT_BOARD = PADS.map((p) => p.id);
+// Robot and Vibrato live in Add effects; Wet vocal and Ghost reverb take their places on the pads
+const DEFAULT_BOARD = PADS.map((p) => p.id === 'robot' ? 'x-wet' : p.id === 'vibrato' ? 'x-ghost' : p.id);
 let fxPreview = null;   // an effect being tried on the sample voice (library or maker)
 const liveParams = () => fxPreview || padParams();
 function padParams(){
