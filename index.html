@@ -95,6 +95,13 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .ed-wrap canvas{display:block;width:100%;height:150px;touch-action:none;cursor:pointer}
 .ed-tools{display:flex;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
 .ed-tools[hidden]{display:none}
+.ed-tools .btn.small[hidden]{display:none}
+.ed-tools.five .btn.small{font-size:12px;padding:0 1px;letter-spacing:-.01em}
+@media (max-width:380px){.ed-tools.five .btn.small{font-size:11.5px}}
+.fade-row{display:flex;flex-direction:column;gap:4px}
+.fade-top{display:flex;justify-content:space-between;font-weight:700;font-size:14px}
+.fade-top span:last-child{color:var(--muted);font-weight:500}
+.fade-row input{width:100%;accent-color:var(--accent-b);height:30px;margin:0}
 .ed-tools .btn.small{flex:1;min-height:44px;padding:0 4px;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;border:0;border-radius:0;background:transparent}
 .ed-tools .btn.small + .btn.small{border-left:1px solid var(--line)}
 .ed-tools .btn.small:active:not(:disabled){background:var(--surface-2)}
@@ -560,6 +567,7 @@ legend{padding:0}
         <button type="button" id="edSplit" class="btn small">Split</button>
         <button type="button" id="edDup" class="btn small">Duplicate</button>
         <button type="button" id="edDel" class="btn small danger">Delete</button>
+        <button type="button" id="edFade" class="btn small" hidden>Fade</button>
         <button type="button" id="edLayer" class="btn small">+ Layer</button>
       </div>
       <p id="edHint" class="hint" hidden></p>
@@ -947,6 +955,19 @@ legend{padding:0}
     <div class="actions">
       <button type="button" id="nameCancel" class="btn">Cancel</button>
       <button type="button" id="nameSave" class="btn primary" disabled>Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="fadeSheet" class="sheet-backdrop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="fadeTitle">
+    <h2 id="fadeTitle">Fade</h2>
+    <div class="fade-row"><div class="fade-top"><span>Fade in</span><span id="fiVal">off</span></div><input type="range" id="fiRange" min="0" max="100" step="1" value="0" aria-label="Fade in length"></div>
+    <div class="fade-row"><div class="fade-top"><span>Fade out</span><span id="foVal">off</span></div><input type="range" id="foRange" min="0" max="100" step="1" value="0" aria-label="Fade out length"></div>
+    <div class="actions">
+      <button type="button" id="fadePlay" class="btn">Play</button>
+      <button type="button" id="fadeCancel" class="btn">Cancel</button>
+      <button type="button" id="fadeDone" class="btn primary">Done</button>
     </div>
   </div>
 </div>
@@ -2117,8 +2138,8 @@ function splitSegAt(layer, t){
   const s = layer.segs[i], cut = s.start + (t - s.at);
   const hi = s.hi == null ? s.end : s.hi;
   if (s.lo == null) s.lo = s.start;
-  layer.segs.splice(i + 1, 0, Object.assign({}, s, { id:nextId++, start:cut, at:t, lo:cut, hi }));
-  s.end = cut; s.hi = cut;
+  layer.segs.splice(i + 1, 0, Object.assign({}, s, { id:nextId++, start:cut, at:t, lo:cut, hi, fadeIn:0 }));
+  s.end = cut; s.hi = cut; s.fadeOut = 0;
   return true;
 }
 const inRange = (s, a, b) => s.at >= a - 0.001 && segEnd(s) <= b + 0.001;
@@ -2143,6 +2164,7 @@ function insertPiece(layer, t, piece){
   }
   piece.at = t; layer.segs.push(piece); ripple(layer);
 }
+const fadeEnv = (s, p) => { const len = segLen(s), fi = s.fadeIn || 0, fo = s.fadeOut || 0; return Math.max(0, Math.min(1, fi > 0 ? p / fi : 1) * Math.min(1, fo > 0 ? (len - p) / fo : 1)); };
 function segAt(layer, t){ return layer.segs.find((s) => s.at - 0.001 <= t && t < segEnd(s)); }
 // mono audio of part of a layer (or of every layer when layer is null)
 function renderRange(layer, a, b, sr){
@@ -2150,10 +2172,11 @@ function renderRange(layer, a, b, sr){
   (layer ? [layer] : state.layers).forEach((l) => { const lvol = layer ? 1 : (l.vol == null ? 1 : l.vol); l.segs.forEach((s) => {
     const s0 = Math.max(a, s.at), s1 = Math.min(b, segEnd(s)); if (s1 <= s0) return;
     const buf = prepSrc(s.src).buffer, d = buf.getChannelData(0), r = buf.sampleRate / sr;
-    const from = s.start + (s0 - s.at), o = Math.floor((s0 - a) * sr), n = Math.floor((s1 - s0) * sr), fade = Math.min(Math.floor(0.008 * sr), n >> 1);
+    const from = s.start + (s0 - s.at), o = Math.floor((s0 - a) * sr), n = Math.floor((s1 - s0) * sr), fade = Math.min(Math.floor(0.008 * sr), n >> 1), hasFade = (s.fadeIn || 0) > 0 || (s.fadeOut || 0) > 0;
     for (let i = 0; i < n && o + i < out.length; i++){
       let v = d[Math.floor(from * buf.sampleRate + i * r)] || 0;
       if (i < fade) v *= i / fade; else if (i > n - fade) v *= (n - i) / fade;
+      if (hasFade) v *= fadeEnv(s, (s0 - s.at) + i / sr);
       out[o + i] += v * lvol;
     }
   }); });
@@ -2213,7 +2236,8 @@ function drawEditor(){
         any = true;
         const buf = prepSrc(s.src).buffer, d = buf.getChannelData(0), sr = buf.sampleRate;
         const i0 = Math.floor((s.start + a - s.at) * sr), i1 = Math.min(d.length, Math.ceil((s.start + b - s.at) * sr)), stride = Math.max(1, Math.floor((i1 - i0) / 300));
-        for (let i = i0; i < i1; i += stride){ const v = Math.abs(d[i]); if (v > pk) pk = v; }
+        const fe = fadeEnv(s, (a + b) / 2 - s.at);
+        for (let i = i0; i < i1; i += stride){ const v = Math.abs(d[i]) * fe; if (v > pk) pk = v; }
       }
       pts.push([x, any ? Math.max(1, Math.min(1, (pk / gpk) * (layer.vol == null ? 1 : layer.vol)) * amp) : 0]);
     }
@@ -2340,6 +2364,8 @@ function edReadouts(){
   $('#edDup').disabled = !(sel || segAt(layer, state.playhead1));
   const al = state.layers[state.activeLayer];
   const emptyLayer = !sel && state.layers.length > 1 && al && !al.segs.length;
+  const fadeOk = !!(sel && sel.seg && state.layers[sel.layer] && state.layers[sel.layer].segs.includes(sel.seg));
+  $('#edFade').hidden = !fadeOk; $('.ed-tools').classList.toggle('five', fadeOk);
   $('#edDel').disabled = !sel && !emptyLayer;
   $('#layerVol').hidden = state.layers.length < 2 || !al || !al.segs.length;
   if (al){ const v = Math.round((al.vol == null ? 1 : al.vol) * 100); $('#lvLabel').textContent = 'Layer ' + (state.activeLayer + 1); $('#lvRange').value = v; $('#lvVal').textContent = v + '%'; }
@@ -2458,7 +2484,7 @@ $('#fxSave').addEventListener('click', async () => {
 const hist = { stack:[], idx:-1, muted:false };
 const snapLayers = () => state.layers.map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((x) => Object.assign({}, x)) }));
 let histNext = null;   // what the next history entry is called ("Split", "Echo on"...)
-const snapKey = (sn) => sn.map((l) => l.id + 'v' + (l.vol == null ? 1 : l.vol) + ':' + l.segs.map((x) => [x.id, x.src.id, x.start.toFixed(4), x.end.toFixed(4), x.at.toFixed(4)].join('/')).join(',')).join('|');
+const snapKey = (sn) => sn.map((l) => l.id + 'v' + (l.vol == null ? 1 : l.vol) + ':' + l.segs.map((x) => [x.id, x.src.id, x.start.toFixed(4), x.end.toFixed(4), x.at.toFixed(4), x.fadeIn || 0, x.fadeOut || 0].join('/')).join(',')).join('|');
 function resetHist(){ hist.stack = []; hist.idx = -1; updHistBtns(); }
 function pushHist(){
   if (hist.muted) return;
@@ -2749,11 +2775,52 @@ $('#addRec').addEventListener('click', () => { closeAddSheet(); if (addAt){ stat
 document.addEventListener('pointerdown', (e) => {
   if (state.page !== 1 || state.section !== 'create' || rec.state !== 'idle' || paint.busy) return;
   if (!state.cursorOn && !state.sel1 && !edPlayState.playing) return;
-  if (e.target.closest('#edCanvas, #pads, #presets, .ed-tools, .editor .tl-bar, .ed-links, .sheet-backdrop, #addSheet, .rec-zoom, .tabbar, #tryBtn, .tour')) return;
+  if (e.target.closest('#edCanvas, #pads, #presets, .ed-tools, .editor .tl-bar, .ed-links, .sheet-backdrop, #addSheet, #fadeSheet, .rec-zoom, .tabbar, #tryBtn, .tour')) return;
   state.cursorOn = false; state.sel1 = null;
   if (edPlayState.playing) edStop();
   drawEditor(); edReadouts();
 }, true);
+
+/* ---------- Fade: fade the start and end of the selected section ---------- */
+let fadeEdit = null;
+const fadeMax = (s) => Math.min(10, segLen(s) / 2);
+const fadeTxt = (v) => v > 0.004 ? fmtS(v) : 'off';
+function fadeShow(){
+  const s = fadeEdit.seg, m = fadeMax(s);
+  $('#fiRange').value = Math.round(((s.fadeIn || 0) / m) * 100); $('#foRange').value = Math.round(((s.fadeOut || 0) / m) * 100);
+  $('#fiVal').textContent = fadeTxt(s.fadeIn || 0); $('#foVal').textContent = fadeTxt(s.fadeOut || 0);
+}
+$('#edFade').addEventListener('click', () => {
+  const sel = state.sel1; if (!sel || !sel.seg) return;
+  stopAllPlayback();
+  fadeEdit = { seg:sel.seg, fi:sel.seg.fadeIn || 0, fo:sel.seg.fadeOut || 0 };
+  fadeShow(); $('#fadeSheet').hidden = false;
+});
+['fi', 'fo'].forEach((k) => $('#' + k + 'Range').addEventListener('input', (e) => {
+  if (!fadeEdit) return;
+  const s = fadeEdit.seg, v = (+e.target.value / 100) * fadeMax(s);
+  if (k === 'fi') s.fadeIn = v; else s.fadeOut = v;
+  $('#' + k + 'Val').textContent = fadeTxt(v);
+  invalidateJoined(); drawEditor();
+}));
+$('#fadePlay').addEventListener('click', () => {
+  if (!fadeEdit) return;
+  if (edPlayState.playing){ edStop(); $('#fadePlay').textContent = 'Play'; return; }
+  const s = fadeEdit.seg; state.playhead1 = s.at; edPlay(); $('#fadePlay').textContent = 'Stop';
+  const end = segEnd(s), stopAt = () => { if (!edPlayState.playing){ $('#fadePlay').textContent = 'Play'; return; } if (state.playhead1 >= end - 0.02){ edStop(); $('#fadePlay').textContent = 'Play'; return; } requestAnimationFrame(stopAt); };
+  requestAnimationFrame(stopAt);
+});
+function closeFade(keep){
+  if (!fadeEdit) return;
+  edStop(); $('#fadePlay').textContent = 'Play';
+  const s = fadeEdit.seg;
+  if (!keep){ s.fadeIn = fadeEdit.fi; s.fadeOut = fadeEdit.fo; invalidateJoined(); drawEditor(); }
+  $('#fadeSheet').hidden = true;
+  if (keep && (fadeEdit.fi !== (s.fadeIn || 0) || fadeEdit.fo !== (s.fadeOut || 0))){ histNext = 'Fade'; fadeEdit = null; renderClips(); return; }
+  fadeEdit = null;
+}
+$('#fadeDone').addEventListener('click', () => closeFade(true));
+$('#fadeCancel').addEventListener('click', () => closeFade(false));
 
 /* ---------- tools ---------- */
 $('#edSplit').addEventListener('click', () => {
@@ -2829,8 +2896,16 @@ function scheduleSong(c, from, dest, skipLayer, onlyLayer){
     l.segs.forEach((s) => {
     if (segEnd(s) <= from) return;
     const off = Math.max(0, from - s.at), src = c.createBufferSource();
-    src.buffer = prepSrc(s.src).buffer; src.connect(lg);
-    src.start(t0 + Math.max(0, s.at - from), s.start + off, segLen(s) - off);
+    src.buffer = prepSrc(s.src).buffer;
+    const st = t0 + Math.max(0, s.at - from), len = segLen(s);
+    if ((s.fadeIn || 0) > 0 || (s.fadeOut || 0) > 0){
+      // fades: ramp the volume between the points where the envelope bends
+      const fg = c.createGain(); src.connect(fg); fg.connect(lg);
+      const pts = [off, s.fadeIn || 0, len - (s.fadeOut || 0), len].filter((p) => p >= off && p <= len).sort((x, y) => x - y);
+      fg.gain.setValueAtTime(fadeEnv(s, off), st);
+      pts.forEach((p) => { if (p > off) fg.gain.linearRampToValueAtTime(fadeEnv(s, p), st + (p - off)); });
+    } else src.connect(lg);
+    src.start(st, s.start + off, len - off);
     nodes.push(src);
   }); });
   return { nodes, t0, gains };
@@ -2950,7 +3025,7 @@ $('#toStep2').addEventListener('click', async () => {
 let joinedCache = null;
 function invalidateJoined(){ joinedCache = null; }
 function joined(){
-  const key = state.key + '#' + state.layers.map((l) => (l.vol == null ? 1 : l.vol) + '~' + l.segs.map((s) => s.id + ':' + s.start.toFixed(3) + ':' + s.end.toFixed(3) + '@' + s.at.toFixed(3)).join(',')).join('|');
+  const key = state.key + '#' + state.layers.map((l) => (l.vol == null ? 1 : l.vol) + '~' + l.segs.map((s) => s.id + ':' + s.start.toFixed(3) + ':' + s.end.toFixed(3) + '@' + s.at.toFixed(3) + 'f' + (s.fadeIn || 0) + '/' + (s.fadeOut || 0)).join(',')).join('|');
   if (joinedCache && joinedCache.key === key) return joinedCache;
   const sr = ctx().sampleRate, dur = songDur(), data = renderRange(null, 0, dur, sr), fx = [];
   const bounds = state.layers[0].segs.map((s) => s.at);
@@ -4316,7 +4391,7 @@ function projectDoc(){
   const r = state.result;
   return {
     v:1, saved:Date.now(), key:state.key, keyFrom:state.keyFrom, blend:state.blend, page:state.page || state.workPage || 1,
-    layers:state.layers.map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((s) => ({ id:s.id, src:s.src.id, start:s.start, end:s.end, at:s.at, lo:s.lo, hi:s.hi })) })),
+    layers:state.layers.map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((s) => ({ id:s.id, src:s.src.id, start:s.start, end:s.end, at:s.at, lo:s.lo, hi:s.hi, fadeIn:s.fadeIn, fadeOut:s.fadeOut })) })),
     activeLayer:state.activeLayer, playhead1:state.playhead1,
     markers:state.markers.filter((m) => m.text.trim()).map((m) => ({ id:m.id, t:m.t, end:m.end, text:m.text })),
     sfx2:state.sfx2.map((p) => ({ itemId:p.item.id, name:p.name, at:p.at })),
@@ -4350,7 +4425,7 @@ async function loadProject(doc, statusEl, landHome){
       srcs[s.src] = { id:s.src, raw:d.raw, sr:d.sr, events:d.events, hist:d.hist, segs:fxSegments(d.events, d.raw.length, d.sr), key:null, buffer:null };
     }
     state.key = doc.key || '60:chromatic'; state.keyFrom = doc.keyFrom || null; state.blend = doc.blend !== false;
-    state.layers = (doc.layers || []).map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((s) => ({ id:s.id, src:srcs[s.src], start:s.start, end:s.end, at:s.at, lo:s.lo, hi:s.hi })) }));
+    state.layers = (doc.layers || []).map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((s) => ({ id:s.id, src:srcs[s.src], start:s.start, end:s.end, at:s.at, lo:s.lo, hi:s.hi, fadeIn:s.fadeIn, fadeOut:s.fadeOut })) }));
     if (!state.layers.length) state.layers = [{ id:nextId++, segs:[] }];
     state.activeLayer = Math.min(doc.activeLayer || 0, state.layers.length - 1);
     state.playhead1 = doc.playhead1 || 0; state.sel1 = null;
@@ -4898,7 +4973,7 @@ const TOURS = {
   ],
   p1:[
     { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
-    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. The round button on the left of each layer jumps the red line to the start of that layer. Tap the wave to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it. Drag its pink handles inward to trim it; drag them back out to bring trimmed audio back (a dotted outline shows how far), then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end of the audio to record more there, or add audio from a file or your camera roll. Double-tap a clip to delete it. With more than one layer, tap a layer to change its volume with the slider under the wave; tap an empty layer and press Delete to remove it. Hold a clip, then drag, to move it; drag it up or down to put it on another layer, or below the last layer to make a new one. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Spread two fingers on the wave to zoom in, pinch them together to zoom out (or use + and −). + Layer stacks up to 4 layers; the other layers play while you record.' },
+    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. The round button on the left of each layer jumps the red line to the start of that layer. Tap the wave to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it. Drag its pink handles inward to trim it; drag them back out to bring trimmed audio back (a dotted outline shows how far), then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end of the audio to record more there, or add audio from a file or your camera roll. Double-tap a clip to delete it. With a section selected, Fade lets you fade in its start and fade out its end. With more than one layer, tap a layer to change its volume with the slider under the wave; tap an empty layer and press Delete to remove it. Hold a clip, then drag, to move it; drag it up or down to put it on another layer, or below the last layer to make a new one. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Spread two fingers on the wave to zoom in, pinch them together to zoom out (or use + and −). + Layer stacks up to 4 layers; the other layers play while you record.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does, and slide up or down to hear it get stronger or weaker.' },
