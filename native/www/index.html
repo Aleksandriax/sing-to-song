@@ -226,7 +226,7 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .earn-panel h2{color:#fff}
 .earn-panel .stat{background:rgba(255,255,255,.12);color:#fff}
 .earn-panel .stat-label{color:rgba(255,247,237,.82)}
-.recording .topbar,.recording .tabbar,.recording #page1 > .back-top,.recording #page1 > .p1-title,.recording .editor .tl-bar,.recording .ed-tools,.recording .ed-links,.recording .pads-head,.recording #tryBtn,.recording .pad-foot,.recording #toStep2{display:none!important}
+.recording .topbar,.recording .tabbar,.recording #page1 > .back-top,.recording #page1 > .p1-title,.recording .editor .tl-bar,.recording .ed-tools,.recording .ed-links,.recording .pads-head,.recording #tryBtn,.recording #toStep2{display:none!important}
 .recording .app{padding-block:calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-bottom));gap:10px}
 .recording #page1{gap:10px}
 .recording #page1 > .editor{order:-1}
@@ -345,6 +345,8 @@ body:not(.recording) #recTime{display:none}
 .item-meta .shield-mark{display:inline-flex;vertical-align:-2px;margin-right:4px;color:#a78bfa}
 .item-meta .shield-mark .ic{width:14px;height:14px}
 .sheet-backdrop#detSheet{z-index:70}
+.sheet-backdrop#fxLibSheet{z-index:66}
+.sheet-backdrop#fxMakeSheet{z-index:67}
 .toast{position:fixed;left:50%;bottom:calc(104px + env(safe-area-inset-bottom));z-index:95;max-width:min(88vw,420px);padding:12px 18px;border-radius:14px;background:#2a2140;border:1px solid rgba(255,255,255,.14);color:#fff;font-size:15px;font-weight:700;text-align:center;box-shadow:0 12px 34px rgba(0,0,0,.45);pointer-events:none;transform:translate(-50%,calc(100% + 140px));transition:transform .25s ease}
 .toast.show{transform:translate(-50%,0)}
 @media (prefers-reduced-motion: reduce){ .toast{transition:none} }
@@ -425,6 +427,43 @@ body:not(.recording) #recTime{display:none}
 .pad-harm .pad-name{font-size:15px}
 .pad-harm .pad-sub{text-align:center}
 .pad-foot{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:-6px}
+.fx-tools{display:flex;gap:8px;align-items:center}
+.fx-tools .btn[aria-pressed="true"]{background:#fbbf24;border-color:#fbbf24;color:#241a05}
+.switch.mon-switch{font-size:14px;gap:10px;margin-left:auto}
+/* edit the pad board: drag to move, x to remove */
+.pads.editing .pad{animation:jiggle .28s ease-in-out infinite alternate;cursor:grab}
+.pads.editing .pad.dragging{animation:none;opacity:.55;outline:2px dashed #fbbf24;outline-offset:-3px}
+@keyframes jiggle{from{transform:rotate(-1deg)}to{transform:rotate(1deg)}}
+@media (prefers-reduced-motion: reduce){ .pads.editing .pad{animation:none} }
+.pad-x{position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:50%;background:#ef4444;color:#fff;display:none;place-items:center;z-index:2;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.pad-x .ic{width:13px;height:13px;stroke-width:3}
+.pads.editing .pad-x{display:grid}
+.pad-add{appearance:none;border:0;background:var(--surface);color:#fbbf24;font:inherit;font-weight:800;font-size:15px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;aspect-ratio:1/0.8}
+.pad-add .plus{font-size:28px;line-height:1}
+.pad-tag{position:relative;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#fbbf24}
+.recording #fxEditBtn{display:none}
+/* library + maker */
+.fx-sheet{max-height:88vh;overflow-y:auto}
+.fx-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.fx-sheet-head h2{margin:0}
+.fx-lib-list{display:flex;flex-direction:column;gap:6px}
+.fx-lib-list h3{margin:8px 0 0;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.lib-fx{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line)}
+.lib-fx .dot{width:14px;height:14px;border-radius:50%;background:var(--c);flex:none}
+.lib-fx .item-main{flex:1;min-width:0}
+.lib-fx .icon-btn{width:34px;height:34px}
+.lib-fx .icon-btn .ic{width:16px;height:16px}
+.lib-fx .icon-btn svg{width:16px;height:16px}
+.fx-on{appearance:none;min-width:48px;height:32px;border-radius:99px;border:1px solid var(--line);background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:800;cursor:pointer}
+.fx-on[aria-pressed="true"]{background:var(--c);border-color:transparent;color:#fff}
+.fx-colors{display:flex;gap:8px;flex-wrap:wrap}
+.fx-colors button{width:32px;height:32px;border-radius:50%;border:3px solid transparent;background:var(--c);cursor:pointer}
+.fx-colors button[aria-checked="true"]{border-color:#fff}
+.fx-knobs{display:grid;grid-template-columns:1fr;gap:6px}
+.fx-knob{display:grid;grid-template-columns:96px 1fr 44px;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.fx-knob input[type=range]{width:100%;accent-color:#ec4899;height:28px;margin:0}
+.fx-knob select{font:inherit;font-size:14px;padding:6px;border-radius:10px;background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
+.fx-knob .mono{font-size:12px;color:var(--muted);text-align:right}
 .linkish{appearance:none;border:0;background:none;color:var(--accent-b);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:6px 0}
 
 /* buttons */
@@ -778,8 +817,12 @@ legend{padding:0}
     <div id="presets" class="presets" aria-label="Presets"></div>
     <button type="button" id="allFxBtn" class="all-fx" hidden><span class="all-fx-name">Hold to add all your effects</span><span id="allFxSub" class="all-fx-sub"></span></button>
     <section id="pads" class="pads" aria-label="Voice effects"></section>
-    <div class="pad-foot" style="justify-content:flex-end">
-      <button type="button" id="monitorBtn" class="linkish" aria-pressed="false">Hear yourself: off</button>
+    <div class="pad-foot">
+      <div class="fx-tools">
+        <button type="button" id="fxEditBtn" class="btn small" aria-pressed="false">Edit</button>
+        <button type="button" id="fxLibBtn" class="btn small">Effects library</button>
+      </div>
+      <label class="switch mon-switch" id="monitorBtn" for="monitorSw"><span>Hear yourself</span><input type="checkbox" id="monitorSw" role="switch"></label>
     </div>
 
     <div id="status1" class="status" role="status" aria-live="polite"></div>
@@ -903,8 +946,8 @@ legend{padding:0}
   <main id="page3" class="page" hidden>
     <button type="button" class="back-top" data-to="2" aria-label="Back to Prep and adjust"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div>
-      <h1>Generate and finish</h1>
-      <p class="lede">Play your song, redo any part you don't like, then name it and publish it.</p>
+      <h1 id="p3Title">Generate and finish</h1>
+      <p id="p3Lede" class="lede">Play your song, redo any part you don't like, then name it and publish it.</p>
     </div>
     <canvas id="viz" class="screen" width="720" height="720" aria-label="Song visualizer"></canvas>
     <div class="transport">
@@ -1254,6 +1297,26 @@ legend{padding:0}
 
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
+<div id="fxLibSheet" class="sheet-backdrop" hidden>
+  <div class="sheet fx-sheet" role="dialog" aria-modal="true" aria-labelledby="fxLibTitle">
+    <div class="fx-sheet-head"><h2 id="fxLibTitle">Effects library</h2><button type="button" id="fxNew" class="btn small primary">+ Create your own</button></div>
+    <p class="hint" style="margin:0">Tap On to use an effect right now, even while you record. Tap + to put it on your pads. Play hears it on a sample voice.</p>
+    <div id="fxLibList" class="fx-lib-list"></div>
+    <div class="actions"><button type="button" id="fxLibClose" class="btn">Done</button></div>
+  </div>
+</div>
+
+<div id="fxMakeSheet" class="sheet-backdrop" hidden>
+  <div class="sheet fx-sheet" role="dialog" aria-modal="true" aria-labelledby="fxMakeTitle">
+    <h2 id="fxMakeTitle">Create an effect</h2>
+    <input id="fxMakeName" class="text" maxlength="24" placeholder="Name it, like Night Echo" autocomplete="off" aria-label="Effect name">
+    <div id="fxMakeColors" class="fx-colors" role="radiogroup" aria-label="Color"></div>
+    <div id="fxMakeKnobs" class="fx-knobs"></div>
+    <div class="actions"><button type="button" id="fxMakeTry" class="btn small" aria-pressed="false">Hear it</button><span class="spacer"></span><button type="button" id="fxMakeDelete" class="btn small danger" hidden>Delete</button></div>
+    <div class="actions"><button type="button" id="fxMakeCancel" class="btn">Cancel</button><button type="button" id="fxMakeSave" class="btn primary">Save effect</button></div>
+  </div>
+</div>
+
 <div id="detSheet" class="sheet-backdrop" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="detTitle">
     <div id="detBody" style="display:flex;flex-direction:column;gap:12px"></div>
@@ -1432,6 +1495,7 @@ function h(tag, props, ...kids){
   return el;
 }
 const ICONS = {
+  plus:'<path d="M12 5v14M5 12h14"/>',
   note:'<path d="M9 18V5.5l10-2.2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
   link:'<path d="M10.5 13.5a3.8 3.8 0 0 0 5.4 0l3.1-3.1a3.8 3.8 0 0 0-5.4-5.4l-1.2 1.2"/><path d="M13.5 10.5a3.8 3.8 0 0 0-5.4 0L5 13.6a3.8 3.8 0 0 0 5.4 5.4l1.2-1.2"/>',
   check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
@@ -2014,29 +2078,63 @@ const PADS = [
   { id:'grit', name:'Grit', color:'#dc2626', desc:'distortion', low:'warm', high:'crunchy' },
   { id:'crush', name:'Crush', color:'#64748b', desc:'8-bit voice', low:'lo-fi', high:'8-bit' },
 ];
+/* More effects in the library: each one is a mix of the basic ones. Levels are at "medium"; sliding the pad scales them. */
+const EXTRA_FX = [
+  { id:'x-chip', name:'Chipmunk', color:'#f472b6', desc:'squeaky high', combo:{ shift:7 } },
+  { id:'x-deep', name:'Deep voice', color:'#1d4ed8', desc:'low and big', combo:{ shift:-5, reverb:0.2 } },
+  { id:'x-monster', name:'Monster', color:'#7f1d1d', desc:'low growl', combo:{ shift:-9, grit:0.5, reverb:0.3 } },
+  { id:'x-phone', name:'Phone call', color:'#78716c', desc:'thin and small', combo:{ radio:0.9, crush:0.2 } },
+  { id:'x-mega', name:'Megaphone', color:'#ea580c', desc:'loud and harsh', combo:{ radio:1, grit:0.4 } },
+  { id:'x-stadium', name:'Stadium', color:'#0e7490', desc:'huge room', combo:{ reverb:0.9, echo:0.35, double:0.3 } },
+  { id:'x-choir', name:'Choir', color:'#ca8a04', desc:'many voices', combo:{ harm:4, double:0.8, reverb:0.6 } },
+  { id:'x-poptune', name:'Pop tune', color:'#db2777', desc:'hard tune, stacked', combo:{ tune:1, double:0.35 } },
+  { id:'x-lofi', name:'Lo-fi tape', color:'#a16207', desc:'old cassette', combo:{ radio:0.5, wobble:0.35, crush:0.15 } },
+  { id:'x-alien', name:'Alien', color:'#16a34a', desc:'wobbly robot', combo:{ shift:4, vibrato:0.8, robot:0.5 } },
+  { id:'x-ghost', name:'Ghost', color:'#6366f1', desc:'far away', combo:{ reverb:1, echo:0.6, vibrato:0.3 } }
+];
+const customFx = [];   // effects you made (kept in lib.customFx)
+const allFx = () => PADS.concat(EXTRA_FX, customFx);
+const fxById = (id) => allFx().find((p) => p.id === id);
 const fx = {};
 PADS.forEach((p) => { fx[p.id] = { on:false, level:0.5, idx:3, semis:5 }; });
+EXTRA_FX.forEach((p) => { fx[p.id] = { on:false, level:0.5 }; });
 fx.tune.level = 0.6; fx.echo.level = 0.4; fx.radio.level = 0.7;
+const DEFAULT_BOARD = PADS.map((p) => p.id);
+let fxPreview = null;   // an effect being tried on the sample voice (library or maker)
+const liveParams = () => fxPreview || padParams();
 function padParams(){
   const L = (id) => fx[id].on ? fx[id].level : 0;
-  return {
+  const o = {
     tune:fx.tune.on || fx.robot.on,
     strength:fx.robot.on ? 0.7 + 0.3 * fx.robot.level : 0.35 + 0.65 * fx.tune.level,
     shift:fx.pitch.on ? fx.pitch.semis : 0, harm:fx.harm.on ? HARM_STEPS[fx.harm.idx] : 0,
     robot:L('robot'), echo:L('echo'), radio:L('radio'), reverb:L('reverb'), double:L('double'),
     vibrato:L('vibrato'), wobble:L('wobble'), grit:L('grit'), crush:L('crush')
   };
+  EXTRA_FX.concat(customFx).forEach((p) => { if (fx[p.id] && fx[p.id].on) addCombo(o, p.combo, fx[p.id].level * 2); });
+  return o;
 }
+// layer one mixed effect on top of the others (k scales its amounts: 1 = as made)
+function addCombo(o, c, k){
+  if (!c) return o;
+  AMT_KEYS.forEach((key) => { if (+c[key] > 0) o[key] = Math.min(1, Math.max(o[key] || 0, c[key] * k)); });
+  if (+c.tune > 0){ const st = clamp(0.35 + 0.65 * Math.min(1, c.tune * k), 0.35, 1); o.strength = o.tune ? Math.max(o.strength, st) : st; o.tune = true; }
+  if (c.shift && !o.shift) o.shift = c.shift;
+  if (c.harm && !o.harm) o.harm = c.harm;
+  return o;
+}
+const comboParams = (c, k) => addCombo(Object.assign({}, NEUTRAL, { strength:0.75 }), c, k == null ? 1 : k);
 function pushPads(){
   const p = padParams();
   if (typeof updateAllFx === 'function') updateAllFx();
-  if (trySt.on) trySend(p);
+  if (trySt.on) trySend(fxPreview || p);
   if (rec.node) rec.node.port.postMessage({ type:'params', params:p });
   if (rec.engine){ rec.engine.set(p); if (rec.state === 'recording') rec.events.push({ at:rec.count, params:p }); }
 }
 function padText(p){
   const s = fx[p.id];
   if (!s.on) return p.desc;
+  if (p.combo) return (s.level < 0.34 ? 'lighter' : s.level > 0.66 ? 'stronger' : 'as made') + ' · ' + Math.round(s.level * 100) + '%';
   if (p.kind === 'harm') return HARM_SHORT[s.idx];
   if (p.kind === 'pitch') return s.semis === 0 ? 'normal' : s.semis > 0 ? '+' + s.semis + ' higher' : '−' + (-s.semis) + ' deeper';
   return (s.level < 0.34 ? p.low : s.level > 0.66 ? p.high : 'medium') + ' · ' + Math.round(s.level * 100) + '%';
@@ -2044,6 +2142,7 @@ function padText(p){
 const padEls = {};
 function paintPad(p){
   const el = padEls[p.id], s = fx[p.id];
+  if (!el) return;
   el.classList.toggle('on', s.on); el.setAttribute('aria-pressed', s.on ? 'true' : 'false');
   el.querySelector('.pad-sub').textContent = padText(p);
   const lvl = p.kind === 'harm' ? (7 - s.idx) / 7 : p.kind === 'pitch' ? (s.semis + 12) / 24 : s.level;
@@ -2056,16 +2155,19 @@ function adjust(p, start, dy){
   else s.level = clamp(start + dy / 120, 0.05, 1);
 }
 const valueOf = (p) => p.kind === 'harm' ? fx[p.id].idx : p.kind === 'pitch' ? fx[p.id].semis : fx[p.id].level;
-PADS.forEach((p) => {
-  const el = h('button', { type:'button', class:'pad', style:'--pad:' + p.color, 'aria-pressed':'false',
+let padEditing = false;
+function makePadEl(p){
+  const el = h('button', { type:'button', class:'pad', style:'--pad:' + p.color, 'aria-pressed':'false', 'data-id':p.id,
     'aria-label':p.name + '. Tap to turn on or off. Hold and slide up for more, down for less.' },
-    h('span', { class:'pad-fill', 'aria-hidden':'true' }), h('span', { class:'pad-name' }, p.name), h('span', { class:'pad-sub' }, p.desc));
-  padEls[p.id] = el; $('#pads').append(el);
+    h('span', { class:'pad-fill', 'aria-hidden':'true' }), p.custom ? h('span', { class:'pad-tag' }, 'Yours') : null, h('span', { class:'pad-name' }, p.name), h('span', { class:'pad-sub' }, p.desc),
+    h('span', { class:'pad-x', 'aria-hidden':'true' }, icon('x')));
+  padEls[p.id] = el;
   let g = null;
   el.addEventListener('pointerdown', (e) => {
     if (e.button !== undefined && e.button !== 0) return;
     e.preventDefault();
     try { el.setPointerCapture(e.pointerId); } catch (_) {}
+    if (padEditing){ if (e.target.closest('.pad-x')) boardRemove(p.id); else g = { drag:true }, el.classList.add('dragging'); return; }
     if (paint.busy) return;
     if (paintMode()){ g = { paint:true, y:e.clientY, start:valueOf(p) }; paintStart(p); return; }
     const s = fx[p.id];
@@ -2074,6 +2176,13 @@ PADS.forEach((p) => {
   });
   el.addEventListener('pointermove', (e) => {
     if (!g) return;
+    if (g.drag){
+      if (e.pointerType === 'mouse' && !e.buttons){ up(); return; }
+      // slide it over another pad to swap places
+      const over = document.elementFromPoint(e.clientX, e.clientY), t = over && over.closest('#pads .pad');
+      if (t && t !== el){ const kids = [...$('#pads').children], a = kids.indexOf(el), b = kids.indexOf(t); if (a < b) t.after(el); else t.before(el); saveBoardOrder(); try { el.setPointerCapture(e.pointerId); } catch (_) {} }
+      return;
+    }
     const dy = g.y - e.clientY;
     if (g.paint){ if (Math.abs(dy) >= 6){ adjust(p, g.start, dy); paintPad(p); paintAdjust(p); } return; }
     if (!g.moved && Math.abs(dy) < 6) return;
@@ -2081,6 +2190,7 @@ PADS.forEach((p) => {
   });
   const up = () => {
     if (!g) return;
+    if (g.drag){ g = null; el.classList.remove('dragging'); saveBoardOrder(); return; }
     if (g.paint){ g = null; paintEnd(p); return; }
     const s = fx[p.id];
     if (!g.moved){
@@ -2097,9 +2207,153 @@ PADS.forEach((p) => {
     if (e.key === ' ' || e.key === 'Enter'){ e.preventDefault(); if (!e.repeat){ s.on = !s.on; paintPad(p); pushPads(); padEdited(true); } }
     else if (s.on && (e.key === 'ArrowUp' || e.key === 'ArrowDown')){ e.preventDefault(); adjust(p, valueOf(p), e.key === 'ArrowUp' ? 12 : -12); paintPad(p); pushPads(); padEdited(true); }
   });
-  paintPad(p);
+  return el;
+}
+// your pads, in your order (Edit to move or remove them; the library adds more)
+let boardReady = false;   // true once your saved things have loaded
+const boardIds = () => ((boardReady && Array.isArray(lib.board)) ? lib.board : DEFAULT_BOARD).filter((id) => fxById(id));
+function renderBoard(){
+  Object.keys(padEls).forEach((k) => delete padEls[k]);
+  const els = boardIds().map((id) => { const p = fxById(id), el = makePadEl(p); paintPad(p); return el; });
+  if (padEditing){ const add = h('button', { type:'button', class:'pad-add', onclick:() => openFxLib() }, h('span', { class:'plus' }, '+'), 'Add effects'); els.push(add); }
+  $('#pads').replaceChildren(...els);
+  $('#pads').classList.toggle('editing', padEditing);
+}
+document.addEventListener('pointerup', () => document.querySelectorAll('#pads .pad.dragging').forEach((x) => x.classList.remove('dragging')));
+function saveBoardOrder(){ lib.board = [...$('#pads').querySelectorAll('.pad')].map((x) => x.dataset.id); saveLib(); }
+function boardRemove(id){
+  lib.board = boardIds().filter((x) => x !== id);
+  if (fx[id] && fx[id].on){ fx[id].on = false; pushPads(); }
+  saveLib(); renderBoard();
+  toast((fxById(id) || {}).name + ' moved to the library');
+}
+function boardAdd(id){ if (!boardIds().includes(id)){ lib.board = boardIds().concat(id); saveLib(); renderBoard(); } }
+renderBoard();
+function resetPads(){ activePreset = null; allFx().forEach((p) => { fx[p.id].on = false; paintPad(p); }); pushPads(); }
+
+/* Effects library: every effect (the basics, more mixed ones, and yours). Use one now, put it on your pads, or make your own. */
+$('#fxEditBtn').addEventListener('click', () => {
+  padEditing = !padEditing;
+  $('#fxEditBtn').textContent = padEditing ? 'Done' : 'Edit'; $('#fxEditBtn').setAttribute('aria-pressed', padEditing ? 'true' : 'false');
+  renderBoard();
+  if (padEditing) setStatus($('#status1'), 'Drag a pad onto another to swap them. Tap the red x to move one to the library. Add effects brings more in.', '');
+  else setStatus($('#status1'), '');
 });
-function resetPads(){ activePreset = null; PADS.forEach((p) => { fx[p.id].on = false; paintPad(p); }); pushPads(); }
+function stopFxPreview(){ if (fxPreview){ fxPreview = null; fxPreviewId = null; if (trySt.on) tryStop(); } paintFxPlayBtns(); }
+let fxPreviewId = null;
+function playFxPreview(id, params){
+  if (fxPreviewId === id){ stopFxPreview(); return; }
+  if (rec.state !== 'idle') return;
+  fxPreview = params; fxPreviewId = id;
+  if (trySt.on) trySend(params); else tryStart();
+  paintFxPlayBtns();
+}
+function paintFxPlayBtns(){
+  document.querySelectorAll('[data-fxplay]').forEach((b) => { const on = b.dataset.fxplay === fxPreviewId; b.innerHTML = on ? PAUSE_SVG : PLAY_SVG; b.setAttribute('aria-label', (on ? 'Stop ' : 'Hear ') + b.dataset.name); });
+  const t = $('#fxMakeTry'); if (t){ const on = fxPreviewId === 'maker'; t.textContent = on ? 'Stop' : 'Hear it'; t.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+}
+function effectParamsOf(p){
+  if (p.combo) return comboParams(p.combo, 1);
+  const saved = {}; allFx().forEach((q) => { saved[q.id] = fx[q.id].on; fx[q.id].on = q.id === p.id; });
+  const o = padParams(); allFx().forEach((q) => { fx[q.id].on = saved[q.id]; }); return o;
+}
+function renderFxLib(){
+  const onBoard = boardIds();
+  const row = (p) => {
+    const inBoard = onBoard.includes(p.id), s = fx[p.id];
+    const use = h('button', { type:'button', class:'fx-on', style:'--c:' + p.color, 'aria-pressed':s.on ? 'true' : 'false', 'aria-label':(s.on ? 'Turn off ' : 'Use ') + p.name }, s.on ? 'On' : 'Off');
+    use.addEventListener('click', () => { s.on = !s.on; paintPad(p); pushPads(); padEdited(true, p.name + (s.on ? ' on' : ' off')); renderFxLib(); });
+    const play = h('button', { type:'button', class:'icon-btn', 'data-fxplay':p.id, 'data-name':p.name, 'aria-label':'Hear ' + p.name, disabled:rec.state !== 'idle' });
+    play.innerHTML = PLAY_SVG; play.addEventListener('click', () => playFxPreview(p.id, effectParamsOf(p)));
+    const board = h('button', { type:'button', class:'icon-btn', 'aria-label':inBoard ? 'Take ' + p.name + ' off your pads' : 'Put ' + p.name + ' on your pads', title:inBoard ? 'On your pads' : 'Add to your pads' }, icon(inBoard ? 'check' : 'plus'));
+    board.addEventListener('click', () => { if (inBoard) boardRemove(p.id); else { boardAdd(p.id); toast(p.name + ' added to your pads'); } renderFxLib(); });
+    const edit = p.custom ? h('button', { type:'button', class:'icon-btn', 'aria-label':'Edit ' + p.name, onclick:() => openFxMaker(p) }, icon('pencil')) : null;
+    return h('div', { class:'lib-fx', style:'--c:' + p.color }, h('span', { class:'dot', 'aria-hidden':'true' }),
+      h('div', { class:'item-main' }, h('span', { class:'item-title', text:p.name }), h('span', { class:'item-meta', text:p.desc })),
+      play, edit, use, board);
+  };
+  $('#fxLibList').replaceChildren(
+    h('h3', { text:'Yours' }),
+    ...(customFx.length ? customFx.map(row) : [h('p', { class:'hint', style:'margin:0' }, 'Nothing yet. Tap Create your own to mix your own effect.')]),
+    h('h3', { text:'More effects' }), ...EXTRA_FX.map(row),
+    h('h3', { text:'The basics' }), ...PADS.map(row));
+  paintFxPlayBtns();
+}
+function openFxLib(){ renderFxLib(); $('#fxLibSheet').hidden = false; }
+function closeFxLib(){ stopFxPreview(); $('#fxLibSheet').hidden = true; }
+$('#fxLibBtn').addEventListener('click', openFxLib);
+$('#fxLibClose').addEventListener('click', closeFxLib);
+$('#fxLibSheet').addEventListener('click', (e) => { if (e.target === $('#fxLibSheet')) closeFxLib(); });
+// make your own: pick how much of each basic effect goes in
+const FX_COLORS = ['#ec4899', '#8b5cf6', '#14b8a6', '#f59e0b', '#3b82f6', '#ef4444', '#22c55e', '#e879f9'];
+const MAKER_KNOBS = [['tune', 'Auto-tune'], ['robot', 'Robot'], ['echo', 'Echo'], ['reverb', 'Reverb'], ['double', 'Double'], ['radio', 'Radio'], ['vibrato', 'Vibrato'], ['wobble', 'Wobble'], ['grit', 'Grit'], ['crush', 'Crush']];
+const maker = { edit:null, color:FX_COLORS[0], combo:{} };
+function makerCombo(){
+  const c = {};
+  MAKER_KNOBS.forEach(([k]) => { const v = +$('#mk-' + k).value / 100; if (v > 0) c[k] = v; });
+  const sh = +$('#mk-shift').value; if (sh) c.shift = sh;
+  const hm = +$('#mk-harm').value; if (hm) c.harm = hm;
+  return c;
+}
+function makerDesc(c){ const parts = []; MAKER_KNOBS.forEach(([k, n]) => { if (c[k]) parts.push(n.toLowerCase()); }); if (c.shift) parts.push((c.shift > 0 ? 'higher' : 'deeper')); if (c.harm) parts.push('harmony'); return parts.slice(0, 3).join(', ') || 'your mix'; }
+function openFxMaker(p){
+  stopFxPreview();
+  maker.edit = p || null; maker.color = p ? p.color : FX_COLORS[customFx.length % FX_COLORS.length];
+  const c = p ? p.combo : { echo:0.3, reverb:0.3 };
+  $('#fxMakeTitle').textContent = p ? 'Edit ' + p.name : 'Create an effect';
+  $('#fxMakeName').value = p ? p.name : '';
+  $('#fxMakeDelete').hidden = !p;
+  const paintColors = () => $('#fxMakeColors').replaceChildren(...FX_COLORS.map((col) => h('button', { type:'button', role:'radio', 'aria-checked':col === maker.color ? 'true' : 'false', 'aria-label':'Color', style:'--c:' + col, onclick:() => { maker.color = col; paintColors(); } })));
+  paintColors();
+  const live = () => { if (fxPreviewId === 'maker'){ fxPreview = comboParams(makerCombo()); trySend(fxPreview); } };
+  const knob = (k, label, v) => {
+    const out = h('span', { class:'mono', text:Math.round(v * 100) + '%' });
+    const r = h('input', { type:'range', id:'mk-' + k, min:'0', max:'100', step:'1', value:String(Math.round(v * 100)), 'aria-label':label });
+    r.addEventListener('input', () => { out.textContent = r.value + '%'; live(); });
+    return h('label', { class:'fx-knob' }, h('span', { text:label }), r, out);
+  };
+  const shOut = h('span', { class:'mono', text:(c.shift > 0 ? '+' : '') + (c.shift || 0) });
+  const sh = h('input', { type:'range', id:'mk-shift', min:'-12', max:'12', step:'1', value:String(c.shift || 0), 'aria-label':'Pitch' });
+  sh.addEventListener('input', () => { shOut.textContent = (+sh.value > 0 ? '+' : '') + sh.value; live(); });
+  const hm = h('select', { id:'mk-harm', 'aria-label':'Harmony' }, h('option', { value:'0' }, 'None'), ...HARM_STEPS.map((st, i) => h('option', { value:String(st) }, HARM_SHORT[i])));
+  hm.value = String(c.harm || 0); hm.addEventListener('change', live);
+  $('#fxMakeKnobs').replaceChildren(...MAKER_KNOBS.map(([k, n]) => knob(k, n, c[k] || 0)),
+    h('label', { class:'fx-knob' }, h('span', { text:'Pitch' }), sh, shOut),
+    h('label', { class:'fx-knob' }, h('span', { text:'Harmony' }), hm, h('span')));
+  $('#fxMakeSheet').hidden = false;
+}
+function closeFxMaker(){ if (fxPreviewId === 'maker') stopFxPreview(); $('#fxMakeSheet').hidden = true; }
+$('#fxNew').addEventListener('click', () => openFxMaker(null));
+$('#fxMakeCancel').addEventListener('click', closeFxMaker);
+$('#fxMakeTry').addEventListener('click', () => playFxPreview('maker', comboParams(makerCombo())));
+$('#fxMakeSave').addEventListener('click', () => {
+  const combo = makerCombo();
+  if (!Object.keys(combo).length){ toast('Turn up at least one knob first'); return; }
+  const name = $('#fxMakeName').value.trim() || 'My effect ' + (customFx.length + 1);
+  if (maker.edit){ Object.assign(maker.edit, { name, color:maker.color, combo, desc:makerDesc(combo) }); }
+  else {
+    const p = { id:uid('c'), name, color:maker.color, desc:makerDesc(combo), combo, custom:true };
+    customFx.push(p); fx[p.id] = { on:false, level:0.5 };
+    lib.board = boardIds().concat(p.id);
+  }
+  lib.customFx = customFx.map((p) => ({ id:p.id, name:p.name, color:p.color, desc:p.desc, combo:p.combo }));
+  saveLib(); closeFxMaker(); renderBoard(); pushPads(); renderFxLib();
+  toast((maker.edit ? 'Saved ' : 'Made ') + name + (maker.edit ? '' : '. It\'s on your pads.'));
+});
+$('#fxMakeDelete').addEventListener('click', async () => {
+  const p = maker.edit; if (!p) return;
+  if (!(await askConfirm('Delete ' + p.name + '?', 'It comes off your pads and out of your presets. Parts of songs you already added it to keep their sound.', 'Delete'))) return;
+  customFx.splice(customFx.indexOf(p), 1); delete fx[p.id];
+  lib.board = boardIds().filter((x) => x !== p.id);
+  lib.customFx = customFx.map((q) => ({ id:q.id, name:q.name, color:q.color, desc:q.desc, combo:q.combo }));
+  saveLib(); closeFxMaker(); renderBoard(); pushPads(); renderFxLib();
+});
+// after your saved things load: your own effects and your pad order
+function loadFxBoard(){
+  boardReady = true; customFx.length = 0;
+  (lib.customFx || []).forEach((q) => { const p = Object.assign({ custom:true }, q); customFx.push(p); if (!fx[p.id]) fx[p.id] = { on:false, level:0.5 }; });
+  renderBoard();
+}
 
 /* Try a sample: a sung phrase loops through the pads so you can hear what each one does before you record */
 const trySt = { on:false, src:null, node:null, sp:null, eng:null, buf:null };
@@ -2117,10 +2371,10 @@ async function tryStart(){
     const out = c.createGain(); out.gain.value = 0.9; out.connect(c.destination);
     if (await ensureWorklet(c)){
       const node = new AudioWorkletNode(c, 's2s-voice', { numberOfInputs:1, numberOfOutputs:1, outputChannelCount:[1], channelCount:1, channelCountMode:'explicit' });
-      node.port.postMessage({ type:'key', params:key }); node.port.postMessage({ type:'params', params:padParams() });
+      node.port.postMessage({ type:'key', params:key }); node.port.postMessage({ type:'params', params:liveParams() });
       s.connect(node); node.connect(out); trySt.node = node;
     } else {
-      const eng = new Engine(c.sampleRate); eng.set(key); eng.set(padParams());
+      const eng = new Engine(c.sampleRate); eng.set(key); eng.set(liveParams());
       const sp = c.createScriptProcessor(1024, 1, 1); sp.onaudioprocess = (e) => eng.process(e.inputBuffer.getChannelData(0), e.outputBuffer.getChannelData(0));
       s.connect(sp); sp.connect(out); trySt.sp = sp; trySt.eng = eng;
     }
@@ -2130,6 +2384,7 @@ async function tryStart(){
 }
 function tryStop(){
   trySt.on = false;
+  if (fxPreview){ fxPreview = null; fxPreviewId = null; setTimeout(paintFxPlayBtns); }
   if (trySt.src){ try { trySt.src.stop(); } catch (_) {} }
   [trySt.node, trySt.sp, trySt.out].forEach((n) => { if (n){ try { n.disconnect(); } catch (_) {} } });
   if (trySt.node) trySt.node.port.onmessage = null;
@@ -2149,8 +2404,8 @@ const paint = { on:false, pad:null, lane:0, a:0, b:0, limit:0, node:null };
 const paintMode = () => state.cursorOn && !trySt.on && !paint.busy && rec.state === 'idle' && state.section === 'create' && state.page === 1 && songDur() > 0.05;
 function onlyPad(p){
   // the settings of just this pad, as it's set now
-  const saved = {}; PADS.forEach((q) => { saved[q.id] = fx[q.id].on; fx[q.id].on = q.id === p.id; });
-  const o = padParams(); PADS.forEach((q) => { fx[q.id].on = saved[q.id]; });
+  const saved = {}; allFx().forEach((q) => { saved[q.id] = fx[q.id].on; fx[q.id].on = q.id === p.id; });
+  const o = padParams(); allFx().forEach((q) => { fx[q.id].on = saved[q.id]; });
   return o;
 }
 function overlayParams(base, over){
@@ -2200,7 +2455,7 @@ function paintAdjust(p){ if (paint.node) paint.node.port.postMessage({ type:'par
 // the "all" button stands in for every pad that's on right now
 const ALL_PAD = { id:'all', name:'Your effects', color:'#fbbf24' };
 const padOver = (p) => p.id === 'all' ? padParams() : onlyPad(p);
-const padsOn = () => PADS.filter((q) => fx[q.id].on);
+const padsOn = () => allFx().filter((q) => fx[q.id].on);
 async function paintEnd(p){
   if (!paint.on) return;
   const playing = edPlayState.playing;
@@ -2278,9 +2533,9 @@ function padEdited(full, label){
   if (activePreset != null){ activePreset = null; renderPresets(); }
   if (full && rec.state === 'idle' && !cd.on && state.page === 1){ histNext = label || 'Voice effects'; pushHist(); }
 }
-const snapshot = () => { const o = {}; PADS.forEach((p) => { o[p.id] = Object.assign({}, fx[p.id]); }); return o; };
-const presetNames = (o) => PADS.filter((p) => o[p.id] && o[p.id].on).map((p) => p.name);
-function applyPreset(o){ PADS.forEach((p) => { if (o[p.id]) Object.assign(fx[p.id], o[p.id]); else fx[p.id].on = false; paintPad(p); }); pushPads(); }
+const snapshot = () => { const o = {}; allFx().forEach((p) => { o[p.id] = Object.assign({}, fx[p.id]); }); return o; };
+const presetNames = (o) => allFx().filter((p) => o[p.id] && o[p.id].on).map((p) => p.name);
+function applyPreset(o){ allFx().forEach((p) => { if (o[p.id]) Object.assign(fx[p.id], o[p.id]); else fx[p.id].on = false; paintPad(p); }); pushPads(); }
 const presetName = (i) => (lib.presetNames && lib.presetNames[i]) || '';
 function renderPresets(){
   while (lib.presets.length < PRESET_COUNT) lib.presets.push(null);
@@ -2293,7 +2548,7 @@ function renderPresets(){
       h('span', { class:'preset-num' }, String(i + 1)), name ? h('span', { class:'preset-sub', text:name }) : null);
     let timer = 0, longDone = false;
     const save = () => {
-      if (!PADS.some((p) => fx[p.id].on)){ setStatus($('#status1'), 'Turn on the pads you like first, then hold a number to save them.', 'error'); return; }
+      if (!allFx().some((p) => fx[p.id].on)){ setStatus($('#status1'), 'Turn on the pads you like first, then hold a number to save them.', 'error'); return; }
       const undo = { preset:lib.presets[i], active:activePreset, name:presetName(i) };
       lib.presets[i] = snapshot(); activePreset = i; saveLib(); renderPresets();
       if (navigator.vibrate) navigator.vibrate(15);
@@ -2359,10 +2614,8 @@ $('#renameInput').addEventListener('input', () => { $('#renameSave').disabled = 
 $('#renameCancel').addEventListener('click', closeRename);
 $('#renameInput').addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); saveRename(); } else if (e.key === 'Escape') closeRename(); });
 
-$('#monitorBtn').addEventListener('click', () => {
-  state.monitor = !state.monitor;
-  $('#monitorBtn').setAttribute('aria-pressed', state.monitor ? 'true' : 'false');
-  $('#monitorBtn').textContent = 'Hear yourself: ' + (state.monitor ? 'on' : 'off');
+$('#monitorSw').addEventListener('change', () => {
+  state.monitor = $('#monitorSw').checked;
   if (rec.monitor) rec.monitor.gain.value = state.monitor ? 1 : 0;
   if (state.monitor) setStatus($('#status1'), 'You\'ll hear yourself with the effects while you record. This one needs headphones (wired or Bluetooth); without them the phone speaker feeds back into the mic. Everything else works with just your phone.', 'ok');
 });
@@ -2851,7 +3104,7 @@ function goHist(to){
   hist.idx = to;
   state.layers = hist.stack[to].sn.map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((x) => Object.assign({}, x)) }));
   const pads = hist.stack[to].pads;
-  if (pads){ PADS.forEach((p) => { if (pads[p.id]) Object.assign(fx[p.id], pads[p.id]); paintPad(p); }); activePreset = null; pushPads(); renderPresets(); }
+  if (pads){ allFx().forEach((p) => { if (pads[p.id]) Object.assign(fx[p.id], pads[p.id]); paintPad(p); }); activePreset = null; pushPads(); renderPresets(); }
   state.activeLayer = Math.min(state.activeLayer, state.layers.length - 1); state.sel1 = null;
   state.playhead1 = Math.min(state.playhead1, songDur());
   hist.muted = true; try { renderClips(); } finally { hist.muted = false; }
@@ -3308,7 +3561,7 @@ function edPlay(fxNode, fxLane){
   const ct0 = c.currentTime, token = edPlayState.token = (edPlayState.token || 0) + 1;
   setTimeout(() => {
     if (!edPlayState.playing || edPlayState.token !== token || c.currentTime - ct0 > 0.05) return;
-    edStop(); if (paint.on){ paint.on = false; paint.node = null; PADS.forEach(paintPad); }
+    edStop(); if (paint.on){ paint.on = false; paint.node = null; allFx().forEach(paintPad); }
     try { c.close(); } catch (_) {}
     actx = null; workletFor = null;
     PADS && drawEditor();
@@ -4308,8 +4561,8 @@ function drawFix(){
 }
 function renderFix(){
   const r = state.result, ready = !!r && !state.busy;
-  $('#fixPanel').hidden = !r;
-  if (!r) return;
+  $('#fixPanel').hidden = !r || !!r.plan.plain;
+  if (!r || r.plan.plain) return;
   if (!$('#fixPlay').dataset.aria){ $('#fixPlay').innerHTML = PLAY_SVG; $('#fixPlay').dataset.aria = 'Play this part'; }
   const dur = r.mix.duration, W = fixWave.getBoundingClientRect().width || 1;
   fixBox.hidden = !fix.on;
@@ -4420,7 +4673,7 @@ const viz = $('#viz'), vg = viz.getContext('2d'), scrub = $('#scrub');
 const pl = { src:null, an:null, playing:false, offset:0, startedAt:0, raf:0, bins:new Uint8Array(128) };
 function vizInfo(){
   const p = state.result.plan;
-  return { title:$('#songName').value.trim() || $('#vibe').value.trim() || 'Untitled song', sub:NOTE_NAMES[p.root % 12] + ' ' + p.scale + ' · ' + p.tempo + ' BPM' };
+  return { title:$('#songName').value.trim() || $('#vibe').value.trim() || 'Untitled song', sub:p.plain ? 'Voice only' : NOTE_NAMES[p.root % 12] + ' ' + p.scale + ' · ' + p.tempo + ' BPM' };
 }
 function paintViz(g, W, H, bins, t, dur, info){
   const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#1a0b2e'); bg.addColorStop(1, '#2a0a24');
@@ -4497,6 +4750,11 @@ function showPlan(note){
   const r = state.result, p = r.plan;
   pl.offset = 0; scrub.max = r.mix.duration.toFixed(2); scrub.value = 0;
   $('#curT').textContent = '0:00'; $('#durT').textContent = fmt(r.mix.duration);
+  $('#fixPanel').hidden = !!p.plain; $('#regenBtn').hidden = !!p.plain;
+  $('#madeHead').textContent = p.plain ? 'Voice only' : 'How it was made';
+  $('#p3Title').textContent = p.plain ? 'Finish and publish' : 'Generate and finish';
+  $('#p3Lede').textContent = p.plain ? 'Your voice with its effects, no music. Name it, publish it or keep it private, and save it to your phone.' : 'Play your song, redo any part you don\'t like, then name it and publish it.';
+  if (p.plain){ $('#planSource').textContent = 'No music'; $('#planSummary').textContent = p.summary; $('#planDetail').textContent = 'Want music too? Go back to step 2 and press Generate song.'; setStatus($('#status3'), note || '', note ? 'error' : ''); paintIdle(); return; }
   $('#planSource').textContent = p.source === 'ai' ? 'Arranged by Claude' : 'Arranged offline by keywords';
   $('#planSummary').textContent = p.summary || 'Arranged from your vibe and notes.';
   const secs = p.sections.filter((s) => s.beat !== null || s.energy !== null).length;
@@ -4615,26 +4873,22 @@ async function saveFile(filename, blob, fresh){
 $('#savePlain').addEventListener('click', async () => {
   if (!state.clips.length || state.busy) return;
   stopAllPlayback();
-  saveCtx = { status:'#status2', box:'#shareBox2', text:'#shareText2' };
   const btn = $('#savePlain'); btn.disabled = true; btn.textContent = 'Getting it ready…';
   try {
     await prepareAll(null);
-    const j = joined(), sr = j.sr;
-    let out = new Float32Array(j.data);
-    if (state.sfx2.length){
-      const bufs = await Promise.all(state.sfx2.map((p) => getSfxBuffer(p.item)));
-      let len = out.length; state.sfx2.forEach((p, i) => { len = Math.max(len, Math.ceil((p.at + bufs[i].duration) * sr)); });
-      const oc = offline(1, len, sr), vb = oc.createBuffer(1, out.length, sr); vb.getChannelData(0).set(out);
-      const v = oc.createBufferSource(); v.buffer = vb; v.connect(oc.destination); v.start();
-      state.sfx2.forEach((p, i) => { const b = oc.createBufferSource(), g = oc.createGain(); b.buffer = bufs[i]; g.gain.value = 0.9; b.connect(g); g.connect(oc.destination); b.start(p.at); });
-      out = (await renderOffline(oc)).getChannelData(0);
-    }
+    const j = joined(), sr = j.sr, out = new Float32Array(j.data);
     let pk = 0; for (let i = 0; i < out.length; i++) pk = Math.max(pk, Math.abs(out[i]));
-    if (pk > 0){ const g = 0.95 / pk; out = out.map((x) => x * g); }
-    const wav = encodeWav([out], sr);
-    const res = dlCap ? await saveFile('sing-to-song-voice.zip', await zipOne('sing-to-song-voice.wav', wav)) : await saveFile('sing-to-song-voice.wav', wav, true);
-    if (res === 'done') showAd();
-  } catch (err){ setStatus($('#status2'), 'It couldn\'t be saved: ' + (err.message || err), 'error'); }
+    if (pk > 0){ const g = 0.95 / pk; for (let i = 0; i < out.length; i++) out[i] *= g; }
+    const base = ctx().createBuffer(1, out.length, sr); base.getChannelData(0).set(out);
+    // your voice only: step 3 lets you name it, publish it or keep it private, and save it to your phone
+    const [root, scale] = (keyIsSet() ? state.key : '60:major').split(':');
+    const plan = { plain:true, root:+root, scale, tempo:0, sections:[], summary:'Your edited recording with its voice effects and sound effects. No music was added.' };
+    state.result = { base, mix:base, plan, sfx:state.sfx2.map((p) => Object.assign({}, p)), video:null, wav:null, redos:[] };
+    fix.on = false;
+    persistMix(state.result);
+    showPage(3); showPlan('');
+    if (state.result.sfx.length) await applySfx(); else renderSfxPanel();
+  } catch (err){ setStatus($('#status2'), 'It couldn\'t be made: ' + (err.message || err), 'error'); }
   finally { btn.disabled = false; btn.textContent = 'Save without music'; }
 });
 $('#saveAudio').addEventListener('click', async () => {
@@ -4681,14 +4935,14 @@ const FEE = 0.15;
 const money = (v) => '$' + (Math.round(v * 100) / 100).toFixed(2);
 const lib = {
   profile:{ name:'', handle:'', bio:'', isPublic:true, postSongs:true, allowSaves:true, sellSfx:true, showLikes:true, showFollows:true },
-  songs:[], sfx:[], saved:[], likes:[], activity:[], sales:[], withdrawals:[], follows:[], requests:[], purchases:[], presets:[], drafts:[], media:[], premium:false, verify:{ status:'none', link:'' }
+  songs:[], sfx:[], saved:[], likes:[], activity:[], sales:[], withdrawals:[], follows:[], requests:[], purchases:[], presets:[], drafts:[], media:[], customFx:[], board:null, premium:false, verify:{ status:'none', link:'' }
 };
 let libTimer = 0;
 function saveLib(){ clearTimeout(libTimer); libTimer = setTimeout(() => store.set('lib', JSON.parse(JSON.stringify(lib))), 250); }
 async function loadLib(){
   const v = await store.get('lib');
   if (v && typeof v === 'object'){
-    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'likes', 'activity', 'sales', 'withdrawals', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media']) if (Array.isArray(v[k])) lib[k] = v[k]; }
+    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'likes', 'activity', 'sales', 'withdrawals', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media', 'customFx', 'board']) if (Array.isArray(v[k])) lib[k] = v[k]; }
 }
 const uid = (p) => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -4973,7 +5227,7 @@ async function deleteSfxItem(it){
 }
 
 /* Step 2: sound effects placed on your song; they're layered into the finished mix */
-const introOf = (plan) => 4 * 60 / plan.tempo;
+const introOf = (plan) => plan.plain ? 0 : 4 * 60 / plan.tempo;
 function syncResultSfx(){
   const r = state.result; if (!r) return;
   r.sfx = state.sfx2.map((p) => Object.assign({}, p, { at:p.at + introOf(r.plan) }));
@@ -6166,6 +6420,7 @@ const TOURS = {
     { sel:'.editor', title:'Layers', text:'+ Layer stacks up to 4 layers, and the new one records from the red line while the others play. Tap a layer to set its volume. Tap an empty layer and press Delete to remove it. The + at the end of your audio records more there or adds audio from a file or your camera roll.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where an effect should start (or select a part), then hold a pad. Tap a gold effect strip to change it or remove it.' },
     { sel:'#pads', title:'Add all your effects', text:'After you record, turn on the pads you want (or tap a preset), then hold the gold "Hold to add all your effects" button. Your song plays and every effect you have on goes in from the red line until you let go. If you selected a part, it stops at the end of the part.' },
+    { sel:'.fx-tools', title:'Edit and the library', text:'Edit lets you drag your pads into any order, or tap the red x to move one to the library. Effects library has more effects, like Chipmunk, Stadium and Choir. Tap On to use one now, even while you record, or + to put it on your pads. Create your own to mix an effect from any of them and name it.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does.' },
     { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on, then name it or skip. Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
@@ -6178,7 +6433,7 @@ const TOURS = {
     { sel:'#artists', title:'Artists you like', text:'Artists are style hints only: tempo, sound and mood. The app never copies their songs, recordings or voice.' },
     { sel:'.ref-box', title:'A song you like', text:'Upload a song file and the app matches its tempo and energy. A link is passed to the AI as a hint; the app can\'t open links.' },
     { sel:'.blend-panel', title:'AI Blend', text:'Premium. On: the AI polishes your voice, evens out your volume and blends the music around it. Off: it only makes music that fits your voice.' },
-    { sel:'#savePlain', title:'Save without music', text:'Want just your voice? This saves your edited recording, with its effects and sound effects, and no AI music.' },
+    { sel:'#savePlain', title:'Save without music', text:'Want just your voice? This takes your edited recording, with its effects and sound effects and no AI music, to the last step. There you name it, publish it or keep it private, and save it to your phone.' },
     { sel:'#genBtn', title:'Generate', text:'The music is built around your voice: its key, tempo and melody. The backing uses the app\'s own synths and drums, never real recordings.' }
   ],
   p3:[
@@ -6454,7 +6709,7 @@ setKey(state.key);
 renderClips(); updateAiMode();
 renderPresets();
 loadLib().catch(() => {}).then(async () => {
-  renderPresets(); renderDrafts(); syncPremiumUI(); renderHome();
+  loadFxBoard(); renderPresets(); renderDrafts(); syncPremiumUI(); renderHome();
   if (needsProfile()) showOnboarding();
   // pick up where you left off
   try {
