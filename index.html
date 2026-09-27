@@ -51,16 +51,18 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .recorder{display:flex;flex-direction:column;align-items:center;gap:8px;padding-block:14px 0}
 body:not(.recording) #page1 .recorder{padding-block:2px 0}
 body:not(.recording) #page1 .rec{width:84px;height:84px}
-body:not(.recording) #page1 .rec::before{inset:5px}
+body:not(.recording) #page1 .rec::before{inset:-4px;border-width:3px}
 body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .rec{position:relative;width:136px;height:136px;border-radius:50%;border:0;padding:0;cursor:pointer;
   background:linear-gradient(135deg,var(--accent-a),var(--accent-b));box-shadow:0 14px 44px var(--glow);
   display:grid;place-items:center;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;transition:transform .15s ease}
 .rec.pressing{transform:scale(.94)}
 .rec:active{transform:scale(.96)}
-.rec::before{content:"";position:absolute;inset:7px;border-radius:50%;background:var(--bg)}
-.rec-core{position:relative;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));transition:border-radius .2s,width .2s,height .2s}
-.rec.is-rec .rec-core{width:38px;height:38px;border-radius:9px}
+.rec::before{display:none}
+.rec-mic{display:block;width:100%;height:100%;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rec.is-rec .rec-mic{display:none}
+.rec-core{position:relative;width:48px;height:48px;border-radius:50%;background:none;display:grid;place-items:center;transition:border-radius .2s,width .2s,height .2s}
+.rec.is-rec .rec-core{width:38px;height:38px;border-radius:9px;background:#fff}
 .rec.is-rec::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--accent-b);animation:pulse 1.4s ease-out infinite}
 .rec.is-wait{opacity:.7}
 @keyframes pulse{from{transform:scale(1);opacity:.9}to{transform:scale(1.2);opacity:0}}
@@ -83,7 +85,7 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .presets{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 /* hold to add every pad that's on, all at once */
 .all-fx{appearance:none;display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;min-height:58px;padding:8px 14px;border-radius:16px;border:1.5px solid #fbbf24;background:linear-gradient(135deg,rgba(251,191,36,.16),rgba(236,72,153,.12));color:var(--text);font:inherit;cursor:pointer;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
-.all-fx[hidden]{display:none}
+.all-fx[hidden],.rec-live .all-fx{display:none}
 .all-fx-name{font-size:15px;font-weight:800}
 .all-fx-sub{font-size:12px;color:var(--muted);text-align:center;overflow-wrap:anywhere}
 .all-fx.none{opacity:.55}
@@ -739,7 +741,7 @@ legend{padding:0}
         <div id="noteRead" class="note-read mono" hidden></div>
       </div>
       <div class="recorder">
-        <button type="button" id="recBtn" class="rec" aria-label="Start recording" aria-pressed="false"><span class="rec-core"></span></button>
+        <button type="button" id="recBtn" class="rec" aria-label="Start recording" aria-pressed="false"><span class="rec-core"><svg class="rec-mic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span></button>
         <div id="recTime" class="rec-time mono">0:00</div>
         <div id="recHist" class="rec-hist" hidden>
           <button type="button" id="recPlay" class="icon-btn" aria-label="Play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></button>
@@ -1120,7 +1122,7 @@ legend{padding:0}
 <nav class="tabbar" aria-label="Sections">
   <div class="tabbar-inner">
     <button type="button" class="tab" data-sec="discover"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></svg>Discover</button>
-    <button type="button" class="tab tab-create" data-sec="create" aria-current="page"><span class="tab-orb"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>Studio</button>
+    <button type="button" class="tab tab-create" data-sec="create" aria-current="page"><span class="tab-orb"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5.5l10-2.2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg></span>Studio</button>
     <button type="button" class="tab" data-sec="profile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</button>
   </div>
 </nav>
@@ -1198,7 +1200,7 @@ legend{padding:0}
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="srTitle">
     <h2 id="srTitle">New sound effect</h2>
     <div class="sr-rec">
-      <button type="button" id="srRec" class="rec" aria-label="Start recording" aria-pressed="false"><span class="rec-core"></span></button>
+      <button type="button" id="srRec" class="rec" aria-label="Start recording" aria-pressed="false"><span class="rec-core"><svg class="rec-mic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span></button>
       <div class="item-main">
         <span id="srTime" class="mono" style="font-size:22px">0:00.0</span>
         <span id="srNote" class="hint">Tap to record, up to 15 seconds.</span>
