@@ -2153,7 +2153,7 @@ function renderRange(layer, a, b, sr){
 /* ---------- drawing ---------- */
 const edCanvas = $('#edCanvas');
 const ed = { viewStart:0 };
-const RULER = 20, LANE_PAD = 4;
+const RULER = 20, LANE_PAD = 4, ED_L = 44, ED_R = 8;   // ED_L: room on the left for each layer's jump-to-start button
 // The wave starts zoomed in (6 s across) and scrolls along; zoom out to see the whole song.
 const liveEnd = () => rec.state === 'recording' && rec.layer != null ? rec.recordAt + rec.live.length * 1024 / (actx ? actx.sampleRate : 48000) : 0;
 const edFull = () => Math.max(songDur(), liveEnd());
@@ -2173,7 +2173,7 @@ function drawEditor(){
   const c = sizeCanvas(edCanvas); if (!c) return;
   const { g, w, h:hh } = c, span = edSpan(), dur = songDur();
   clampView();
-  const vs = ed.viewStart, X = (t) => 8 + ((t - vs) / span) * (w - 16);
+  const vs = ed.viewStart, X = (t) => ED_L + ((t - vs) / span) * (w - ED_L - ED_R);
   const muted = cssVar('--muted', '#a99dc2'), faint = cssVar('--faint', '#7d7197'), pink = cssVar('--playhead', '#db2777');
   const waveBg = cssVar('--wave-bg', '#1d1631'), tuned = cssVar('--tuned', '#fbbf24');
   const waveFill = g.createLinearGradient(0, 0, w, 0); waveFill.addColorStop(0, '#8b5cf6'); waveFill.addColorStop(0.55, '#c084fc'); waveFill.addColorStop(1, '#ec4899');
@@ -2187,7 +2187,7 @@ function drawEditor(){
   const box = laneBox(hh);
   state.layers.forEach((layer, li) => {
     const { y, h:lh } = box(li), mid = y + lh / 2, amp = lh / 2 - 6;
-    roundRectPath(g, 2, y, w - 4, lh, 10); g.fillStyle = 'rgba(255,255,255,.025)'; g.fill();
+    roundRectPath(g, ED_L - 4, y, w - ED_L + 2, lh, 10); g.fillStyle = 'rgba(255,255,255,.025)'; g.fill();
     if (li === state.activeLayer && state.layers.length > 1){ g.lineWidth = 2; g.strokeStyle = pink; g.stroke(); }
     // each clip is its own rounded block with a gap between, so you can see where a new section starts
     const blocks = layer.segs.map((s) => ({ s, x0:X(s.at) + 2, x1:X(segEnd(s)) - 2 })).filter((b) => b.x1 > -10 && b.x0 < w + 10);
@@ -2195,8 +2195,8 @@ function drawEditor(){
     g.save(); g.beginPath(); blocks.forEach((b) => g.rect(b.x0, y + 3, Math.max(0, b.x1 - b.x0), lh - 6)); g.clip();
     // wave, one column every 3 px
     const pts = [];
-    for (let x = 8; x <= w - 8; x += 3){
-      const t0 = vs + ((x - 8) / (w - 16)) * span, t1 = t0 + (3 / (w - 16)) * span;
+    for (let x = ED_L; x <= w - ED_R; x += 3){
+      const t0 = vs + ((x - ED_L) / (w - ED_L - ED_R)) * span, t1 = t0 + (3 / (w - ED_L - ED_R)) * span;
       let pk = 0, any = false;
       for (const s of layer.segs){
         const a = Math.max(t0, s.at), b = Math.min(t1, segEnd(s)); if (b <= a) continue;
@@ -2248,7 +2248,7 @@ function drawEditor(){
       g.lineWidth = 2.5; g.strokeStyle = '#ec4899'; g.stroke();
       [a, b].forEach((gx) => { roundRectPath(g, gx - 5, y + lh / 2 - 16, 10, 32, 5); g.fillStyle = '#ec4899'; g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke(); });
     }
-    if (state.layers.length > 1){ g.fillStyle = 'rgba(243,238,251,.75)'; g.font = '700 10px "Figtree", system-ui, sans-serif'; g.fillText('Layer ' + (li + 1), 10, y + 13); }
+    if (state.layers.length > 1){ g.fillStyle = 'rgba(243,238,251,.75)'; g.font = '700 10px "Figtree", system-ui, sans-serif'; g.fillText('Layer ' + (li + 1), ED_L + 4, y + 13); }
   });
   // part being painted with a pad
   if (paint.on && paint.pad){
@@ -2283,7 +2283,19 @@ function drawEditor(){
     g.fillStyle = pink; g.fillRect(px - 1, RULER - 4, 2, hh - RULER + 4);
     if (rec.state !== 'recording'){ g.beginPath(); g.arc(px, RULER - 2, 8, 0, Math.PI * 2); g.fillStyle = pink; g.fill(); g.lineWidth = 2; g.strokeStyle = '#fff'; g.stroke(); }
   }
-  ed.px = showCur ? px : null;
+  ed.px = showCur && px >= ED_L - 2 ? px : null;
+  // left gutter: a jump-to-start button for each layer
+  g.fillStyle = cssVar('--bg', '#0c0816'); g.fillRect(0, 0, ED_L - 5, hh);
+  ed.starts = [];
+  state.layers.forEach((layer, li) => {
+    const { y, h:lh } = box(li), cx = (ED_L - 5) / 2, cy = y + lh / 2, r = Math.min(15, lh / 2 - 3);
+    g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2); g.fillStyle = li === state.activeLayer ? 'rgba(236,72,153,.22)' : 'rgba(255,255,255,.07)'; g.fill();
+    g.lineWidth = 1; g.strokeStyle = 'rgba(255,255,255,.14)'; g.stroke();
+    const k = r * 0.42; g.fillStyle = '#f3eefb';
+    g.fillRect(cx - k - 1.5, cy - k, 2.2, k * 2);
+    g.beginPath(); g.moveTo(cx - k + 1.5, cy); g.lineTo(cx + k, cy - k); g.lineTo(cx + k, cy + k); g.closePath(); g.fill();
+    ed.starts.push({ x:cx, y:cy, r:r + 5, lane:li });
+  });
   $('#edEmpty').hidden = true;
 }
 function edReadouts(){
@@ -2470,7 +2482,7 @@ $('#clipDelete').addEventListener('click', () => {
 {
   let d = null, lastTap = null;
   const HOLD = 420;
-  const t0Raw = (e) => { const r = edCanvas.getBoundingClientRect(); return Math.max(0, ed.viewStart + ((e.clientX - r.left - 8) / (r.width - 16)) * edSpan()); };
+  const t0Raw = (e) => { const r = edCanvas.getBoundingClientRect(); return Math.max(0, ed.viewStart + ((e.clientX - r.left - ED_L) / (r.width - ED_L - ED_R)) * edSpan()); };
   const tAt = (e) => Math.min(t0Raw(e), songDur());
   document.addEventListener('keydown', (e) => { if (state.page !== 1 || state.section !== 'create' || /INPUT|TEXTAREA/.test(document.activeElement.tagName)) return; if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z'){ e.preventDefault(); goHist(hist.idx + (e.shiftKey ? 1 : -1)); } });
   const laneAt = (e) => { const r = edCanvas.getBoundingClientRect(), box = laneBox(r.height), y = e.clientY - r.top; for (let i = 0; i < state.layers.length; i++){ const b = box(i); if (y >= b.y - LANE_PAD && y <= b.y + b.h + LANE_PAD) return i; } return y < RULER ? 0 : state.layers.length - 1; };
@@ -2487,13 +2499,21 @@ $('#clipDelete').addEventListener('click', () => {
       if (d){ clearTimeout(d.timer); d = null; }
       state.moving = null; ed.panning = false; ed.trim = null; cancelAnimationFrame(glide);
       const r = edCanvas.getBoundingClientRect(), pi = pinchInfo();
-      pinch = { dist:pi.dist, span:edSpan(), t:ed.viewStart + ((pi.cx - r.left - 8) / (r.width - 16)) * edSpan() };
+      pinch = { dist:pi.dist, span:edSpan(), t:ed.viewStart + ((pi.cx - r.left - ED_L) / (r.width - ED_L - ED_R)) * edSpan() };
       return;
     }
     if (ptrs.size > 2 || pinch) return;
     if (rec.state !== 'idle' || paint.busy) return;
     cancelAnimationFrame(glide);
-    const r = edCanvas.getBoundingClientRect(), hit = (ed.plus || []).find((q) => Math.hypot(e.clientX - r.left - q.x, e.clientY - r.top - q.y) <= q.r);
+    const r = edCanvas.getBoundingClientRect();
+    const st = (ed.starts || []).find((q) => Math.hypot(e.clientX - r.left - q.x, e.clientY - r.top - q.y) <= q.r);
+    if (st){
+      const l = state.layers[st.lane], start = l.segs.length ? Math.min(...l.segs.map((x) => x.at)) : 0;
+      state.activeLayer = st.lane; state.sel1 = null; state.cursorOn = true; ed.viewStart = Math.max(0, start - edSpan() * 0.05); setPlayhead1(start);
+      return;
+    }
+    if (e.clientX - r.left < ED_L - 4) return;
+    const hit = (ed.plus || []).find((q) => Math.hypot(e.clientX - r.left - q.x, e.clientY - r.top - q.y) <= q.r);
     if (hit){
       // if the red line is on this layer, new audio starts there; otherwise at the end of the layer
       const useCursor = state.cursorOn && state.activeLayer === hit.lane;
@@ -2505,7 +2525,7 @@ $('#clipDelete').addEventListener('click', () => {
     const t0 = tAt(e), lane = laneAt(e), cx = e.clientX - r.left, cy = e.clientY - r.top;
     d = { t0, cx, cy, x:e.clientX, moved:false, lane, seg:segAt(state.layers[lane], t0), mode:null, timer:0, time:performance.now(), vs:ed.viewStart, lastX:e.clientX, lastT:performance.now(), vel:0 };
     try { edCanvas.setPointerCapture(e.pointerId); } catch (_) {}
-    const Xc = (t) => 8 + ((t - ed.viewStart) / edSpan()) * (r.width - 16);
+    const Xc = (t) => ED_L + ((t - ed.viewStart) / edSpan()) * (r.width - ED_L - ED_R);
     // grab an edge of the selection box
     const sel = state.sel1;
     if (sel){
@@ -2537,7 +2557,7 @@ $('#clipDelete').addEventListener('click', () => {
       if (rec.state === 'recording'){ state.recSpan = Math.min(span, 60); state.recSpanSet = true; }
       else {
         state.span1 = span >= full ? Infinity : span;
-        ed.viewStart = pinch.t - ((pi.cx - r.left - 8) / (r.width - 16)) * edSpan(); clampView();
+        ed.viewStart = pinch.t - ((pi.cx - r.left - ED_L) / (r.width - ED_L - ED_R)) * edSpan(); clampView();
       }
       drawEditor(); return;
     }
@@ -2556,7 +2576,7 @@ $('#clipDelete').addEventListener('click', () => {
       state.playhead1 = d.edge === 'a' ? sl.a : sl.b; follow(t); drawEditor(); edReadouts(); return;
     }
     if (d.mode === 'pan'){
-      const w = edCanvas.getBoundingClientRect().width - 16, now = performance.now();
+      const w = edCanvas.getBoundingClientRect().width - ED_L - ED_R, now = performance.now();
       ed.viewStart = d.vs - ((e.clientX - d.x) / w) * edSpan(); clampView();
       d.vel = 0.8 * d.vel + 0.2 * ((e.clientX - d.lastX) / Math.max(1, now - d.lastT)); d.lastX = e.clientX; d.lastT = now;
       drawEditor(); return;
@@ -2587,7 +2607,7 @@ $('#clipDelete').addEventListener('click', () => {
     if (d.mode === 'scrub' || d.mode === 'edge'){ d = null; drawEditor(); edReadouts(); return; }
     if (d.mode === 'pan'){
       let v = d.vel; d = null; ed.panning = false; state.cursorOn = true; drawEditor(); edReadouts();
-      const w = edCanvas.getBoundingClientRect().width - 16;
+      const w = edCanvas.getBoundingClientRect().width - ED_L - ED_R;
       let last = performance.now();
       const step = () => {
         const now = performance.now(), dt = now - last; last = now;
@@ -4813,7 +4833,7 @@ const TOURS = {
   ],
   p1:[
     { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
-    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it. Drag its pink handles inward to trim it: whatever you pull past is cut off when you let go (undo brings it back), then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end of the audio to record more there, or add audio from a file or your camera roll. Double-tap a clip to delete it. With more than one layer, tap a layer to change its volume with the slider under the wave; tap an empty layer and press Delete to remove it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Spread two fingers on the wave to zoom in, pinch them together to zoom out (or use + and −). + Layer stacks up to 4 layers; the other layers play while you record.' },
+    { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. The round button on the left of each layer jumps the red line to the start of that layer. Tap the wave to show the red line there, or grab its round handle and drag it. With the red line showing, holding a pad plays your song from the red line with that effect. Tap outside the wave to hide the red line; then the pads just set up your next recording. Slide anywhere else to scroll the wave, and zoom out to see the whole song. Tap a section to select it. Drag its pink handles inward to trim it: whatever you pull past is cut off when you let go (undo brings it back), then Duplicate or Delete it. Split cuts at the red line, and recording again continues from there. Tap the + at the end of the audio to record more there, or add audio from a file or your camera roll. Double-tap a clip to delete it. With more than one layer, tap a layer to change its volume with the slider under the wave; tap an empty layer and press Delete to remove it. Hold a clip, then drag, to move it. Tap a gold effect strip to change how strong it is or remove it. The arrows undo and redo. Spread two fingers on the wave to zoom in, pinch them together to zoom out (or use + and −). + Layer stacks up to 4 layers; the other layers play while you record.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where you want an effect to start (or select a part), then hold a pad. Your song plays with the effect, and it stops where you let go.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does, and slide up or down to hear it get stronger or weaker.' },
