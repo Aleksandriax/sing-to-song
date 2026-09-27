@@ -913,7 +913,7 @@ let nextId = 1, takeCount = 0;
 
 let actx = null;
 function ctx(){
-  if (!actx){
+  if (!actx || actx.state === 'closed'){
     const C = window.AudioContext || window.webkitAudioContext;
     if (!C) throw new Error('This browser has no Web Audio support, so it can\'t process sound.');
     actx = new C();
@@ -927,12 +927,13 @@ function audioSession(type){ try { if (navigator.audioSession) navigator.audioSe
 audioSession('playback');
 {
   // the first touch anywhere wakes the phone's audio (plays one silent sample)
+  // stays on: phones can put the audio to sleep again (after recording, a call, or switching apps)
   const unlock = () => {
+    if (actx && actx.state === 'running') return;
     try {
       const c = ctx(), b = c.createBuffer(1, 1, c.sampleRate), s = c.createBufferSource();
       s.buffer = b; s.connect(c.destination); s.start(0);
     } catch (e) {}
-    if (actx && actx.state === 'running'){ document.removeEventListener('pointerdown', unlock, true); document.removeEventListener('touchend', unlock, true); }
   };
   document.addEventListener('pointerdown', unlock, true);
   document.addEventListener('touchend', unlock, true);
@@ -2408,6 +2409,16 @@ function edPlay(fxNode, fxLane){
     nodes = a.nodes.concat(b.nodes); t0 = a.t0;
   } else ({ nodes, t0 } = scheduleSong(c, from, bus, -1));
   Object.assign(edPlayState, { playing:true, nodes, bus, from, t0, fxNode:fxNode || null });
+  // if the phone kept the audio asleep, time doesn't move: start the audio fresh and ask for one more tap
+  const ct0 = c.currentTime, token = edPlayState.token = (edPlayState.token || 0) + 1;
+  setTimeout(() => {
+    if (!edPlayState.playing || edPlayState.token !== token || c.currentTime - ct0 > 0.05) return;
+    edStop(); if (paint.on){ paint.on = false; paint.node = null; PADS.forEach(paintPad); }
+    try { c.close(); } catch (_) {}
+    actx = null; workletFor = null;
+    PADS && drawEditor();
+    setStatus($('#status1'), 'Your phone paused the sound. Tap Play again.', 'error');
+  }, 700);
   $('#edPlay').textContent = 'Pause';
   const loop = () => {
     const t = from + Math.max(0, c.currentTime - t0);
