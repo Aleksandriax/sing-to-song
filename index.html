@@ -318,7 +318,9 @@ body:not(.recording) #recTime{display:none}
 .pub-name{display:flex;align-items:center;gap:6px;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:26px;line-height:1.1}
 .pub-name .vbadge{width:22px;height:22px}
 .pub-hero .prof-stats{width:100%;margin-top:6px}
-.pub-hero .prof-stats:has(> :nth-child(4)){grid-template-columns:repeat(4,1fr)}
+.pub-hero .prof-stats:has(> :nth-child(5)){grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.pub-hero .prof-stats:has(> :nth-child(5)) .pstat span:last-child{font-size:10.5px}
+.pub-hero .prof-stats:has(> :nth-child(4)):not(:has(> :nth-child(5))){grid-template-columns:repeat(4,1fr)}
 .pub-body > .d-list,.pub-body > .pub-private{margin:0 16px}
 /* Discover play buttons wear the purple-to-pink theme */
 .d-list .btn.small.round.ic-play,.det-top .btn.small.round.ic-play{border-color:transparent;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:#fff;box-shadow:none}
@@ -482,6 +484,13 @@ legend{padding:0}
 #homeDrafts .item-title{white-space:normal;overflow-wrap:anywhere}
 .draft-act{appearance:none;border:0;background:none;padding:2px 0;color:var(--accent-b);font:inherit;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:5px;cursor:pointer}
 .draft-act .ic{width:15px;height:15px}
+.draft-row{flex-wrap:wrap;row-gap:8px}
+.draft-row .item-main{flex:1 1 0;min-width:0}
+.draft-ctl{flex-basis:100%;display:flex;justify-content:flex-end;align-items:center;gap:8px}
+.draft-row .item-title{overflow-wrap:anywhere}
+#homeDrafts .btn.small.round.ic-play{border-color:transparent;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:#fff;box-shadow:none}
+.icon-btn.draft-ic{width:36px;height:36px;color:var(--muted)}
+.icon-btn.draft-ic .ic{width:17px;height:17px}
 .draft-name{appearance:none;border:0;background:none;padding:0;color:inherit;font:inherit;display:flex;align-items:center;gap:6px;text-align:left;cursor:pointer;min-width:0}
 .draft-name .ic{width:15px;height:15px;color:var(--muted)}
 .sfx-panel{background:linear-gradient(160deg,#4a3107 0%,#3a220c 55%,#221812 100%);border-color:rgba(251,191,36,.32)}
@@ -4404,7 +4413,7 @@ const store = (() => {
 const FEE = 0.15;
 const money = (v) => '$' + (Math.round(v * 100) / 100).toFixed(2);
 const lib = {
-  profile:{ name:'', handle:'', bio:'', isPublic:true, postSongs:true, allowSaves:true, sellSfx:true, showLikes:true },
+  profile:{ name:'', handle:'', bio:'', isPublic:true, postSongs:true, allowSaves:true, sellSfx:true, showLikes:true, showFollows:true },
   songs:[], sfx:[], saved:[], likes:[], activity:[], sales:[], withdrawals:[], follows:[], requests:[], purchases:[], presets:[], drafts:[], media:[], premium:false, verify:{ status:'none', link:'' }
 };
 let libTimer = 0;
@@ -4883,33 +4892,69 @@ async function openDraft(d){
     autosave();
   } catch (err){ setStatus($('#homeStatus'), 'Couldn\'t open "' + d.name + '": ' + (err.message || err) + '.', 'error'); }
 }
+/* hear a draft without opening it: its finished song if it has one, otherwise its layers mixed the way the editor plays them */
+const draftBufs = new Map();
+async function draftBuffer(d){
+  const doc = await store.get('draft:' + d.id);
+  if (!doc) throw new Error('missing');
+  const ck = d.id + '@' + doc.saved;
+  if (draftBufs.has(ck)) return draftBufs.get(ck);
+  let buf = null;
+  if (doc.result && doc.result.mixId){ const blob = await store.get('mix:' + doc.result.mixId); if (blob) buf = await decodeBlob(blob); }
+  if (!buf){
+    const sr = ctx().sampleRate, key = doc.key || '60:chromatic', rendered = {};
+    let dur = 0;
+    for (const l of doc.layers || []) for (const sg of l.segs){
+      dur = Math.max(dur, sg.at + (sg.end - sg.start));
+      if (rendered[sg.src]) continue;
+      const src = await store.get('src:' + sg.src); if (!src) throw new Error('missing');
+      rendered[sg.src] = { y:await renderTake(src.raw, src.sr, src.events, key), sr:src.sr };
+    }
+    if (!dur) throw new Error('empty');
+    const out = new Float32Array(Math.ceil(dur * sr));
+    for (const l of doc.layers || []){ const lvol = l.vol == null ? 1 : l.vol; for (const sg of l.segs){
+      const { y, sr:ssr } = rendered[sg.src], r = ssr / sr, o = Math.floor(sg.at * sr), n = Math.floor((sg.end - sg.start) * sr), fade = Math.min(Math.floor(0.008 * sr), n >> 1), hasFade = (sg.fadeIn || 0) > 0 || (sg.fadeOut || 0) > 0;
+      for (let i = 0; i < n && o + i < out.length; i++){
+        let v = y[Math.floor(sg.start * ssr + i * r)] || 0;
+        if (i < fade) v *= i / fade; else if (i > n - fade) v *= (n - i) / fade;
+        if (hasFade) v *= fadeEnv(sg, i / sr);
+        out[o + i] += v * lvol;
+      }
+    } }
+    let pk = 0; for (let i = 0; i < out.length; i++){ const v = Math.abs(out[i]); if (v > pk) pk = v; }
+    if (pk > 1) for (let i = 0; i < out.length; i++) out[i] /= pk;
+    buf = ctx().createBuffer(1, out.length, sr); buf.getChannelData(0).set(out);
+  }
+  draftBufs.clear(); draftBufs.set(ck, buf);
+  return buf;
+}
 function renderDrafts(){
   const rows = lib.drafts.map((d) => {
     let armed = 0;
+    const play = playIconBtn('Play ' + d.name);
+    play.addEventListener('click', () => previewToggle('draft:' + d.id, () => draftBuffer(d).catch((e) => { setStatus($('#homeStatus'), e.message === 'empty' ? '"' + d.name + '" has nothing recorded yet.' : 'Couldn\'t play "' + d.name + '": a recording is missing on this device.', 'error'); throw e; }), play));
     const open = h('button', { type:'button', class:'btn small' }, 'Open');
     open.addEventListener('click', () => {
-      clearTimeout(armed);
+      clearTimeout(armed); previewStop();
       (async () => { if (hasWork(projectDoc())) await saveCurrentAsDraft(); openDraft(d); })();
     });
-    return h('div', { class:'item' },
+    const rename = h('button', { type:'button', class:'icon-btn draft-ic', 'aria-label':'Rename ' + d.name, title:'Rename' }, icon('pencil'));
+    rename.addEventListener('click', async () => { const v = await askName('Rename draft', d.name); if (!v) return; d.name = v; saveLib(); renderDrafts(); });
+    const dup = h('button', { type:'button', class:'icon-btn draft-ic', 'aria-label':'Duplicate ' + d.name, title:'Duplicate' }, icon('copy'));
+    dup.addEventListener('click', async () => {
+      const doc = await store.get('draft:' + d.id);
+      if (!doc){ setStatus($('#homeStatus'), 'That draft\'s data is missing on this device.', 'error'); return; }
+      const id = uid('draft'), name = d.name + ' duplicate';
+      await store.set('draft:' + id, JSON.parse(JSON.stringify(doc)));
+      lib.drafts.splice(lib.drafts.indexOf(d), 0, { id, name, saved:Date.now(), dur:d.dur });
+      saveLib(); renderDrafts();
+    });
+    return h('div', { class:'item draft-row' }, play,
       h('div', { class:'item-main' },
         h('span', { class:'item-title', text:d.name }),
-        h('span', { class:'item-meta', text:fmt(d.dur || 0) + ' · saved ' + new Date(d.saved).toLocaleString() }),
-        h('div', { class:'draft-acts' },
-          h('button', { type:'button', class:'draft-act', onclick:async () => {
-            const v = await askName('Rename draft', d.name); if (!v) return;
-            d.name = v; saveLib(); renderDrafts();
-          } }, icon('pencil'), 'Rename'),
-          h('button', { type:'button', class:'draft-act', onclick:async () => {
-            const doc = await store.get('draft:' + d.id);
-            if (!doc){ setStatus($('#homeStatus'), 'That draft\'s data is missing on this device.', 'error'); return; }
-            const id = uid('draft'), name = d.name + ' duplicate';
-            await store.set('draft:' + id, JSON.parse(JSON.stringify(doc)));
-            lib.drafts.splice(lib.drafts.indexOf(d), 0, { id, name, saved:Date.now(), dur:d.dur });
-            saveLib(); renderDrafts();
-          } }, icon('copy'), 'Duplicate'))),
-      open,
-      deleteBtn(async () => { lib.drafts = lib.drafts.filter((x) => x !== d); await store.del('draft:' + d.id); saveLib(); renderDrafts(); gcMedia(); }));
+        h('span', { class:'item-meta', text:fmt(d.dur || 0) + ' · ' + new Date(d.saved).toLocaleDateString() })),
+      deleteBtn(async () => { lib.drafts = lib.drafts.filter((x) => x !== d); await store.del('draft:' + d.id); saveLib(); renderDrafts(); gcMedia(); }),
+      h('div', { class:'draft-ctl' }, dup, rename, open));
   });
   $('#homeDrafts').replaceChildren(...(rows.length ? rows : [h('p', { class:'hint' }, 'No drafts yet. On the last step, press Save draft to keep a song to finish later.')]));
   $('#tileDraftsSub').textContent = lib.drafts.length ? lib.drafts.length + ' saved' : 'none yet';
@@ -4920,19 +4965,19 @@ function renderDrafts(){
    The example creators are made up for the preview.
    ========================================================= */
 const EXAMPLES = [
-  { id:'ex-nova', name:'Nova Reyes', handle:'novareyes', isPublic:true, verified:true, followers:12400, color:'#ec4899', bio:'Bedroom pop with too much echo.',
+  { id:'ex-nova', name:'Nova Reyes', handle:'novareyes', isPublic:true, verified:true, followers:12400, following:['ex-kw', 'ex-mari'], color:'#ec4899', bio:'Bedroom pop with too much echo.',
     songs:[{ id:'ex-nova-1', title:'Late Bus Home', allowSave:true, desc:'Written on the last bus after a long shift. Headphones on.', melody:DEMO_SONG[0].melody.concat(DEMO_SONG[2].melody),
       plan:{ tempo:84, wave:'sawtooth', detune:9, reverbSec:3.4, wet:0.42, beat:false, scale:'minor', root:57, brightness:0.55, harmony:0.7, progression:[0,5,2,6], sections:[] } }],
     sfx:[{ id:'ex-nova-x1', name:'Tape riser', recipe:'riser', desc:'A warm tape swell that lifts into a drop. Made on a cassette deck and a lot of patience.', forSale:true, price:1.99 }, { id:'ex-nova-x2', name:'Vinyl crackle', recipe:'crackle', forSale:false, price:0 }] },
-  { id:'ex-kw', name:'DJ Kilowatt', handle:'djkilowatt', isPublic:true, verified:true, followers:48900, color:'#14b8a6', bio:'Club edits and one-shots you can hit.',
+  { id:'ex-kw', name:'DJ Kilowatt', handle:'djkilowatt', isPublic:true, verified:true, followers:48900, following:['ex-nova'], color:'#14b8a6', bio:'Club edits and one-shots you can hit.',
     songs:[{ id:'ex-kw-1', title:'Voltage', allowSave:false, melody:DEMO_SONG[1].melody.concat(DEMO_SONG[1].melody),
       plan:{ tempo:126, wave:'triangle', detune:0, reverbSec:1.6, wet:0.22, beat:true, scale:'major', root:60, brightness:0.7, harmony:0.5, progression:[0,4,5,3], sections:[] } }],
     sfx:[{ id:'ex-kw-x1', name:'Clap stack', recipe:'clap', desc:'Three claps layered tight. Hits hard on the 2 and 4.', forSale:true, price:0.99 }, { id:'ex-kw-x2', name:'Laser zap', recipe:'zap', forSale:true, price:1.49 }, { id:'ex-kw-x3', name:'Sub drop', recipe:'subdrop', desc:'Deep sub that falls away. Best right before the beat comes back.', forSale:true, price:2.49 }] },
-  { id:'ex-mari', name:'Marisol Vega', handle:'marisolsings', isPublic:true, followers:3100, color:'#f59e0b', bio:'Front-porch folk, recorded on my phone.',
+  { id:'ex-mari', name:'Marisol Vega', handle:'marisolsings', isPublic:true, followers:3100, following:['ex-nova', 'ex-kw', 'ex-theo'], showFollows:false, color:'#f59e0b', bio:'Front-porch folk, recorded on my phone.',
     songs:[{ id:'ex-mari-1', title:'Porch Light', allowSave:true, desc:'Recorded on the porch one summer night. You can hear the crickets if you listen.', melody:DEMO_SONG[2].melody.concat(DEMO_SONG[0].melody),
       plan:{ tempo:72, wave:'triangle', detune:0, reverbSec:1.1, wet:0.15, beat:false, scale:'major', root:67, brightness:0.35, harmony:0.8, progression:[0,3,4,3], sections:[] } }],
     sfx:[{ id:'ex-mari-x1', name:'Rain on tin', recipe:'rain', forSale:false, price:0 }, { id:'ex-mari-x2', name:'Little bell', recipe:'bell', forSale:true, price:0.99 }] },
-  { id:'ex-theo', name:'Theo Lin', handle:'theolin', isPublic:false, followers:870, color:'#3b82f6', bio:'', songs:[], sfx:[] }
+  { id:'ex-theo', name:'Theo Lin', handle:'theolin', isPublic:false, followers:870, following:['ex-mari'], color:'#3b82f6', bio:'', songs:[], sfx:[] }
 ];
 async function exampleSongBuffer(song){
   const key = 'song:' + song.id; if (bufCache.has(key)) return bufCache.get(key);
@@ -5361,6 +5406,10 @@ function renderPublicView(){
   const follows = mine ? EXAMPLES.filter((c) => lib.follows.includes(c.id)) : [];
   const following = lib.follows.includes(m.id), requested = lib.requests.includes(m.id);
   $('#pubNote').textContent = mine ? 'How others see you' : ''; $('#pubNote').hidden = !mine;
+  // who follows them and who they follow, unless they've hidden it (you always see your own)
+  const showsFollows = mine || m.showFollows !== false;
+  const theirFollowing = mine ? follows : EXAMPLES.filter((c) => (m.following || []).includes(c.id));
+  const theirFollowers = mine ? [] : EXAMPLES.filter((c) => c.id !== m.id && (c.following || []).includes(m.id)).concat(following && lib.profile.showFollows !== false && lib.profile.isPublic ? [me()] : []);
   const stat = (tab, color, n, label) => { const b = h('button', { type:'button', class:'pstat' + (pubTab === tab ? ' on' : ''), style:'--st:' + color }, h('span', { class:'mono', text:typeof n === 'number' ? compact(n) : n }), h('span', { text:label })); if (tab) b.addEventListener('click', () => { pubTab = tab; renderPublicView(); }); return b; };
   let followBtn = null;
   if (!mine){
@@ -5381,7 +5430,8 @@ function renderPublicView(){
     m.bio ? h('p', { class:'prof-bio', text:m.bio }) : null,
     followBtn,
     h('div', { class:'prof-stats' }, stat('songs', '#f472b6', m.songs.length, 'songs'), stat('sounds', '#2dd4bf', m.sfx.length, 'sounds'),
-      ...(mine ? [stat('following', '#fbbf24', follows.length, 'following'), stat('liked', '#a78bfa', lib.likes.length, 'liked')] : [stat(null, '#fbbf24', followers(m), 'followers')])));
+      stat('followers', '#fbbf24', mine ? 0 : followers(m), 'followers'), stat('following', '#60a5fa', mine ? follows.length : (m.following || []).length, 'following'),
+      ...(mine ? [stat('liked', '#a78bfa', lib.likes.length, 'liked')] : [])));
   let list;
   if (!mine && !m.isPublic) list = [h('p', { class:'empty' }, 'This account is private. Their songs and sound effects are hidden until they accept your request.')];
   else if (pubTab === 'songs') list = m.songs.length ? m.songs.map((x) => songRow(x, m)) : [h('p', { class:'empty' }, mine ? 'No published songs yet. Songs you save and make public show up here.' : 'No public songs yet.')];
@@ -5395,7 +5445,16 @@ function renderPublicView(){
     });
     list = [h('p', { class:'pub-private' }, lib.profile.showLikes !== false ? 'Others can see what you like. You can hide this in Profile.' : 'Only you can see this. Turn on Show my likes in Profile to share it.')].concat(rows.length ? rows : [h('p', { class:'empty' }, 'Tap the heart on songs and sounds in Discover to like them.')]);
   }
-  else list = follows.length ? follows.map((c) => creatorCard(c)) : [h('p', { class:'empty' }, 'You aren\'t following anyone yet. Find singers on Discover.')];
+  else if (!showsFollows) list = [h('p', { class:'empty' }, m.name + ' keeps who they follow and who follows them private.')];
+  else if (pubTab === 'followers'){
+    const rows = theirFollowers.map((c) => creatorCard(c)), more = mine ? 0 : followers(m) - theirFollowers.length;
+    list = (mine ? [h('p', { class:'pub-private' }, lib.profile.showFollows !== false ? 'Others can see who follows you and who you follow. You can hide this in Profile.' : 'Only you can see this. Turn on Show followers and following in Profile to share it.')] : [])
+      .concat(rows.length ? rows : [h('p', { class:'empty' }, mine ? 'No followers yet. Post songs and sounds so people can find you.' : 'No followers to show yet.')])
+      .concat(more > 0 ? [h('p', { class:'hint', style:'text-align:center', text:'and ' + compact(more) + ' more' })] : []);
+  }
+  else if (mine) list = [h('p', { class:'pub-private' }, lib.profile.showFollows !== false ? 'Others can see who follows you and who you follow. You can hide this in Profile.' : 'Only you can see this. Turn on Show followers and following in Profile to share it.')]
+    .concat(follows.length ? follows.map((c) => creatorCard(c)) : [h('p', { class:'empty' }, 'You aren\'t following anyone yet. Find singers on Discover.')]);
+  else list = theirFollowing.length ? theirFollowing.map((c) => creatorCard(c)) : [h('p', { class:'empty' }, m.name + ' isn\'t following anyone yet.')];
   $('#pubBody').replaceChildren(hero,
     ...(mine && !m.isPublic ? [h('p', { class:'pub-private' }, 'Your account is private, so only people you approve can see your songs and sounds.')] : []),
     h('div', { class:'d-list' }, ...list));
@@ -5490,6 +5549,7 @@ function renderProfile(){
     switchEl('swPost', 'Post my new songs', null, pr.postSongs, (v) => { pr.postSongs = v; saveLib(); }),
     switchEl('swSaves', 'Let people save my songs', null, pr.allowSaves, (v) => { pr.allowSaves = v; saveLib(); }),
     switchEl('swLikes', 'Show my likes', null, pr.showLikes !== false, (v) => { pr.showLikes = v; saveLib(); }),
+    switchEl('swFollows', 'Show followers and following', null, pr.showFollows !== false, (v) => { pr.showFollows = v; saveLib(); }),
     switchEl('swSell', h('span', {}, 'Sell my sounds ', lib.premium ? null : h('span', { class:'tag muted' }, 'Premium')), null, pr.sellSfx && lib.premium, (v) => {
       if (v && !lib.premium){ renderProfile(); openPremium('Selling sound effects needs Premium.'); return; }
       pr.sellSfx = v; saveLib(); renderProfile();
