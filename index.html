@@ -194,6 +194,8 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .tile-sub{font-size:13px;opacity:.8}
 .continue-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line)}
 .lib-grid,.album-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.song-card .card-row{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0}
+.song-card .card-photo{font-size:12px;white-space:nowrap;padding:4px 0;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .album-grid{grid-template-columns:repeat(3,1fr);gap:8px}
 .song-card{display:flex;flex-direction:column;gap:6px;min-width:0}
 .cover{position:relative;display:block;width:100%;aspect-ratio:1;border-radius:14px;overflow:hidden;background:linear-gradient(135deg,var(--c1,#8b5cf6),var(--c2,#ec4899))}
@@ -542,6 +544,16 @@ legend{padding:0}
 #sfxLib .item{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .pick-text{font-size:13px;color:#e7cf9f}
 .pick-layers{display:flex;flex-wrap:wrap;gap:6px}
+.fix-panel{gap:12px}
+.fix-wrap{position:relative;height:96px;border-radius:12px;overflow:visible;touch-action:none}
+#fixWave{display:block;width:100%;height:96px;border-radius:12px;background:var(--wave-bg,#1d1631);cursor:pointer;touch-action:none}
+.tl-box.fix-box{top:0;height:96px;z-index:2}
+.tl-pick.fix-box .tl-grip{height:96px}
+.fix-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.fix-info{font-size:13px;color:var(--muted)}
+.fix-info.full{color:var(--err)}
+.keep-panel .dl-head{margin:6px 0 0;font-size:15px}
+.keep-panel textarea.text{resize:vertical;min-height:72px}
 .pick-layers:empty{display:none}
 .pick-chip{appearance:none;display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 12px 0 9px;border-radius:99px;border:1px solid rgba(251,191,36,.35);background:transparent;color:#e7cf9f;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .pick-chip .dot{width:16px;height:16px;border-radius:50%;border:2px solid currentColor;display:grid;place-items:center;flex:none}
@@ -881,7 +893,7 @@ legend{padding:0}
     <button type="button" class="back-top" data-to="2" aria-label="Back to Prep and adjust"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div>
       <h1>Generate and finish</h1>
-      <p class="lede">Play your song. Regenerate for a different arrangement, or save it.</p>
+      <p class="lede">Play your song, redo any part you don't like, then name it and publish it.</p>
     </div>
     <canvas id="viz" class="screen" width="720" height="720" aria-label="Song visualizer"></canvas>
     <div class="transport">
@@ -896,9 +908,23 @@ legend{padding:0}
       <p id="planDetail" class="hint"></p>
     </section>
     <div id="status3" class="status" role="status" aria-live="polite"></div>
-    <button type="button" id="regenBtn" class="btn primary big">Regenerate</button>
+    <section id="fixPanel" class="panel fix-panel" aria-labelledby="fixTitle">
+      <h2 id="fixTitle">Redo a part</h2>
+      <p class="hint" style="margin:0">Don't like the music in one part? Highlight it and the app redoes just that part. It keeps your key, tempo and chords so it blends with the music it already made. You can redo each part up to 5 times.</p>
+      <div id="fixWrap" class="fix-wrap">
+        <canvas id="fixWave" aria-label="Your finished song. Tap a part to highlight it."></canvas>
+        <div id="fixBox" class="tl-box tl-pick fix-box" hidden><span class="tl-grip l" data-edge="l" role="slider" aria-label="Drag to change where the part starts"></span><span class="tl-grip r" data-edge="r" role="slider" aria-label="Drag to change where the part ends"></span></div>
+      </div>
+      <div class="fix-row"><span id="fixInfo" class="fix-info mono">Tap the wave to highlight a part.</span><button type="button" id="fixPlay" class="btn small ic-play round" aria-label="Play this part" disabled></button></div>
+      <div class="actions"><button type="button" id="fixUndo" class="btn small" hidden>Undo last redo</button><button type="button" id="fixGo" class="btn primary" disabled>Redo this part</button></div>
+    </section>
+    <button type="button" id="regenBtn" class="btn big">Regenerate the whole song</button>
     <section id="keepPanel" class="panel keep-panel" aria-labelledby="keepHead">
-      <h2 id="keepHead">Keep it</h2>
+      <h2 id="keepHead">Publish</h2>
+      <label class="label" for="songName" style="margin:0">Song name</label>
+      <input id="songName" class="text" maxlength="60" placeholder="Name your song" autocomplete="off">
+      <label class="label" for="songDesc" style="margin:0">Description</label>
+      <textarea id="songDesc" class="text" rows="3" maxlength="300" placeholder="Tell people about it. It shows when they tap your song on Discover."></textarea>
       <div class="cover-pick">
         <div id="coverThumb" class="cover cover-sm" aria-hidden="true"></div>
         <div class="item-main">
@@ -911,20 +937,26 @@ legend{padding:0}
         <input type="radio" name="songVis" id="songPublic" value="public" checked><label for="songPublic">Public</label>
         <input type="radio" name="songVis" id="songPrivate" value="private"><label for="songPrivate">Private</label>
       </div>
+      <div class="switches">
+        <label class="switch" for="songSave"><span>Let people save it</span><input type="checkbox" id="songSave" role="switch" checked></label>
+        <label class="switch" for="songSell"><span>Sell it <span id="songSellTag" class="tag muted">Premium</span></span><input type="checkbox" id="songSell" role="switch"></label>
+      </div>
+      <div id="songPriceRow" class="price-row" hidden><span class="label" style="margin:0">Price $</span><input id="songPrice" class="text" type="number" min="0.49" max="49.99" step="0.01" value="1.29" inputmode="decimal" aria-label="Price in dollars"><span id="songKeep" class="item-meta"></span></div>
       <div class="downloads">
         <button type="button" id="saveSong" class="btn primary">Save to my songs</button>
         <button type="button" id="saveDraft" class="btn">Save draft</button>
       </div>
+      <h3 class="dl-head">Download</h3>
+      <div class="downloads">
+        <button type="button" id="saveAudio" class="btn">Save audio (.wav)</button>
+        <button type="button" id="saveVideo" class="btn">Save video</button>
+      </div>
+      <div id="shareBox" class="share-box" hidden>
+        <p id="shareText" class="summary"></p>
+        <button type="button" id="shareBtn" class="btn primary">Save to my phone</button>
+      </div>
+      <p id="saveHint" class="hint" style="margin:0">On a phone, saving opens the share menu: choose Save Video for your camera roll, or Save to Files for the audio. Saving a video plays the song once while it records.</p>
     </section>
-    <div class="downloads">
-      <button type="button" id="saveAudio" class="btn">Save audio (.wav)</button>
-      <button type="button" id="saveVideo" class="btn">Save video</button>
-    </div>
-    <div id="shareBox" class="share-box" hidden>
-      <p id="shareText" class="summary"></p>
-      <button type="button" id="shareBtn" class="btn primary">Save to my phone</button>
-    </div>
-    <p id="saveHint" class="hint">On a phone, saving opens the share menu: choose Save Video for your camera roll, or Save to Files for the audio. Saving a video plays the song once while it records.</p>
     <div class="actions">
       <button type="button" id="restartBtn" class="btn danger">Start over</button>
     </div>
@@ -4114,7 +4146,7 @@ async function mixSong(voc, harmUp, harmDown, sr, plan){
   const out = await renderOffline(oc);
   let peak = 0;
   for (let c = 0; c < out.numberOfChannels; c++){ const d = out.getChannelData(c); for (let i = 0; i < d.length; i++){ const v = Math.abs(d[i]); if (v > peak) peak = v; } }
-  if (peak > 0){ const g = 0.95 / peak; for (let c = 0; c < out.numberOfChannels; c++){ const d = out.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] *= g; } }
+  if (peak > 0){ const g = 0.95 / peak; out.normGain = g; for (let c = 0; c < out.numberOfChannels; c++){ const d = out.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] *= g; } }
   return out;
 }
 
@@ -4132,7 +4164,8 @@ function setBusy(b){
   ['#genBtn', '#regenBtn', '#saveAudio', '#saveVideo', '#restartBtn'].forEach((s) => { $(s).disabled = b; });
   if (!b && !videoMime()) $('#saveVideo').disabled = true;
   $('#genBtn').textContent = b ? 'Generating…' : 'Generate song';
-  $('#regenBtn').textContent = b ? 'Working…' : 'Regenerate';
+  $('#regenBtn').textContent = b ? 'Working…' : 'Regenerate the whole song';
+  if (typeof renderFix === 'function') renderFix();
   updateTabs();
 }
 async function generate(regenerate){
@@ -4184,9 +4217,11 @@ async function generate(regenerate){
     }
     setProgress(3); await nextTick();
     const mix = await mixSong(voc, harmUp, harmDown, sr, plan);
+    plan.normGain = mix.normGain || 1;
     setProgress(4);
     const keepSfx = state.sfx2.map((p) => Object.assign({}, p, { at:p.at + introOf(plan) }));
-    state.result = { base:mix, mix, plan, sfx:keepSfx, video:null, wav:null };
+    state.result = { base:mix, mix, plan, sfx:keepSfx, video:null, wav:null, voice:{ voc, harmUp, harmDown, sr }, redos:[] };
+    fix.on = false;
     persistMix(state.result);
     $('#progress').hidden = true;
     showPage(3);
@@ -4200,6 +4235,142 @@ async function generate(regenerate){
 $('#genBtn').addEventListener('click', () => generate(false));
 $('#regenBtn').addEventListener('click', () => generate(true));
 
+/* Redo a part: highlight part of the finished song and the app re-arranges just that part.
+   Same key, tempo and chords (so it fits), new instruments and patterns, blended in with short crossfades. */
+const FIX_MAX = 5;
+const fix = { on:false, a:0, b:0, src:null };
+const fixWave = $('#fixWave'), fixBox = $('#fixBox');
+function fixCount(){
+  const r = state.result; if (!r || !fix.on) return null;
+  r.redos = r.redos || [];
+  // the same part: overlaps an earlier redo by at least half
+  return r.redos.find((x) => { const ov = Math.min(x.b, fix.b) - Math.max(x.a, fix.a); return ov > 0 && ov >= 0.5 * Math.min(x.b - x.a, fix.b - fix.a); }) || null;
+}
+function drawFix(){
+  const r = state.result; if (!r || state.page !== 3) return;
+  const c = sizeCanvas(fixWave); if (!c) return;
+  const { g, w, h:hh } = c, buf = r.mix, d = buf.getChannelData(0), dur = buf.duration, mid = hh / 2, col = 2;
+  g.clearRect(0, 0, w, hh);
+  (r.redos || []).forEach((x) => { g.fillStyle = 'rgba(251,191,36,.10)'; g.fillRect((x.a / dur) * w, 0, ((x.b - x.a) / dur) * w, hh); });
+  let peak = 0; for (let i = 0; i < d.length; i += 32) peak = Math.max(peak, Math.abs(d[i]));
+  const pts = [];
+  for (let x = 0; x <= w; x += col){
+    const a = Math.floor((x / w) * d.length), b = Math.min(d.length, Math.floor(((x + col) / w) * d.length)), stride = Math.max(1, Math.floor((b - a) / 200));
+    let pk = 0; for (let i = a; i < b; i += stride) pk = Math.max(pk, Math.abs(d[i]));
+    pts.push([x, Math.max(0.5, (pk / (peak || 1)) * (hh / 2 - 6))]);
+  }
+  const wf = g.createLinearGradient(0, 0, w, 0); wf.addColorStop(0, '#8b5cf6'); wf.addColorStop(0.55, '#c084fc'); wf.addColorStop(1, '#ec4899');
+  blobPath(g, pts, mid); g.fillStyle = wf; g.fill();
+  const t = fix.src ? Math.min(fix.b, fix.a + (ctx().currentTime - fix.t0)) : pl.playing ? plPos() : null;
+  if (t != null){ g.fillStyle = cssVar('--playhead', '#db2777'); g.fillRect((t / dur) * w - 1, 0, 2, hh); }
+}
+function renderFix(){
+  const r = state.result, ready = !!r && !state.busy;
+  $('#fixPanel').hidden = !r;
+  if (!r) return;
+  if (!$('#fixPlay').dataset.aria){ $('#fixPlay').innerHTML = PLAY_SVG; $('#fixPlay').dataset.aria = 'Play this part'; }
+  const dur = r.mix.duration, W = fixWave.getBoundingClientRect().width || 1;
+  fixBox.hidden = !fix.on;
+  if (fix.on){ fixBox.style.left = (fix.a / dur) * W + 'px'; fixBox.style.width = Math.max(14, ((fix.b - fix.a) / dur) * W) + 'px'; }
+  const used = fixCount(), left = FIX_MAX - (used ? used.n : 0);
+  const info = $('#fixInfo');
+  if (!fix.on){ info.textContent = 'Tap the wave to highlight a part.'; info.classList.remove('full'); }
+  else { info.textContent = fmtT(fix.a) + ' – ' + fmtT(fix.b) + ' · ' + (left > 0 ? left + ' redo' + (left === 1 ? '' : 's') + ' left' : 'no redos left for this part'); info.classList.toggle('full', left <= 0); }
+  $('#fixGo').disabled = !ready || !fix.on || left <= 0;
+  $('#fixPlay').disabled = !ready || !fix.on;
+  $('#fixUndo').hidden = !r.prevBase; $('#fixUndo').disabled = !ready;
+  drawFix();
+}
+function fixStopPart(){ if (fix.src){ const s = fix.src; fix.src = null; try { s.stop(); } catch (_) {} } setBtnState($('#fixPlay'), 'stop'); cancelAnimationFrame(fix.raf); drawFix(); }
+$('#fixPlay').addEventListener('click', () => {
+  if (fix.src){ fixStopPart(); return; }
+  const r = state.result; if (!r || !fix.on) return;
+  stopAllPlayback();
+  const c = ctx(), s = c.createBufferSource(); s.buffer = r.mix; s.connect(c.destination);
+  s.start(0, fix.a, fix.b - fix.a); fix.src = s; fix.t0 = c.currentTime; setBtnState($('#fixPlay'), 'play');
+  s.onended = () => { if (fix.src === s) fixStopPart(); };
+  const loop = () => { if (!fix.src) return; drawFix(); fix.raf = requestAnimationFrame(loop); }; loop();
+});
+{
+  const tAt = (e) => { const r = fixWave.getBoundingClientRect(); return clamp((e.clientX - r.left) / r.width, 0, 1) * (state.result ? state.result.mix.duration : 0); };
+  // tap the wave: highlight about two bars there
+  fixWave.addEventListener('click', (e) => {
+    const r = state.result; if (!r || state.busy) return;
+    const dur = r.mix.duration, len = Math.min(dur, 2 * 4 * 60 / r.plan.tempo), t = tAt(e);
+    fix.a = clamp(t - len / 2, 0, Math.max(0, dur - len)); fix.b = Math.min(dur, fix.a + len); fix.on = true;
+    fixStopPart(); renderFix();
+  });
+  let d = null;
+  fixBox.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); d = { edge:e.target.dataset.edge || 'move', t0:tAt(e), a:fix.a, b:fix.b }; try { fixBox.setPointerCapture(e.pointerId); } catch (_) {} });
+  fixBox.addEventListener('pointermove', (e) => {
+    if (!d || !state.result) return; const dur = state.result.mix.duration, dt = tAt(e) - d.t0;
+    if (d.edge === 'l') fix.a = clamp(d.a + dt, 0, fix.b - 0.25);
+    else if (d.edge === 'r') fix.b = clamp(d.b + dt, fix.a + 0.25, dur);
+    else { const len = d.b - d.a, a = clamp(d.a + dt, 0, dur - len); fix.a = a; fix.b = a + len; }
+    renderFix();
+  });
+  const up = () => { d = null; };
+  fixBox.addEventListener('pointerup', up); fixBox.addEventListener('pointercancel', up);
+}
+window.addEventListener('resize', () => { if (state.page === 3) renderFix(); });
+$('#fixUndo').addEventListener('click', async () => {
+  const r = state.result; if (!r || !r.prevBase || state.busy) return;
+  fixStopPart(); stopAllPlayback();
+  r.base = r.prevBase; r.plan.normGain = r.prevGain; r.redos = r.prevRedos; r.prevBase = null; r.mixId = null;
+  await applySfx(); persistMix(r); renderFix();
+  setStatus($('#status3'), 'Put that part back the way it was.', 'ok'); toast('Undid: redo of a part');
+});
+async function voiceParts(){
+  const r = state.result; if (r.voice) return r.voice;
+  // after reopening a draft: rebuild the voice and harmonies from your recordings
+  await prepareAll(null);
+  const j = joined(), sr = ctx().sampleRate, voc = new Float32Array(j.data);
+  for (let i = 0; i < voc.length; i++) voc[i] *= 0.9 / j.peak;
+  let harmUp = null, harmDown = null; const plan = r.plan;
+  if (plan.harmony > 0.05){ const upS = plan.scale === 'major' ? 4 : 3, dn = plan.scale === 'major' ? -3 : -4; harmUp = await olaShift(voc, Math.pow(2, upS / 12)); harmDown = await olaShift(voc, Math.pow(2, dn / 12)); }
+  r.voice = { voc, harmUp, harmDown, sr };
+  return r.voice;
+}
+$('#fixGo').addEventListener('click', async () => {
+  const r = state.result; if (!r || !fix.on || state.busy) return;
+  const used = fixCount(); if (used && used.n >= FIX_MAX) return;
+  fixStopPart(); stopAllPlayback();
+  setBusy(true); $('#fixGo').textContent = 'Redoing this part…'; setStatus($('#status3'), 'Redoing ' + fmtT(fix.a) + ' – ' + fmtT(fix.b) + '…');
+  try {
+    const v = await voiceParts(), plan = r.plan;
+    const R = mulberry(freshSeed());
+    let instruments = COMBOS[Math.floor(R() * COMBOS.length)].slice();
+    for (let k = 0; k < 6 && instruments.join() === (plan.instruments || []).join(); k++) instruments = COMBOS[Math.floor(R() * COMBOS.length)].slice();
+    const alt = Object.assign({}, plan, { seed:freshSeed(), instruments, brightness:clamp(plan.brightness + (R() - 0.5) * 0.25, 0.15, 0.9) });
+    const fresh = await mixSong(v.voc, v.harmUp, v.harmDown, v.sr, alt);
+    // match levels: undo each render's own normalizing, so the voice stays exactly as loud
+    const k = (plan.normGain || 1) / (fresh.normGain || 1), sr = r.base.sampleRate;
+    const beat = 60 / plan.tempo, snap = (t) => Math.round(t / beat) * beat;
+    const a = Math.max(0, snap(fix.a)), b = Math.min(r.base.duration, Math.max(a + beat, snap(fix.b))), xf = 0.09;
+    const out = ctx().createBuffer(r.base.numberOfChannels, r.base.length, sr);
+    let peak = 0;
+    for (let ch = 0; ch < out.numberOfChannels; ch++){
+      const o = out.getChannelData(ch), old = r.base.getChannelData(ch), nw = fresh.getChannelData(Math.min(ch, fresh.numberOfChannels - 1));
+      o.set(old);
+      const i0 = Math.max(0, Math.floor((a - xf) * sr)), i1 = Math.min(o.length, Math.ceil((b + xf) * sr));
+      for (let i = i0; i < i1; i++){
+        const t = i / sr, wgt = t < a ? (t - (a - xf)) / xf : t > b ? ((b + xf) - t) / xf : 1;
+        o[i] = old[i] * (1 - wgt) + (nw[i] || 0) * k * wgt;
+      }
+      for (let i = 0; i < o.length; i += 4) peak = Math.max(peak, Math.abs(o[i]));
+    }
+    if (peak > 0.99){ const gg = 0.97 / peak; for (let ch = 0; ch < out.numberOfChannels; ch++){ const o = out.getChannelData(ch); for (let i = 0; i < o.length; i++) o[i] *= gg; } plan.normGain = (plan.normGain || 1) * gg; }
+    r.prevBase = r.base; r.prevGain = plan.normGain; r.prevRedos = (r.redos || []).map((x) => Object.assign({}, x));
+    if (peak > 0.99) r.prevGain = r.prevGain / (0.97 / peak);
+    r.base = out; r.mixId = null;
+    if (used){ used.n++; used.a = Math.min(used.a, fix.a); used.b = Math.max(used.b, fix.b); } else r.redos.push({ a:fix.a, b:fix.b, n:1 });
+    await applySfx(); persistMix(r);
+    const left = FIX_MAX - (used ? used.n : 1);
+    setStatus($('#status3'), 'Redid ' + fmtT(fix.a) + ' – ' + fmtT(fix.b) + ' with ' + instruments.map((x) => INSTR_NAMES[x]).join(', ').toLowerCase() + '. ' + (left > 0 ? left + ' redo' + (left === 1 ? '' : 's') + ' left for this part.' : 'That was the last redo for this part.'), 'ok');
+  } catch (err){ setStatus($('#status3'), 'That part couldn\'t be redone: ' + (err.message || err), 'error'); }
+  finally { $('#fixGo').textContent = 'Redo this part'; setBusy(false); renderFix(); }
+});
+
 /* =========================================================
    Step 3: player, visualizer, saving
    ========================================================= */
@@ -4207,7 +4378,7 @@ const viz = $('#viz'), vg = viz.getContext('2d'), scrub = $('#scrub');
 const pl = { src:null, an:null, playing:false, offset:0, startedAt:0, raf:0, bins:new Uint8Array(128) };
 function vizInfo(){
   const p = state.result.plan;
-  return { title:$('#vibe').value.trim() || 'Untitled song', sub:NOTE_NAMES[p.root % 12] + ' ' + p.scale + ' · ' + p.tempo + ' BPM' };
+  return { title:$('#songName').value.trim() || $('#vibe').value.trim() || 'Untitled song', sub:NOTE_NAMES[p.root % 12] + ' ' + p.scale + ' · ' + p.tempo + ' BPM' };
 }
 function paintViz(g, W, H, bins, t, dur, info){
   const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#1a0b2e'); bg.addColorStop(1, '#2a0a24');
@@ -4280,6 +4451,7 @@ scrub.addEventListener('change', () => {
 });
 
 function showPlan(note){
+  requestAnimationFrame(() => renderFix()); renderPublishOpts();
   const r = state.result, p = r.plan;
   pl.offset = 0; scrub.max = r.mix.duration.toFixed(2); scrub.value = 0;
   $('#curT').textContent = '0:00'; $('#durT').textContent = fmt(r.mix.duration);
@@ -4848,12 +5020,13 @@ const fileName = (f) => f.name.replace(/\.[^.]+$/, '') || 'Sound';
 }));
 $('#saveSong').addEventListener('click', async () => {
   const r = state.result; if (!r || state.busy) return;
-  const id = uid('song'), title = $('#vibe').value.trim() || 'Song ' + (lib.songs.length + 1);
+  const id = uid('song'), title = $('#songName').value.trim() || $('#vibe').value.trim() || 'Song ' + (lib.songs.length + 1);
+  const sell = $('#songSell').checked && lib.premium, price = clamp(Math.round((+$('#songPrice').value || 1.29) * 100) / 100, 0.49, 49.99);
   if (!r.wav) r.wav = bufferToWav(r.mix);
   await store.set('blob:' + id, r.wav);
-  lib.songs.unshift({ id, title, dur:r.mix.duration, created:Date.now(), isPublic:$('#songPublic').checked, allowSave:lib.profile.allowSaves, cover:r.cover || null });
+  lib.songs.unshift({ id, title, dur:r.mix.duration, created:Date.now(), isPublic:$('#songPublic').checked, allowSave:$('#songSave').checked, forSale:sell, price, desc:$('#songDesc').value.trim(), cover:r.cover || null });
   saveLib();
-  setStatus($('#status3'), 'Saved "' + title + '" to your songs in Studio. ' + (!$('#songPublic').checked ? 'It\'s private, so only you can hear it; change that in Profile.' : lib.profile.isPublic ? 'It\'s public on Discover; change that in Profile.' : 'It\'s public, but your account is private, so only people you approve can hear it.'), 'ok');
+  setStatus($('#status3'), 'Saved "' + title + '" to your songs in Studio. ' + (sell && $('#songPublic').checked ? 'It\'s for sale at ' + money(price) + '. ' : '') + (!$('#songPublic').checked ? 'It\'s private, so only you can hear it; change that in Profile.' : lib.profile.isPublic ? 'It\'s public on Discover; change that in Profile.' : 'It\'s public, but your account is private, so only people you approve can hear it.'), 'ok');
   showAd();
 });
 
@@ -4883,8 +5056,8 @@ function projectDoc(){
     activeLayer:state.activeLayer, playhead1:state.playhead1,
     markers:state.markers.filter((m) => m.text.trim()).map((m) => ({ id:m.id, t:m.t, end:m.end, text:m.text })),
     sfx2:state.sfx2.map((p) => ({ itemId:p.item.id, name:p.name, at:p.at })),
-    vibe:$('#vibe').value, artists:$('#artists').value, refLink:$('#refLink').value, variation:state.variation,
-    result:r && r.mixId ? { mixId:r.mixId, plan:r.plan, sfx:r.sfx.map((p) => ({ itemId:p.item.id, name:p.name, at:p.at })) } : null,
+    vibe:$('#vibe').value, songName:$('#songName').value, songDesc:$('#songDesc').value, artists:$('#artists').value, refLink:$('#refLink').value, variation:state.variation,
+    result:r && r.mixId ? { mixId:r.mixId, plan:r.plan, redos:r.redos || [], sfx:r.sfx.map((p) => ({ itemId:p.item.id, name:p.name, at:p.at })) } : null,
     pads:snapshot()
   };
 }
@@ -4919,7 +5092,7 @@ async function loadProject(doc, statusEl, landHome){
     state.playhead1 = doc.playhead1 || 0; state.sel1 = null;
     state.markers = (doc.markers || []).map((m) => Object.assign({ end:null }, m)); state.selMarker = null;
     state.sfx2 = (doc.sfx2 || []).map((p) => { const item = lib.sfx.find((x) => x.id === p.itemId); return item ? { id:uid('p'), item, name:p.name, at:p.at } : null; }).filter(Boolean);
-    $('#vibe').value = doc.vibe || ''; $('#artists').value = doc.artists || ''; $('#refLink').value = doc.refLink || ''; $('#refLink').hidden = !doc.refLink;
+    $('#vibe').value = doc.vibe || ''; $('#songName').value = doc.songName || ''; $('#songDesc').value = doc.songDesc || ''; $('#artists').value = doc.artists || ''; $('#refLink').value = doc.refLink || ''; $('#refLink').hidden = !doc.refLink;
     state.variation = doc.variation || 0;
     const ids = [0, ...state.layers.map((l) => l.id), ...state.clips.map((s) => s.id), ...state.markers.map((m) => m.id)].filter(Number.isFinite);
     nextId = Math.max(nextId, ...ids) + 1;
@@ -4931,7 +5104,7 @@ async function loadProject(doc, statusEl, landHome){
       const blob = await store.get('mix:' + doc.result.mixId);
       if (blob){
         const base = await decodeBlob(blob);
-        state.result = { base, mix:base, plan:doc.result.plan, sfx:[], video:null, wav:null, mixId:doc.result.mixId };
+        state.result = { base, mix:base, plan:doc.result.plan, sfx:[], video:null, wav:null, mixId:doc.result.mixId, redos:doc.result.redos || [] };
         state.result.sfx = doc.result.sfx.map((p) => { const item = lib.sfx.find((x) => x.id === p.itemId); return item ? { id:uid('p'), item, name:p.name, at:p.at } : null; }).filter(Boolean);
       }
     }
@@ -5070,7 +5243,7 @@ function renderDrafts(){
    ========================================================= */
 const EXAMPLES = [
   { id:'ex-nova', name:'Nova Reyes', handle:'novareyes', isPublic:true, verified:true, followers:12400, following:['ex-kw', 'ex-mari'], color:'#ec4899', bio:'Bedroom pop with too much echo.',
-    songs:[{ id:'ex-nova-1', title:'Late Bus Home', allowSave:true, desc:'Written on the last bus after a long shift. Headphones on.', melody:DEMO_SONG[0].melody.concat(DEMO_SONG[2].melody),
+    songs:[{ id:'ex-nova-1', title:'Late Bus Home', allowSave:true, forSale:true, price:1.29, desc:'Written on the last bus after a long shift. Headphones on.', melody:DEMO_SONG[0].melody.concat(DEMO_SONG[2].melody),
       plan:{ tempo:84, wave:'sawtooth', detune:9, reverbSec:3.4, wet:0.42, beat:false, scale:'minor', root:57, brightness:0.55, harmony:0.7, progression:[0,5,2,6], sections:[] } }],
     sfx:[{ id:'ex-nova-x1', name:'Tape riser', recipe:'riser', desc:'A warm tape swell that lifts into a drop. Made on a cassette deck and a lot of patience.', forSale:true, price:1.99 }, { id:'ex-nova-x2', name:'Vinyl crackle', recipe:'crackle', forSale:false, price:0 }] },
   { id:'ex-kw', name:'DJ Kilowatt', handle:'djkilowatt', isPublic:true, verified:true, followers:48900, following:['ex-nova'], color:'#14b8a6', bio:'Club edits and one-shots you can hit.',
@@ -5161,7 +5334,7 @@ const copyMsg = (p) => 'This sound belongs to @' + p.c.handle + ' ("' + p.x.name
 function me(){
   const pr = lib.profile;
   return { id:'me', mine:true, photo:pr.photo || null, banner:pr.banner || null, name:pr.name.trim() || 'Your profile', handle:pr.handle.trim() || 'you', isPublic:pr.isPublic, verified:lib.verify.status === 'verified', color:'#8b5cf6', bio:pr.bio,
-    songs:lib.songs.filter((s) => s.isPublic).map((s) => Object.assign({ mine:true }, s)),
+    songs:lib.songs.filter((s) => s.isPublic).map((s) => Object.assign({ mine:true }, s, { forSale:!!s.forSale && lib.premium })),
     sfx:lib.sfx.filter((s) => s.isPublic && (s.source === 'take' || s.source === 'file')).map((s) => Object.assign({ mine:true }, s, { forSale:s.forSale && pr.sellSfx && lib.premium })) };
 }
 function creators(){ const m = me(); return (m.isPublic ? [m] : []).concat(EXAMPLES); }
@@ -5210,13 +5383,19 @@ function saveFlag(s, c){
 function songRow(s, c){
   const play = playIconBtn('Play ' + s.title);
   play.addEventListener('click', () => { if (pv.key !== 'song:' + s.id) track('play', 'song:' + s.id); previewToggle('song:' + s.id, () => s.mine ? store.get('blob:' + s.id).then(decodeBlob) : exampleSongBuffer(s), play); });
-  let action;
-  if (s.mine) action = h('span', { class:'tag' }, 'Yours');
-  else if (!s.allowSave) action = h('span', { class:'tag muted' }, 'Listen only');
-  else action = saveFlag(s, c);
+  const action = songAction(s, c);
   return tapRow(h('div', { class:'item' }, s.cover ? h('img', { class:'cover cover-sm', src:s.cover, alt:'' }) : null, play,
     h('div', { class:'item-main' }, h('span', { class:'item-title', text:s.title }), h('span', { class:'item-meta', text:'Song · ' + c.name + ' · ' + lenTxt(s.mine ? (s.dur || 0) : exampleDur(s)) })),
     h('div', { class:'row-acts' }, likeBtn('song', s, c), action)), () => openDetails('song', s, c));
+}
+const boughtSong = (id) => lib.purchases.some((p) => p.id === id);
+const priceBtn = (x, c, name) => h('button', { type:'button', class:'btn small price-btn', 'aria-label':'Buy ' + name + ' for ' + money(x.price), onclick:() => { closeDetails(); openCheckout(x, c); } }, h('span', { class:'cur', text:'$' }), (+x.price).toFixed(2));
+function songAction(s, c){
+  if (s.mine) return h('span', { class:'tag' }, s.forSale ? money(s.price) + ' · yours' : 'Yours');
+  if (s.forSale && !boughtSong(s.id)) return priceBtn(s, c, s.title);
+  if (boughtSong(s.id)) return h('span', { class:'tag' }, 'Bought');
+  if (!s.allowSave) return h('span', { class:'tag muted' }, 'Listen only');
+  return saveFlag(s, c);
 }
 // tap anywhere on a song or sound (but its buttons) to see its details and who made it
 function tapRow(row, open){
@@ -5255,7 +5434,7 @@ function openDetails(kind, x, c){
   const len = h('span', { class:'item-meta', text:song ? 'Length · ' + lenTxt(x.mine ? (x.dur || 0) : exampleDur(x)) : '' });
   if (!song) sfxLen(x, len, 'Length');
   let action;
-  if (song) action = x.mine ? h('span', { class:'tag' }, 'Yours') : !x.allowSave ? h('span', { class:'tag muted' }, 'Listen only') : saveFlag(x, c);
+  if (song) action = songAction(x, c);
   else {
     action = sfxAction(x, c);
     if (action.tagName === 'BUTTON' && x.forSale && !x.mine && !owned(x.id)) action.onclick = () => { closeDetails(); openCheckout(x, c); };
@@ -5436,7 +5615,7 @@ let checkoutItem = null;
 function openCheckout(x, c){
   checkoutItem = { x, c };
   const fee = x.price * FEE;
-  $('#sheetItem').textContent = '"' + x.name + '" by ' + c.name;
+  $('#sheetItem').textContent = '"' + (x.name || x.title) + '" by ' + c.name;
   $('#rPrice').textContent = money(x.price); $('#rFee').textContent = money(fee); $('#rCreator').textContent = money(x.price - fee);
   $('#sheet').hidden = false; $('#sheetBuy').focus();
 }
@@ -5447,6 +5626,12 @@ document.addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if
 $('#sheetBuy').addEventListener('click', async () => {
   if (!checkoutItem) return;
   const { x, c } = checkoutItem, fee = x.price * FEE;
+  if (x.title){
+    // a song: it goes to your Saved songs
+    lib.purchases.unshift({ id:x.id, name:x.title, kind:'song', from:c.name, price:x.price, fee, at:Date.now() }); track('buy', 'song:' + x.id);
+    if (!lib.saved.some((y) => y.id === x.id)) lib.saved.unshift({ kind:'song', id:x.id, title:x.title, from:c.name, creator:c.id });
+    saveLib(); closeCheckout(); renderDiscover(); if (!$('#pubView').hidden) renderPublicView(); showAd(); return;
+  }
   lib.purchases.unshift({ id:x.id, name:x.name, from:c.name, price:x.price, fee, at:Date.now() }); track('buy', 'sfx:' + x.id);
   await addSfxToLib({ name:x.name, recipe:x.recipe, source:'bought', from:c.name, origin:x.id, price:x.price });
   closeCheckout(); renderDiscover(); showAd();
@@ -5636,6 +5821,11 @@ function deleteBtn(onconfirm){
   });
   return b;
 }
+function songPriceIn(s){
+  const i = h('input', { type:'number', class:'text price', min:'0.49', max:'49.99', step:'0.01', value:(+s.price || 1.29).toFixed(2), 'aria-label':'Price for ' + s.title });
+  i.addEventListener('change', () => { s.price = clamp(+i.value || 1.29, 0.49, 49.99); i.value = s.price.toFixed(2); saveLib(); });
+  return h('span', { class:'price-wrap' }, '$', i);
+}
 // a short description people see when they tap your song or sound on Discover
 function descField(it){
   const t = h('textarea', { class:'text desc-in', rows:'2', maxlength:'300', placeholder:'Description (shows when people tap it on Discover)', 'aria-label':'Description for ' + (it.title || it.name) });
@@ -5667,7 +5857,9 @@ function renderProfile(){
       deleteBtn(() => { lib.songs = lib.songs.filter((x) => x !== s); store.del('blob:' + s.id); saveLib(); renderProfile(); }),
       h('div', { class:'item-ctl' },
         miniSwitch('Public', s.isPublic, (v) => { s.isPublic = v; saveLib(); }),
-        miniSwitch('Others can save it', s.allowSave, (v) => { s.allowSave = v; saveLib(); })),
+        miniSwitch('Others can save it', s.allowSave, (v) => { s.allowSave = v; saveLib(); }),
+        lib.premium ? miniSwitch('For sale', !!s.forSale, (v) => { s.forSale = v; if (!s.price) s.price = 1.29; saveLib(); renderProfile(); }) : null,
+        s.forSale && lib.premium ? songPriceIn(s) : null),
       descField(s));
   });
   $('#pSongs').replaceChildren(...(songs.length ? songs : [h('p', { class:'hint' }, 'No songs yet. Make one in Studio, then press Save to my songs.')]));
@@ -5948,9 +6140,10 @@ const TOURS = {
   ],
   p3:[
     { sel:'#viz', title:'Your song', text:'Play it and drag the slider to move around.' },
-    { sel:'#regenBtn', title:'Regenerate', text:'Not quite right? Get a new arrangement of the same singing.' },
-    { sel:'#keepPanel', title:'Keep it', text:'Add an album photo, pick Public (on Discover) or Private (just you), then save it to your songs. Or save a draft and name it to finish later.' },
-    { sel:'#saveAudio', title:'Save to your phone', text:'On a phone this opens the share menu: Save Video puts it in your camera roll, Save to Files keeps the audio.' }
+    { sel:'#fixPanel', title:'Redo a part', text:'Tap the wave to highlight a part you don\'t like, drag the round knobs to fit it exactly, and press Redo this part. Only that part changes, and it keeps your key, tempo and chords so it blends in. Up to 5 redos per part; Undo last redo puts it back.' },
+    { sel:'#regenBtn', title:'Regenerate the whole song', text:'Not quite right anywhere? Get a whole new arrangement of the same singing.' },
+    { sel:'#keepPanel', title:'Publish', text:'Name your song, write a description, add an album photo, and pick Public (on Discover) or Private (just you). Choose whether people can save it, or sell it (Premium). Then save it to your songs, or save a draft to finish later.' },
+    { sel:'#saveAudio', title:'Download', text:'Save the audio or a video. On a phone this opens the share menu: Save Video puts it in your camera roll, Save to Files keeps the audio.' }
   ],
   discover:[
     { sel:'#dFilters', title:'Discover', text:'Search creators, songs and sounds. Creators marked Example are made up to show how this works; your own public songs and sounds show up here too.' },
@@ -6072,8 +6265,9 @@ function renderHome(){
   $('#homeLibrary').replaceChildren(...(songs.length ? songs.map((s) => {
     const cov = coverEl(s.title, s.cover);
     cov.append(playBtn('lib:' + s.id, s.title, () => store.get('blob:' + s.id).then(decodeBlob)));
-    const pick = h('button', { type:'button', class:'linkish', onclick:() => { coverTarget = s; $('#coverPickLib').click(); } }, s.cover ? 'Change album photo' : 'Add album photo');
-    return h('div', { class:'song-card' }, cov, h('span', { class:'item-title', text:s.title }), h('span', { class:'item-meta', text:fmt(s.dur) }), pick);
+    const pick = h('button', { type:'button', class:'linkish card-photo', onclick:() => { coverTarget = s; $('#coverPickLib').click(); } }, s.cover ? 'Change album photo' : 'Add album photo');
+    // the album photo button sits to the right of how long the song is
+    return h('div', { class:'song-card' }, cov, h('span', { class:'item-title', text:s.title }), h('div', { class:'card-row' }, h('span', { class:'item-meta', text:fmt(s.dur) }), pick));
   }) : [h('p', { class:'hint', style:'grid-column:1/-1' }, 'Finished songs you save show up here. Tap Create new to make your first one.')]));
 }
 $('#coverPickLib').addEventListener('change', async (e) => {
@@ -6102,7 +6296,7 @@ function resetProject(){
   if (state.recView){ state.recView = false; setRecUI(); }
   stopAllPlayback();
   Object.assign(state, { layers:[{ id:nextId++, segs:[] }], activeLayer:0, playhead1:0, sel1:null, zoom1:0, span1:6, markers:[], sfx2:[], selMarker:null, playhead2:0, result:null, variation:0, workPage:1 });
-  takeCount = 0; $('#vibe').value = ''; $('#artists').value = ''; $('#refLink').value = ''; $('#refLink').hidden = true; state.ref = null; $('#refInfo').textContent = ''; $('#refPlay').hidden = true; $('#refClear').hidden = true; $('#mkEditor').hidden = true;
+  takeCount = 0; $('#vibe').value = ''; $('#songName').value = ''; $('#songDesc').value = ''; $('#songSell').checked = false; $('#songSave').checked = lib.profile.allowSaves !== false; fix.on = false; $('#artists').value = ''; $('#refLink').value = ''; $('#refLink').hidden = true; state.ref = null; $('#refInfo').textContent = ''; $('#refPlay').hidden = true; $('#refClear').hidden = true; $('#mkEditor').hidden = true;
   resetPads(); state.keyFrom = null; setKey('60:chromatic'); rec.live = [];
   ['#status1', '#status2', '#status3'].forEach((s) => setStatus($(s), ''));
   renderClips(); renderMarkerList();
@@ -6131,6 +6325,20 @@ function paintCoverThumb(){
   $('#coverThumb').replaceChildren(r && r.cover ? h('img', { src:r.cover, alt:'' }) : h('span', { class:'cover-mark', 'aria-hidden':'true' }, icon('note')));
   $('#coverLabel').firstChild.textContent = r && r.cover ? 'Change' : 'Add';
 }
+// Publish: selling a song is part of Premium
+function songKeep(){ $('#songKeep').textContent = 'You keep ' + money(clamp(+$('#songPrice').value || 1.29, 0.49, 49.99) * (1 - FEE)); }
+function renderPublishOpts(){
+  $('#songSellTag').hidden = lib.premium;
+  if (!lib.premium) $('#songSell').checked = false;
+  $('#songPriceRow').hidden = !$('#songSell').checked; songKeep();
+}
+$('#songSell').addEventListener('change', (e) => {
+  if (e.target.checked && !lib.premium){ e.target.checked = false; openPremium('Selling songs is part of Premium.'); return; }
+  renderPublishOpts();
+});
+$('#songPrice').addEventListener('input', songKeep);
+$('#songPrice').addEventListener('change', () => { $('#songPrice').value = clamp(+$('#songPrice').value || 1.29, 0.49, 49.99).toFixed(2); songKeep(); });
+['#songName', '#songDesc'].forEach((sel) => $(sel).addEventListener('input', () => { scheduleAutosave(); if (sel === '#songName') paintIdle(); }));
 $('#coverFile').addEventListener('change', async (e) => {
   const f = e.target.files && e.target.files[0]; e.target.value = '';
   if (!f || !state.result) return;
