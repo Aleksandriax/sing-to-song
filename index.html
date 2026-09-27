@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#100c1b">
+<meta name="color-scheme" content="dark">
 <title>Sing to Song</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%238b5cf6'/%3E%3Cstop offset='1' stop-color='%23ec4899'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M3.5 23 Q 6 20.5 8 23.5 Q 10 26.5 14 26.5 C 19 26.5 22 24 21.5 20.5 C 21 16.5 11 17.5 10.5 12 C 10 7.5 15 6 18.5 6.5 Q 21.5 7 22.8 9.2 Q 24.5 11.5 28 4.5' fill='none' stroke='url(%23g)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,24 +19,6 @@
   --wave-bg:#c7dbff; --wave-fill:#1e3a8a; --playhead:#db2777; --tuned:#ec4899;
   --glow:rgba(236,72,153,.32);
   color-scheme:dark;
-}
-@media (prefers-color-scheme: light){
-  :root:not([data-theme="dark"]){
-    --bg:#f6f3fb; --surface:#ffffff; --surface-2:#f0eaf8; --line:#e0d6ef;
-    --text:#1d1631; --muted:#65597d; --faint:#8c80a6;
-    --accent-a:#7c3aed; --accent-b:#db2777; --focus:#a21caf;
-    --err:#be123c; --err-bg:rgba(190,18,60,.08); --ok:#15803d;
-    --glow:rgba(219,39,119,.22);
-    color-scheme:light;
-  }
-}
-:root[data-theme="light"]{
-  --bg:#f6f3fb; --surface:#ffffff; --surface-2:#f0eaf8; --line:#e0d6ef;
-  --text:#1d1631; --muted:#65597d; --faint:#8c80a6;
-  --accent-a:#7c3aed; --accent-b:#db2777; --focus:#a21caf;
-  --err:#be123c; --err-bg:rgba(190,18,60,.08); --ok:#15803d;
-  --glow:rgba(219,39,119,.22);
-  color-scheme:light;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -102,7 +86,7 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .ed-wrap{position:relative}
 .ed-wrap canvas{display:block;width:100%;height:150px;touch-action:pan-y;cursor:pointer}
 .ed-tools{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.ed-tools .btn{padding:0 4px;font-size:13px}
+.ed-tools .btn{padding:0 4px;font-size:13px;white-space:nowrap}
 .ed-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .danger-link{color:var(--err)}
 .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
@@ -119,7 +103,24 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .ad-card{border-radius:14px;padding:22px 18px;background:linear-gradient(135deg,#1a0b2e,#3b0d33);color:#f3eefb}
 .ad-card h2{font-size:22px;margin:0 0 6px;color:#fff}
 .ad-card p{margin:0;color:#d9cff0}
-.back-top{appearance:none;align-self:flex-start;border:0;background:none;color:var(--accent-b);font:inherit;font-size:14px;font-weight:600;cursor:pointer;padding:4px 0;margin-bottom:-8px}
+.onboard{position:fixed;inset:0;z-index:55;background:var(--bg);overflow-y:auto;padding-inline:16px;padding-block:calc(28px + env(safe-area-inset-top)) calc(28px + env(safe-area-inset-bottom))}
+.onboard-inner{max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.ob-logo{width:52px;height:52px}
+.ob-photo{display:flex;align-items:center;gap:14px}
+.ob-photo .avatar{width:64px;height:64px;font-size:26px}
+.tour{position:fixed;inset:0;z-index:60}
+.tour-spot{position:fixed;border-radius:16px;box-shadow:0 0 0 9999px rgba(8,5,16,.74),0 0 0 3px var(--accent-b);pointer-events:none;transition:left .25s,top .25s,width .25s,height .25s}
+.tour-spot.none{box-shadow:0 0 0 9999px rgba(8,5,16,.74)}
+.tour-card{position:fixed;left:16px;right:16px;max-width:448px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:6px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.tour-card h2{font-size:20px}
+.tour-card p{margin:0;font-size:15px;color:var(--text)}
+.tour-count{font-size:12px;color:var(--accent-b)}
+.tour-actions{display:flex;align-items:center;gap:8px;margin-top:6px}
+.tour-actions .spacer{flex:1}
+.help-btn{margin-top:4px}
+@media (prefers-reduced-motion: reduce){ .tour-spot{transition:none} }
+.back-top{appearance:none;align-self:flex-start;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);cursor:pointer;padding:0;margin-bottom:-6px}
+.back-top svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .pad-sub{position:relative;font-size:12px;color:var(--muted)}
 .pad.on{background:var(--pad);border-color:var(--pad);color:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--pad) 30%,transparent),0 10px 26px color-mix(in srgb,var(--pad) 45%,transparent)}
 .pad.on .pad-sub{color:rgba(255,255,255,.9)}
@@ -304,7 +305,7 @@ legend{padding:0}
 <body>
 <div class="app">
   <header class="topbar">
-    <div class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="logoGrad" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><path d="M3.5 23 Q 6 20.5 8 23.5 Q 10 26.5 14 26.5 C 19 26.5 22 24 21.5 20.5 C 21 16.5 11 17.5 10.5 12 C 10 7.5 15 6 18.5 6.5 Q 21.5 7 22.8 9.2 Q 24.5 11.5 28 4.5" fill="none" stroke="url(#logoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Sing to Song<span id="modeChip" class="mode-chip">Creator mode</span></div>
+    <div class="brand"><svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="logoGrad" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><path d="M3.5 23 Q 6 20.5 8 23.5 Q 10 26.5 14 26.5 C 19 26.5 22 24 21.5 20.5 C 21 16.5 11 17.5 10.5 12 C 10 7.5 15 6 18.5 6.5 Q 21.5 7 22.8 9.2 Q 24.5 11.5 28 4.5" fill="none" stroke="url(#logoGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Sing to Song</div>
     <nav class="steps-nav" id="stepsNav" aria-label="Creator steps">
       <button type="button" class="step-tab" id="tab1" data-page="1" aria-current="step"><span>Step 1</span>Record &amp; cut</button>
       <button type="button" class="step-tab" id="tab2" data-page="2" disabled><span>Step 2</span>Notes &amp; vibe</button>
@@ -372,7 +373,7 @@ legend{padding:0}
 
   <!-- STEP 2 -->
   <main id="page2" class="page" hidden>
-    <button type="button" class="back-top" data-to="1">← Back to Record &amp; cut</button>
+    <button type="button" class="back-top" data-to="1" aria-label="Back to Record and cut"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div>
       <h1>Notes &amp; vibe</h1>
       <p class="lede">Scroll through your song. Tap the wave, then tap + to pin a note for the AI. Give it a duration to cover a whole section.</p>
@@ -473,12 +474,11 @@ legend{padding:0}
       </ul>
     </aside>
 
-    <div class="actions"><button type="button" id="back1" class="btn">Back</button></div>
   </main>
 
   <!-- STEP 3 -->
   <main id="page3" class="page" hidden>
-    <button type="button" class="back-top" data-to="2">← Back to Notes &amp; vibe</button>
+    <button type="button" class="back-top" data-to="2" aria-label="Back to Notes and vibe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div>
       <h1>Listen &amp; save</h1>
       <p class="lede">Play your song. Regenerate for a different arrangement, or save it.</p>
@@ -520,7 +520,6 @@ legend{padding:0}
     </div>
     <p id="saveHint" class="hint">Saving a video plays the whole song once while it records. Some browsers, including some iOS Safari versions, can't record video.</p>
     <div class="actions">
-      <button type="button" id="back2" class="btn">Back to notes</button>
       <button type="button" id="restartBtn" class="btn danger">Start over</button>
     </div>
   </main>
@@ -600,7 +599,47 @@ legend{padding:0}
       <div id="pEarn" class="stats"></div>
       <p class="hint">Sales show up here once real accounts and payments are connected. Purchases in this preview are test purchases.</p>
     </section>
+    <button type="button" id="helpBtn" class="btn big help-btn">Need help? Show me how it works</button>
   </main>
+</div>
+
+<div id="onboard" class="onboard" hidden>
+  <div class="onboard-inner">
+    <svg class="ob-logo" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="obGrad" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#8b5cf6"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><path d="M3.5 23 Q 6 20.5 8 23.5 Q 10 26.5 14 26.5 C 19 26.5 22 24 21.5 20.5 C 21 16.5 11 17.5 10.5 12 C 10 7.5 15 6 18.5 6.5 Q 21.5 7 22.8 9.2 Q 24.5 11.5 28 4.5" fill="none" stroke="url(#obGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <h1>Create your profile</h1>
+    <p class="lede">Sing, add effects, and let the AI build a song around your voice. First, tell people who you are.</p>
+    <div class="ob-photo">
+      <div id="obAvatar"></div>
+      <label class="linkish file-pick" id="obPhotoLabel">Add a photo<input id="obPhoto" class="sr-only" type="file" accept="image/*"></label>
+    </div>
+    <div>
+      <label class="label" for="obName">Your name</label>
+      <input id="obName" class="text" type="text" maxlength="40" autocomplete="name" placeholder="What should people call you?">
+    </div>
+    <div>
+      <label class="label" for="obHandle">Username</label>
+      <div class="handle"><span aria-hidden="true">@</span><input id="obHandle" class="text" type="text" maxlength="30" autocapitalize="none" autocomplete="username" spellcheck="false" placeholder="username"></div>
+    </div>
+    <label class="switch" for="obPublic"><span>Public account<small>People can find you and your public songs on Discover. You can change this later.</small></span><input type="checkbox" id="obPublic" role="switch" checked></label>
+    <p id="obNote" class="status" role="status"></p>
+    <button type="button" id="obCreate" class="btn primary big">Create profile</button>
+    <p class="hint" style="text-align:center">Your profile is saved on this device.</p>
+  </div>
+</div>
+
+<div id="tour" class="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+  <div id="tourSpot" class="tour-spot"></div>
+  <div id="tourCard" class="tour-card">
+    <span id="tourCount" class="tour-count mono"></span>
+    <h2 id="tourTitle"></h2>
+    <p id="tourText"></p>
+    <div class="tour-actions">
+      <button type="button" id="tourSkip" class="linkish">Skip tour</button>
+      <span class="spacer"></span>
+      <button type="button" id="tourBack" class="btn small">Back</button>
+      <button type="button" id="tourNext" class="btn small primary">Next</button>
+    </div>
+  </div>
 </div>
 
 <nav class="tabbar" aria-label="Sections">
@@ -684,8 +723,24 @@ function ctx(){
     if (!C) throw new Error('This browser has no Web Audio support, so it can\'t process sound.');
     actx = new C();
   }
-  if (actx.state === 'suspended') actx.resume().catch(() => {});
+  if (actx.state !== 'running') actx.resume().catch(() => {});
   return actx;
+}
+// iPhone: 'playback' lets sound play with the silent switch on and through the speaker;
+// 'play-and-record' is only used while the microphone is on.
+function audioSession(type){ try { if (navigator.audioSession) navigator.audioSession.type = type; } catch (e) {} }
+audioSession('playback');
+{
+  // the first touch anywhere wakes the phone's audio (plays one silent sample)
+  const unlock = () => {
+    try {
+      const c = ctx(), b = c.createBuffer(1, 1, c.sampleRate), s = c.createBufferSource();
+      s.buffer = b; s.connect(c.destination); s.start(0);
+    } catch (e) {}
+    if (actx && actx.state === 'running'){ document.removeEventListener('pointerdown', unlock, true); document.removeEventListener('touchend', unlock, true); }
+  };
+  document.addEventListener('pointerdown', unlock, true);
+  document.addEventListener('touchend', unlock, true);
 }
 function offline(ch, len, sr){
   const O = window.OfflineAudioContext || window.webkitOfflineAudioContext;
@@ -1112,9 +1167,12 @@ async function startRecording(){
   try {
     const c = ctx();
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw Object.assign(new Error('no api'), { name:'NoApi' });
-    const stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:true } });
+    // with other layers playing through the phone speaker, echo cancellation keeps them out of the new recording
+    const backingPlays = state.layers.length > 1 && state.layers.some((l, i) => i !== state.activeLayer && l.segs.length);
+    audioSession('play-and-record');
+    const stream = await navigator.mediaDevices.getUserMedia({ audio:{ echoCancellation:backingPlays, noiseSuppression:false, autoGainControl:true } });
     rec.stream = stream;
-    if (c.state === 'suspended') await c.resume();
+    if (c.state !== 'running') await c.resume();
     rec.src = c.createMediaStreamSource(stream);
     rec.monitor = c.createGain(); rec.monitor.gain.value = state.monitor ? 1 : 0; rec.monitor.connect(c.destination);
     rec.chunks = []; rec.events = []; rec.live = []; rec.count = 0;
@@ -1124,9 +1182,18 @@ async function startRecording(){
       rec.node = node; rec.src.connect(node); node.connect(rec.monitor);
       node.port.postMessage({ type:'key', params:keyParams() });
       node.port.postMessage({ type:'start', params:padParams() });
-    } else {
+    } else useScriptProcessor(c);
+    rec.state = 'recording';
+    finishStart(c);
+  } catch (err){
+    cleanupRec(); audioSession('playback'); rec.state = 'idle'; rec.startedByPress = false; setRecUI();
+    setStatus($('#status1'), micError(err), 'error');
+  }
+}
+function useScriptProcessor(c){
+      if (rec.node){ try { rec.node.disconnect(); } catch (e) {} rec.node.port.onmessage = null; rec.node = null; }
       const eng = new Engine(c.sampleRate); rec.engine = eng; eng.set(keyParams()); eng.set(padParams());
-      rec.events.push({ at:0, params:padParams() });
+      rec.events = [{ at:0, params:padParams() }]; rec.chunks = []; rec.count = 0;
       const sp = c.createScriptProcessor(2048, 1, 1); rec.sp = sp;
       sp.onaudioprocess = (e) => {
         const inp = e.inputBuffer.getChannelData(0), out = e.outputBuffer.getChannelData(0);
@@ -1136,7 +1203,8 @@ async function startRecording(){
         eng.peak = 0;
       };
       rec.src.connect(sp); sp.connect(rec.monitor);
-    }
+}
+function finishStart(c){
     // where this recording goes, and the other layers to sing along to
     rec.layer = state.activeLayer;
     const lane0End = state.layers[0].segs.reduce((d, s) => Math.max(d, segEnd(s)), 0);
@@ -1150,6 +1218,8 @@ async function startRecording(){
     rec.timer = setInterval(() => {
       const el = (performance.now() - rec.t0) / 1000;
       recTime.textContent = fmt(el) + ' / 10:00';
+      // some phones never run the audio worklet: switch to the other method after 1.5 s of nothing
+      if (rec.node && el > 1.5 && !rec.chunks.length && rec.state === 'recording'){ useScriptProcessor(c); rec.t0 = performance.now(); }
       if (el >= MAX_SEC && rec.state === 'recording'){ rec.hitLimit = true; stopRecording(); }
     }, 200);
     setRecUI();
@@ -1160,10 +1230,6 @@ async function startRecording(){
     };
     rec.raf = requestAnimationFrame(loop);
     if (rec.stopWanted) stopRecording();
-  } catch (err){
-    cleanupRec(); rec.state = 'idle'; rec.startedByPress = false; setRecUI();
-    setStatus($('#status1'), micError(err), 'error');
-  }
 }
 async function stopRecording(){
   if (rec.state === 'starting'){ rec.stopWanted = true; return; }
@@ -1172,13 +1238,19 @@ async function stopRecording(){
   if (rec.node) await new Promise((res) => { rec.stopWait = res; rec.node.port.postMessage({ type:'stop' }); setTimeout(res, 800); });
   const sr = ctx().sampleRate, chunks = rec.chunks, events = rec.events.slice().sort((a, b) => a.at - b.at);
   if (rec.backing){ rec.backing.nodes.forEach((n) => { try { n.stop(); } catch (e) {} }); rec.backing = null; }
-  cleanupRec();
+  cleanupRec(); audioSession('playback'); ctx();
   rec.state = 'idle'; rec.startedByPress = false; setRecUI(); recTime.textContent = '0:00';
   const total = chunks.reduce((s, c) => s + c.length, 0);
   const raw = new Float32Array(total); let o = 0; for (const c of chunks){ raw.set(c, o); o += c.length; }
   if (raw.length < sr * 0.3){
     rec.live = []; drawEditor();
     setStatus($('#status1'), 'That recording was too short to use. Record at least half a second.', 'error'); return;
+  }
+  let rawPeak = 0; for (let i = 0; i < raw.length; i += 16){ const v = Math.abs(raw[i]); if (v > rawPeak) rawPeak = v; }
+  if (rawPeak < 0.001){
+    rec.live = []; drawEditor();
+    setStatus($('#status1'), 'That recording was silent, so the microphone didn\'t send any sound. Check that this site is allowed to use the microphone (on iPhone: Settings, then Safari, then Microphone; on Android: tap the lock next to the address), then reload the page and try again.', 'error');
+    return;
   }
   const layerNo = rec.layer + 1;
   await placeRecording(raw, sr, events.length ? events : [{ at:0, params:Object.assign({}, NEUTRAL) }]);
@@ -1363,7 +1435,7 @@ $('#monitorBtn').addEventListener('click', () => {
   $('#monitorBtn').setAttribute('aria-pressed', state.monitor ? 'true' : 'false');
   $('#monitorBtn').textContent = 'Hear yourself: ' + (state.monitor ? 'on' : 'off');
   if (rec.monitor) rec.monitor.gain.value = state.monitor ? 1 : 0;
-  if (state.monitor) setStatus($('#status1'), 'You\'ll hear yourself with the effects while recording. Use headphones, or your speakers will feed back.', 'ok');
+  if (state.monitor) setStatus($('#status1'), 'You\'ll hear yourself with the effects while you record. This one needs headphones (wired or Bluetooth); without them the phone speaker feeds back into the mic. Everything else works with just your phone.', 'ok');
 });
 
 async function setKey(k, statusEl){
@@ -1615,7 +1687,7 @@ function edReadouts(){
   $('#edRemoveLayer').textContent = 'Remove layer ' + (state.activeLayer + 1);
   const where = (state.layers.length > 1 ? 'layer ' + (state.activeLayer + 1) : 'your song') + ' at ' + fmtT(state.activeLayer === 0 ? Math.min(state.playhead1, state.layers[0].segs.reduce((d, s) => Math.max(d, segEnd(s)), 0)) : state.playhead1);
   $('#edHint').textContent = !has ? 'Press record and sing. Your wave draws here.' :
-    'Recording goes into ' + where + '. Tap the wave to move there. Drag across it to select a part.' + (state.activeLayer > 0 ? ' You\'ll hear the other layers while you record, so use headphones.' : '');
+    'Recording goes into ' + where + '. Tap the wave to move there. Drag across it to select a part.' + (state.activeLayer > 0 ? ' The other layers play while you record. Just your phone works; headphones keep them out of your recording completely.' : '');
   $('#toStep2').textContent = has ? 'Continue' : 'Continue with a demo song';
   updateTabs();
 }
@@ -1688,7 +1760,7 @@ $('#edLayer').addEventListener('click', () => {
   if (state.layers.length >= MAX_LAYERS) return;
   state.layers.push({ id:nextId++, segs:[] });
   state.activeLayer = state.layers.length - 1; state.sel1 = null;
-  setStatus($('#status1'), 'Layer ' + state.layers.length + ' added. Move to where it should start and press record. The other layers play while you record, so wear headphones.', 'ok');
+  setStatus($('#status1'), 'Layer ' + state.layers.length + ' added. Move to where it should start and press record. The other layers play from your phone while you record, and it filters them out of your voice (headphones do it perfectly).', 'ok');
   renderClips();
 });
 {
@@ -2418,7 +2490,7 @@ function setProgress(step, frac, label){
 }
 function setBusy(b){
   state.busy = b;
-  ['#genBtn', '#regenBtn', '#saveAudio', '#saveVideo', '#back1', '#back2', '#restartBtn'].forEach((s) => { $(s).disabled = b; });
+  ['#genBtn', '#regenBtn', '#saveAudio', '#saveVideo', '#restartBtn'].forEach((s) => { $(s).disabled = b; });
   if (!b && !videoMime()) $('#saveVideo').disabled = true;
   $('#genBtn').textContent = b ? 'Generating…' : 'Generate song';
   $('#regenBtn').textContent = b ? 'Working…' : 'Regenerate';
@@ -3315,7 +3387,6 @@ $('#pSfxFile').addEventListener('change', async (e) => {
    ========================================================= */
 function setTab(sec){
   document.querySelectorAll('.tab').forEach((t) => { if (t.dataset.sec === sec) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); });
-  $('#modeChip').hidden = sec !== 'create';
 }
 function showSection(sec){
   if (rec.state !== 'idle' || state.busy) return;
@@ -3330,6 +3401,98 @@ function showSection(sec){
   window.scrollTo(0, 0);
 }
 document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => showSection(t.dataset.sec)));
+
+/* =========================================================
+   First visit: create your profile, then a quick tour.
+   The tour can be replayed from "Need help?" at the bottom of Profile.
+   ========================================================= */
+async function cropPhoto(file){
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const side = Math.min(img.naturalWidth, img.naturalHeight), cv = document.createElement('canvas'); cv.width = cv.height = 256;
+    cv.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, 256, 256);
+    return cv.toDataURL('image/jpeg', 0.85);
+  } finally { URL.revokeObjectURL(url); }
+}
+const needsProfile = () => !(lib.profile.name.trim() && lib.profile.handle.trim());
+let obPhoto = null;
+function paintObAvatar(){ $('#obAvatar').replaceChildren(avatar({ name:$('#obName').value || '?', color:'#8b5cf6', photo:obPhoto })); $('#obPhotoLabel').firstChild.textContent = obPhoto ? 'Change photo' : 'Add a photo'; }
+function showOnboarding(){
+  obPhoto = lib.profile.photo || null;
+  $('#obName').value = lib.profile.name; $('#obHandle').value = lib.profile.handle; $('#obPublic').checked = lib.profile.isPublic !== false;
+  setStatus($('#obNote'), ''); paintObAvatar();
+  $('#onboard').hidden = false; document.body.style.overflow = 'hidden';
+  setTimeout(() => $('#obName').focus(), 50);
+}
+$('#obName').addEventListener('input', paintObAvatar);
+$('#obHandle').addEventListener('input', (e) => { const v = e.target.value.replace(/[^a-z0-9_.]/gi, '').slice(0, 30); if (v !== e.target.value) e.target.value = v; });
+$('#obPhoto').addEventListener('change', async (e) => {
+  const f = e.target.files && e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  try { obPhoto = await cropPhoto(f); paintObAvatar(); setStatus($('#obNote'), ''); }
+  catch (err){ setStatus($('#obNote'), 'That file couldn\'t be used as a photo. Try a JPG or PNG.', 'error'); }
+});
+$('#obCreate').addEventListener('click', () => {
+  const name = $('#obName').value.trim(), handle = $('#obHandle').value.trim();
+  if (!name){ setStatus($('#obNote'), 'Add your name.', 'error'); $('#obName').focus(); return; }
+  if (handle.length < 3){ setStatus($('#obNote'), 'Pick a username with at least 3 letters or numbers.', 'error'); $('#obHandle').focus(); return; }
+  if (EXAMPLES.some((c) => c.handle.toLowerCase() === handle.toLowerCase())){ setStatus($('#obNote'), '@' + handle + ' is taken. Pick another username.', 'error'); $('#obHandle').focus(); return; }
+  Object.assign(lib.profile, { name, handle, isPublic:$('#obPublic').checked, photo:obPhoto });
+  saveLib();
+  $('#onboard').hidden = true; document.body.style.overflow = '';
+  startTour();
+});
+
+const TOUR = [
+  { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
+  { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to move the playhead, drag across it to pick a part, then Split, Duplicate or Delete. Record again and it continues from the playhead. + Layer stacks up to 4 layers.' },
+  { sel:'#pads', title:'Voice effects', text:'Tap a pad to turn it on or off while you sing. Hold one and slide up for more, down for less.' },
+  { sel:'#presets', title:'Presets', text:'Tap an empty slot to save the pads you like. Tap it later to bring them back.' },
+  { sel:'#toStep2', title:'Next: notes and vibe', text:'Scroll your song and tap + to pin a note for the AI, like "beat drops here". Describe the vibe and artists you like. The key, tempo and chords come from your voice.' },
+  { sel:null, title:'Then: listen and save', text:'Generate your song, play it, regenerate for a new version, add sound effects, and save the audio, a video, or a draft to finish later. Your work saves itself as you go.' },
+  { sel:'.tab[data-sec=discover]', title:'Discover', text:'Find singers, play their songs and pick up sound effects.' },
+  { sel:'.tab[data-sec=profile]', title:'Profile', text:'Your photo, who you follow, drafts, Premium and privacy. Want this tour again? Tap Need help at the bottom of Profile.' }
+];
+let tourStep = 0;
+function startTour(){
+  if (rec.state !== 'idle' || state.busy) return;
+  showPage(1);
+  tourStep = 0; $('#tour').hidden = false; document.body.style.overflow = 'hidden';
+  showTourStep();
+}
+function endTour(){ $('#tour').hidden = true; document.body.style.overflow = ''; lib.tourDone = true; saveLib(); }
+function showTourStep(){
+  const st = TOUR[tourStep], el = st.sel && document.querySelector(st.sel);
+  $('#tourCount').textContent = (tourStep + 1) + ' of ' + TOUR.length;
+  $('#tourTitle').textContent = st.title; $('#tourText').textContent = st.text;
+  $('#tourBack').disabled = tourStep === 0;
+  $('#tourNext').textContent = tourStep === TOUR.length - 1 ? 'Done' : 'Next';
+  const spot = $('#tourSpot'), card = $('#tourCard');
+  if (el && !el.closest('.tabbar')) el.scrollIntoView({ block:'center' });
+  requestAnimationFrame(() => {
+    const vh = window.innerHeight;
+    card.style.top = card.style.bottom = '';
+    if (el){
+      const r = el.getBoundingClientRect(), pad = 8;
+      spot.classList.remove('none');
+      Object.assign(spot.style, { left:(r.left - pad) + 'px', top:(r.top - pad) + 'px', width:(r.width + pad * 2) + 'px', height:(r.height + pad * 2) + 'px' });
+      if (r.top + r.height / 2 < vh / 2) card.style.top = Math.min(vh - 220, r.bottom + pad + 12) + 'px';
+      else card.style.bottom = Math.min(vh - 220, vh - r.top + pad + 12) + 'px';
+    } else {
+      spot.classList.add('none');
+      Object.assign(spot.style, { left:'50%', top:'50%', width:'0px', height:'0px' });
+      card.style.top = Math.max(24, vh / 2 - 110) + 'px';
+    }
+    $('#tourNext').focus({ preventScroll:true });
+  });
+}
+$('#tourNext').addEventListener('click', () => { if (tourStep < TOUR.length - 1){ tourStep++; showTourStep(); } else endTour(); });
+$('#tourBack').addEventListener('click', () => { if (tourStep > 0){ tourStep--; showTourStep(); } });
+$('#tourSkip').addEventListener('click', endTour);
+document.addEventListener('keydown', (e) => { if (!$('#tour').hidden && e.key === 'Escape') endTour(); });
+window.addEventListener('resize', () => { if (!$('#tour').hidden) showTourStep(); });
+$('#helpBtn').addEventListener('click', startTour);
 
 /* =========================================================
    Pages, start over, boot
@@ -3360,9 +3523,7 @@ function showPage(p){
   updateTabs();
 }
 document.querySelectorAll('.step-tab').forEach((b) => b.addEventListener('click', () => showPage(+b.dataset.page)));
-$('#back1').addEventListener('click', () => showPage(1));
 document.querySelectorAll('.back-top').forEach((b) => b.addEventListener('click', () => { if (!state.busy) showPage(+b.dataset.to); }));
-$('#back2').addEventListener('click', () => showPage(2));
 
 let restartArmed = 0;
 $('#restartBtn').addEventListener('click', () => {
@@ -3400,6 +3561,7 @@ renderClips(); updateAiMode();
 renderPresets();
 loadLib().catch(() => {}).then(async () => {
   renderPresets(); renderDrafts(); syncPremiumUI();
+  if (needsProfile()) showOnboarding();
   // pick up where you left off
   try {
     const cur = await store.get('project:current');
