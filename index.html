@@ -75,13 +75,13 @@ h2{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:600;font-s
 .pad-fill{position:absolute;left:0;right:0;bottom:0;height:var(--lvl,50%);background:rgba(255,255,255,.2);pointer-events:none;opacity:0;transition:opacity .15s}
 .pad.on .pad-fill{opacity:1}
 .presets{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.preset.filled .preset-num{color:var(--accent-b)}
 .preset{appearance:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:52px;padding:4px;border-radius:12px;border:1px dashed var(--line);background:transparent;color:var(--muted);font:inherit;cursor:pointer;min-width:0;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
 .preset.filled{border-style:solid;border-color:transparent;background:var(--surface-2);color:var(--text)}
 .preset-num{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:17px;line-height:1}
-.preset-sub{font-size:10px;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preset-sub{font-size:11px;font-weight:600;line-height:1.15;max-width:100%;overflow:hidden;text-align:center;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 .preset-off{border-style:solid}
 .preset.active{box-shadow:inset 0 0 0 2px var(--accent-b);background:color-mix(in srgb,var(--accent-b) 12%,var(--surface-2))}
-.preset-live{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent-b);line-height:1.1}
 .editor{display:flex;flex-direction:column;gap:10px}
 .ed-wrap{position:relative}
 .ed-wrap canvas{display:block;width:100%;height:150px;touch-action:pan-y;cursor:pointer}
@@ -424,7 +424,7 @@ legend{padding:0}
     <div id="presets" class="presets" aria-label="Presets"></div>
     <section id="pads" class="pads" aria-label="Voice effects"></section>
     <div class="pad-foot">
-      <span class="hint">Tap a pad to turn it on or off. Hold and slide up for more, down for less, then let go to lock it. Presets: tap an empty one to save the pads you have on. Tap a saved one to load it; while it's selected, every change you make is saved to it. Tap it again to stop, or hold it to replace it.</span>
+      <span class="hint">Tap a pad to turn it on or off. Hold and slide up for more, down for less, then let go to lock it. Presets: tap an empty one to save the pads you have on. Tap a saved one to load it; while it's selected, every change you make saves into it. Hold one to name it.</span>
       <button type="button" id="monitorBtn" class="linkish" aria-pressed="false">Hear yourself: off</button>
     </div>
 
@@ -714,6 +714,18 @@ legend{padding:0}
     <button type="button" class="tab" data-sec="profile"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</button>
   </div>
 </nav>
+
+<div id="renameSheet" class="sheet-backdrop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="renameTitle">
+    <h2 id="renameTitle">Name preset</h2>
+    <label class="sr-only" for="renameInput">Preset name</label>
+    <input id="renameInput" class="text" type="text" maxlength="14" placeholder="e.g. Chorus voice">
+    <div class="actions">
+      <button type="button" id="renameCancel" class="btn">Cancel</button>
+      <button type="button" id="renameSave" class="btn primary">Save name</button>
+    </div>
+  </div>
+</div>
 
 <div id="premSheet" class="sheet-backdrop" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="premTitle">
@@ -1461,40 +1473,58 @@ function padEdited(full){
   if (activePreset == null) return;
   lib.presets[activePreset] = snapshot(); saveLib();
   if (full) renderPresets();
-  else { const sub = document.querySelector('#presets .preset.active .preset-sub'); if (sub) sub.textContent = presetNames(lib.presets[activePreset]).join(' + ') || 'all off'; }
 }
 const snapshot = () => { const o = {}; PADS.forEach((p) => { o[p.id] = Object.assign({}, fx[p.id]); }); return o; };
 const presetNames = (o) => PADS.filter((p) => o[p.id] && o[p.id].on).map((p) => p.name);
 function applyPreset(o){ PADS.forEach((p) => { if (o[p.id]) Object.assign(fx[p.id], o[p.id]); else fx[p.id].on = false; paintPad(p); }); pushPads(); }
+const presetName = (i) => (lib.presetNames && lib.presetNames[i]) || '';
 function renderPresets(){
   while (lib.presets.length < PRESET_COUNT) lib.presets.push(null);
   const box = $('#presets');
   box.replaceChildren(...lib.presets.slice(0, PRESET_COUNT).map((pr, i) => {
-    const names = pr ? presetNames(pr) : [];
-    const active = activePreset === i;
+    const active = activePreset === i, name = presetName(i), label = name || 'Preset ' + (i + 1);
     const b = h('button', { type:'button', class:'preset' + (pr ? ' filled' : '') + (active ? ' active' : ''), 'aria-pressed':active ? 'true' : 'false',
-      'aria-label':pr ? 'Preset ' + (i + 1) + ': ' + names.join(', ') + (active ? '. Selected: pad changes are saved to it. Tap to stop.' : '. Tap to load it and save changes to it, hold to replace.') : 'Empty preset ' + (i + 1) + '. Tap to save the pads that are on.' },
-      h('span', { class:'preset-num' }, String(i + 1)), h('span', { class:'preset-sub' }, pr ? names.join(' + ') || 'all off' : 'save'), active ? h('span', { class:'preset-live' }, 'saving changes') : null);
+      'aria-label':pr ? label + ': ' + (presetNames(pr).join(', ') || 'all pads off') + (active ? '. Selected: pad changes are saved to it. Tap to stop.' : '. Tap to load it. Hold to rename it.') : 'Empty preset ' + (i + 1) + '. Tap to save the pads that are on.' },
+      h('span', { class:'preset-num' }, String(i + 1)), name ? h('span', { class:'preset-sub', text:name }) : null);
     let timer = 0, longDone = false;
-    const save = (verb) => {
+    const save = () => {
       if (!PADS.some((p) => fx[p.id].on)){ setStatus($('#status1'), 'Turn on the pads you like first, then tap an empty preset to save them.', 'error'); return; }
       lib.presets[i] = snapshot(); activePreset = i; saveLib(); renderPresets();
-      setStatus($('#status1'), 'Preset ' + (i + 1) + ' ' + verb + ': ' + presetNames(lib.presets[i]).join(', ') + '. Changes you make to the pads now are saved to it.', 'ok');
+      setStatus($('#status1'), 'Saved to preset ' + (i + 1) + '. Changes you make to the pads now save into it. Hold it to give it a name.', 'ok');
     };
-    b.addEventListener('pointerdown', () => { longDone = false; if (pr) timer = setTimeout(() => { longDone = true; save('replaced'); }, 650); });
+    b.addEventListener('pointerdown', () => { longDone = false; if (pr) timer = setTimeout(() => { longDone = true; openRename(i); }, 600); });
     const cancel = () => clearTimeout(timer);
     b.addEventListener('pointerup', cancel); b.addEventListener('pointerleave', cancel); b.addEventListener('pointercancel', cancel);
     b.addEventListener('contextmenu', (e) => e.preventDefault());
     b.addEventListener('click', () => {
       if (longDone){ longDone = false; return; }
-      if (pr && activePreset === i){ activePreset = null; renderPresets(); setStatus($('#status1'), 'Stopped saving to preset ' + (i + 1) + '. Your pads stay as they are.', 'ok'); }
-      else if (pr){ applyPreset(pr); activePreset = i; renderPresets(); setStatus($('#status1'), 'Preset ' + (i + 1) + ' on: ' + (presetNames(pr).join(', ') || 'all pads off') + '. Changes you make to the pads are saved to it. Tap it again to stop.', 'ok'); }
-      else save('saved');
+      if (pr && activePreset === i){ activePreset = null; renderPresets(); setStatus($('#status1'), 'Stopped saving to ' + label + '. Your pads stay as they are.', 'ok'); }
+      else if (pr){ applyPreset(pr); activePreset = i; renderPresets(); setStatus($('#status1'), label + ' on. Changes you make to the pads save into it. Tap it again to stop.', 'ok'); }
+      else save();
     });
     return b;
-  }), h('button', { type:'button', class:'preset preset-off', onclick:() => { resetPads(); renderPresets(); setStatus($('#status1'), 'All voice effects off. Your presets are unchanged.', 'ok'); } },
-    h('span', { class:'preset-num' }, 'Off'), h('span', { class:'preset-sub' }, 'all pads')));
+  }), h('button', { type:'button', class:'preset preset-off', 'aria-label':'Turn all pads off', onclick:() => { resetPads(); renderPresets(); setStatus($('#status1'), 'All voice effects off. Your presets are unchanged.', 'ok'); } },
+    h('span', { class:'preset-num' }, 'Off')));
 }
+let renameIdx = null;
+function openRename(i){
+  renameIdx = i;
+  $('#renameTitle').textContent = 'Name preset ' + (i + 1);
+  $('#renameInput').value = presetName(i);
+  $('#renameSheet').hidden = false;
+  setTimeout(() => { $('#renameInput').focus(); $('#renameInput').select(); }, 50);
+}
+function closeRename(){ $('#renameSheet').hidden = true; renameIdx = null; }
+function saveRename(){
+  if (renameIdx == null) return;
+  lib.presetNames = lib.presetNames || [];
+  lib.presetNames[renameIdx] = $('#renameInput').value.trim().slice(0, 14);
+  saveLib(); closeRename(); renderPresets();
+}
+$('#renameSave').addEventListener('click', saveRename);
+$('#renameCancel').addEventListener('click', closeRename);
+$('#renameInput').addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); saveRename(); } else if (e.key === 'Escape') closeRename(); });
+$('#renameSheet').addEventListener('click', (e) => { if (e.target === $('#renameSheet')) closeRename(); });
 $('#monitorBtn').addEventListener('click', () => {
   state.monitor = !state.monitor;
   $('#monitorBtn').setAttribute('aria-pressed', state.monitor ? 'true' : 'false');
@@ -2868,7 +2898,7 @@ function saveLib(){ clearTimeout(libTimer); libTimer = setTimeout(() => store.se
 async function loadLib(){
   const v = await store.get('lib');
   if (v && typeof v === 'object'){
-    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media']) if (Array.isArray(v[k])) lib[k] = v[k]; }
+    lib.premium = !!v.premium; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media']) if (Array.isArray(v[k])) lib[k] = v[k]; }
 }
 const uid = (p) => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -3539,7 +3569,7 @@ const TOURS = {
     { sel:'#recBtn', title:'Record', text:'Tap to start recording and tap again to stop. Or hold it and let go to stop. Just your phone is enough, no headphones needed.' },
     { sel:'.editor', title:'Your song', text:'Your wave draws here as you sing. Tap it to move the playhead, drag across it to pick a part, then Split, Duplicate or Delete. Record again and it continues from the playhead. + Layer stacks up to 4 layers.' },
     { sel:'#pads', title:'Voice effects', text:'Tap a pad to turn it on or off while you sing. Hold one and slide up for more, down for less. They change your voice only.' },
-    { sel:'#presets', title:'Presets', text:'Tap an empty slot to save the pads you like. Tap it later to bring them back; while it\'s selected, your changes save into it.' },
+    { sel:'#presets', title:'Presets', text:'Tap an empty slot to save the pads you like. Tap it later to bring them back; while it\'s selected, your changes save into it. Hold one to give it a name.' },
     { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to notes and vibe.' }
   ],
   p2:[
