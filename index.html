@@ -368,6 +368,7 @@ legend{padding:0}
 .sfx-plus{flex:none;width:48px;height:48px;border-radius:99px;border:0;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#2a1a02;font:inherit;font-size:30px;font-weight:700;line-height:1;cursor:pointer;box-shadow:0 6px 18px rgba(245,158,11,.4)}
 .add-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .add-grid.two{grid-template-columns:1fr 1fr}
+.add-grid.two #srFromSong{grid-column:1 / -1}
 .add-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:84px;padding:10px 6px;border-radius:14px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:inherit;font-size:13px;font-weight:700;text-align:center;cursor:pointer}
 .add-grid.two .add-tile{min-height:60px;flex-direction:row}
 .add-tile svg{width:26px;height:26px;fill:none;stroke:var(--accent-b);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
@@ -389,6 +390,18 @@ legend{padding:0}
 .ref-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .mk-dur{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .mk-dur > div{width:100%;display:flex;flex-direction:column;gap:4px}
+.tl-head{position:absolute;top:2px;width:22px;height:22px;margin-left:-11px;border-radius:50%;border:2px solid #fff;background:var(--playhead);padding:0;cursor:ew-resize;touch-action:none;z-index:3;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.tl-sfx{position:absolute;top:112px;width:30px;height:30px;margin-left:-15px;border-radius:50%;border:2px solid #fff;background:#fbbf24;color:#1a1206;padding:0;display:grid;place-items:center;cursor:grab;touch-action:none;z-index:2;box-shadow:0 3px 10px rgba(0,0,0,.35)}
+.tl-sfx svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.tl-sfx.sel{outline:3px solid rgba(251,191,36,.45);outline-offset:2px}
+.tl-trash{position:absolute;top:110px;width:34px;height:34px;margin-left:22px;border-radius:10px;border:1px solid rgba(239,68,68,.45);background:rgba(28,10,12,.92);color:#f87171;padding:0;display:grid;place-items:center;cursor:pointer;z-index:3}
+.tl-trash svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.tl-box.tl-pick{border-color:#fbbf24;background:rgba(251,191,36,.12);box-shadow:0 0 18px rgba(251,191,36,.35)}
+.tl-box.tl-pick .tl-grip::before{background:#fbbf24}
+.pick-bar{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-radius:14px;border:1px solid rgba(251,191,36,.35);background:rgba(251,191,36,.08)}
+.pick-bar[hidden]{display:none}
+#sfxLib .item{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.pick-text{font-size:13px;color:#e7cf9f}
 .tl-box{position:absolute;top:26px;height:124px;border:2.5px solid var(--accent-b);border-radius:12px;background:rgba(236,72,153,.1);cursor:grab;touch-action:none;box-shadow:0 0 18px rgba(236,72,153,.35);z-index:1}
 .tl-grip{position:absolute;top:50%;width:26px;height:56px;margin-top:-28px;cursor:ew-resize;touch-action:none}
 .tl-grip.l{left:-14px}.tl-grip.r{right:-14px}
@@ -616,10 +629,16 @@ legend{padding:0}
           <canvas id="tlCanvas" aria-hidden="true"></canvas>
           <div id="tlPins"></div>
           <button type="button" id="tlAdd" class="tl-add" aria-label="Add a note here" hidden>+</button>
+          <div id="tlSfx"></div>
+          <div id="tlPick" class="tl-box tl-pick" hidden><span class="tl-grip l" data-edge="l" aria-label="Drag to change where it starts" role="slider"></span><span class="tl-grip r" data-edge="r" aria-label="Drag to change where it ends" role="slider"></span></div>
+          <button type="button" id="tlHead" class="tl-head" aria-label="Red line: drag to move it"></button>
           <div id="tlBox" class="tl-box" hidden><span class="tl-grip l" data-edge="l" aria-label="Drag to change where it starts" role="slider"></span><span class="tl-grip r" data-edge="r" aria-label="Drag to change where it ends" role="slider"></span></div>
         </div>
       </div>
-      <input type="range" id="tlPos" class="tl-pos" min="0" max="1" step="0.05" value="0" aria-label="Position in the song">
+      <div id="pickBar" class="pick-bar" hidden>
+        <span class="pick-text">Slide and stretch the gold box over the part you want. <span id="pickLen" class="mono"></span></span>
+        <div class="actions"><button type="button" id="pickCancel" class="btn small">Cancel</button><button type="button" id="pickUse" class="btn small primary">Use this part</button></div>
+      </div>
       <button type="button" id="addNoteBtn" class="btn">+ Add a note at 0:00.0</button>
       <div id="mkEditor" class="mk-editor" hidden>
         <span class="label" id="mkLabel" style="margin:0">Note for the AI</span>
@@ -931,6 +950,7 @@ legend{padding:0}
     <div class="add-grid two">
       <label class="add-tile file-pick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M10 17a2 2 0 1 1-2-2V10l5-1v6"/></svg><span>Upload a file</span><input id="srFile" class="sr-only" type="file" accept="audio/*"></label>
       <label class="add-tile file-pick"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg><span>From camera roll</span><input id="srRoll" class="sr-only" type="file" accept="video/*,audio/*"></label>
+      <button type="button" id="srFromSong" class="add-tile"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h2M7 8v8M11 5v14M15 9v6M19 11v2"/></svg><span>Part of your song</span></button>
     </div>
     <label class="sr-only" for="srName">Name</label>
     <input id="srName" class="text" type="text" maxlength="40" placeholder="Name it">
@@ -968,6 +988,17 @@ legend{padding:0}
       <button type="button" id="fadePlay" class="btn">Play</button>
       <button type="button" id="fadeCancel" class="btn">Cancel</button>
       <button type="button" id="fadeDone" class="btn primary">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmSheet" class="sheet-backdrop" hidden>
+  <div class="sheet" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <h2 id="confirmTitle">Are you sure?</h2>
+    <p id="confirmText" class="summary"></p>
+    <div class="actions">
+      <button type="button" id="confirmNo" class="btn">Keep it</button>
+      <button type="button" id="confirmYes" class="btn danger-fill">Delete</button>
     </div>
   </div>
 </div>
@@ -3049,7 +3080,6 @@ function layoutTimeline(){
   tlCanvas.style.width = cw + 'px';
   state.markers.forEach((m) => { m.t = clamp(m.t, 0, j.dur); if (m.end != null) m.end = clamp(m.end, Math.min(j.dur, m.t + 0.2), j.dur); });
   state.playhead2 = clamp(state.playhead2, 0, j.dur);
-  const pos = $('#tlPos'); pos.max = j.dur.toFixed(2);
   renderPins(); drawTimeline(); updateTlReadouts();
   if (j.dur > MAX_SEC) setStatus($('#status2'), 'Your takes add up to ' + fmt(j.dur) + '. A finished song can be up to 10 minutes, so cut or delete takes on step 1 before generating.', 'error');
 }
@@ -3095,15 +3125,9 @@ function drawTimeline(){
     const xa = tlX(m.t) - sl, xb = tlX(m.end) - sl; if (xb < 0 || xa > w) return;
     roundRectPath(g, xa, top + 1, xb - xa, wh - 2, 10); g.lineWidth = 2; g.strokeStyle = 'rgba(236,72,153,.7)'; g.stroke();
   });
-  // sound effects you placed
-  g.font = '700 12px "Figtree", system-ui, sans-serif'; g.textAlign = 'center';
-  state.sfx2.forEach((p) => {
-    const x = tlX(p.at) - sl; if (x < -10 || x > w + 10) return;
-    g.fillStyle = '#fbbf24'; g.beginPath(); g.arc(x, top + wh - 16, 9, 0, Math.PI * 2); g.fill();
-    g.save(); g.translate(x - 6, top + wh - 22); g.scale(0.5, 0.5); g.strokeStyle = '#1a1206'; g.lineWidth = 2.6; g.lineCap = 'round'; g.lineJoin = 'round';
-    g.stroke(new Path2D('M9 18V5.5l10-2.2V16')); g.fillStyle = '#1a1206'; g.beginPath(); g.arc(6.5, 18, 2.5, 0, Math.PI * 2); g.arc(16.5, 16, 2.5, 0, Math.PI * 2); g.fill(); g.restore();
-  });
-  g.textAlign = 'left';
+  // sound effects you placed: a gold line where each starts (the draggable pins sit on top)
+  g.fillStyle = 'rgba(251,191,36,.55)';
+  state.sfx2.forEach((p) => { const x = tlX(p.at) - sl; if (x > -4 && x < w + 4) g.fillRect(x - 1, top, 2, wh); });
   // playhead
   const px = tlX(state.playhead2) - sl;
   if (px >= -2 && px <= w + 2){ g.fillStyle = cssVar('--playhead', '#db2777'); g.fillRect(px - 1, top - 4, 2, wh + 8); }
@@ -3117,10 +3141,46 @@ function renderPins(){
   const sel = state.markers.find((m) => m.id === state.selMarker), box = $('#tlBox');
   box.hidden = !(sel && sel.end != null);
   if (sel && sel.end != null){ box.style.left = tlX(sel.t) + 'px'; box.style.width = Math.max(12, tlX(sel.end) - tlX(sel.t)) + 'px'; }
+  renderSfxPins();
+  $('#tlHead').style.left = tlX(state.playhead2) + 'px';
+  if (pick.on) renderPick();
   const add = $('#tlAdd');
   add.style.left = tlX(state.playhead2) + 'px';
   add.hidden = tl.playing || state.markers.some((m) => Math.abs(m.t - state.playhead2) < 0.05);
   renderMarkerList();
+}
+let sfxSel = null;
+function renderSfxPins(){
+  const els = [];
+  state.sfx2.forEach((p) => {
+    const b = h('button', { type:'button', class:'tl-sfx' + (sfxSel === p.id ? ' sel' : ''), style:'left:' + tlX(p.at) + 'px', 'aria-label':p.name + ' at ' + fmtT(p.at) + '. Drag to move it, tap for delete.' });
+    b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5.5l10-2.2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>';
+    let d = null;
+    b.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); d = { x:e.clientX, at:p.at, moved:false }; try { b.setPointerCapture(e.pointerId); } catch (_) {} });
+    b.addEventListener('pointermove', (e) => {
+      if (!d) return;
+      if (!d.moved && Math.abs(e.clientX - d.x) < 5) return;
+      d.moved = true;
+      p.at = clamp(d.at + (e.clientX - d.x) / state.pps, 0, joined().dur);
+      b.style.left = tlX(p.at) + 'px'; drawTimeline();
+    });
+    const up = () => {
+      if (!d) return;
+      const moved = d.moved; d = null;
+      if (moved){ sfxSel = null; syncResultSfx(); scheduleAutosave(); renderSfxPanel(); renderPins(); return; }
+      sfxSel = sfxSel === p.id ? null : p.id; renderPins();
+    };
+    b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
+    b.addEventListener('click', (e) => e.stopPropagation());
+    els.push(b);
+    if (sfxSel === p.id){
+      const t = h('button', { type:'button', class:'tl-trash', style:'left:' + tlX(p.at) + 'px', 'aria-label':'Delete ' + p.name });
+      t.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
+      t.addEventListener('click', (e) => { e.stopPropagation(); state.sfx2 = state.sfx2.filter((x) => x !== p); sfxSel = null; renderSfxPanel(); renderPins(); drawTimeline(); syncResultSfx(); scheduleAutosave(); });
+      els.push(t);
+    }
+  });
+  $('#tlSfx').replaceChildren(...els);
 }
 function renderMarkerList(){
   const sorted = state.markers.slice().sort((a, b) => a.t - b.t);
@@ -3133,7 +3193,6 @@ function renderMarkerList(){
 function updateTlReadouts(){
   const j = joined();
   $('#tlTime').textContent = fmtT(state.playhead2) + ' / ' + fmtT(j.dur);
-  $('#tlPos').value = state.playhead2;
   $('#addNoteBtn').textContent = '+ Add a note at ' + fmtT(state.playhead2);
   $('#sfxAt').textContent = fmtT(state.playhead2);
 }
@@ -3221,12 +3280,21 @@ $('#mkDel').addEventListener('click', () => { if (state.selMarker) deleteMarker(
 $('#tlAdd').addEventListener('click', (e) => { e.stopPropagation(); addMarker(state.playhead2); });
 $('#addNoteBtn').addEventListener('click', () => addMarker(state.playhead2));
 tlCanvas.addEventListener('click', (e) => {
+  if (sfxSel){ sfxSel = null; renderPins(); }
   const r = tlCanvas.getBoundingClientRect();
   setPlayhead2((e.clientX - r.left + tlScroll.scrollLeft - TL_PAD) / state.pps, false);
 });
+{
+  const head = $('#tlHead'); let dragging = false;
+  const tFrom = (e) => (e.clientX - tlScroll.getBoundingClientRect().left + tlScroll.scrollLeft - TL_PAD) / state.pps;
+  head.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); dragging = true; tlStop(); try { head.setPointerCapture(e.pointerId); } catch (_) {} });
+  head.addEventListener('pointermove', (e) => { if (!dragging) return; setPlayhead2(tFrom(e), false); const cw = tlScroll.clientWidth, x = tlX(state.playhead2) - tlScroll.scrollLeft; if (x > cw - 24) tlScroll.scrollLeft += 8; else if (x < 24) tlScroll.scrollLeft -= 8; });
+  const stop = () => { dragging = false; };
+  head.addEventListener('pointerup', stop); head.addEventListener('pointercancel', stop);
+  head.addEventListener('click', (e) => e.stopPropagation());
+}
 let tlScrollRaf = 0;
 tlScroll.addEventListener('scroll', () => { cancelAnimationFrame(tlScrollRaf); tlScrollRaf = requestAnimationFrame(drawTimeline); }, { passive:true });
-$('#tlPos').addEventListener('input', (e) => setPlayhead2(+e.target.value, true));
 function zoom(dir){
   const i = PPS_STEPS.indexOf(state.pps), ni = clamp(i + dir, 0, PPS_STEPS.length - 1);
   if (ni === i) return;
@@ -4277,6 +4345,74 @@ $('#srSave').addEventListener('click', async () => {
   setStatus($('#status2'), 'Saved "' + it.name + '"' + (sell ? ' and put it up for sale at ' + money(price) + '.' : '.') + ' Press Add to put it in your song.', 'ok');
 });
 
+/* make a sound effect from part of your song: a gold box you slide and stretch on the step 2 wave */
+const pick = { on:false, a:0, b:0 };
+function renderPick(){
+  const box = $('#tlPick'); box.hidden = !pick.on; $('#pickBar').hidden = !pick.on;
+  if (!pick.on) return;
+  box.style.left = tlX(pick.a) + 'px'; box.style.width = Math.max(12, tlX(pick.b) - tlX(pick.a)) + 'px';
+  $('#pickLen').textContent = fmtS(pick.b - pick.a);
+}
+$('#srFromSong').addEventListener('click', () => {
+  if (!state.clips.length) return;
+  srStopRec(true); srStopPrev(); $('#srSheet').hidden = true;
+  const dur = joined().dur;
+  pick.a = Math.min(state.playhead2, Math.max(0, dur - 1)); pick.b = Math.min(dur, pick.a + 2); pick.on = true;
+  renderPick(); setPlayhead2(pick.a, true);
+  $('.tl-card').scrollIntoView({ block:'center', behavior:'smooth' });
+});
+{
+  const box = $('#tlPick'); let d = null;
+  const tFrom = (e) => (e.clientX - tlScroll.getBoundingClientRect().left + tlScroll.scrollLeft - TL_PAD) / state.pps;
+  box.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); d = { edge:e.target.dataset.edge || 'move', t0:tFrom(e), a:pick.a, b:pick.b }; try { box.setPointerCapture(e.pointerId); } catch (_) {} });
+  box.addEventListener('pointermove', (e) => {
+    if (!d) return; const dur = joined().dur, dt = tFrom(e) - d.t0;
+    if (d.edge === 'l') pick.a = clamp(d.a + dt, 0, pick.b - 0.1);
+    else if (d.edge === 'r') pick.b = clamp(d.b + dt, pick.a + 0.1, Math.min(dur, pick.a + 60));
+    else { const len = d.b - d.a, a = clamp(d.a + dt, 0, dur - len); pick.a = a; pick.b = a + len; }
+    renderPick();
+  });
+  const stop = () => { d = null; };
+  box.addEventListener('pointerup', stop); box.addEventListener('pointercancel', stop);
+  box.addEventListener('click', (e) => e.stopPropagation());
+}
+$('#pickCancel').addEventListener('click', () => { pick.on = false; renderPick(); $('#srSheet').hidden = false; });
+$('#pickUse').addEventListener('click', () => {
+  const sr = ctx().sampleRate, data = renderRange(null, pick.a, pick.b, sr);
+  let pk = 0; for (let i = 0; i < data.length; i++) pk = Math.max(pk, Math.abs(data[i]));
+  if (pk < 0.001){ setStatus($('#status2'), 'That part is silent. Pick a part with sound in it.', 'error'); return; }
+  for (let i = 0; i < data.length; i++) data[i] *= 0.9 / pk;
+  const fade = Math.min(Math.floor(sr * 0.01), data.length >> 2); for (let i = 0; i < fade; i++){ data[i] *= i / fade; data[data.length - 1 - i] *= i / fade; }
+  sr2.data = data; sr2.sr = sr;
+  pick.on = false; renderPick();
+  $('#srTime').textContent = fmtT(data.length / sr); $('#srNote').textContent = 'Got it. Play it back, name it, then save.';
+  $('#srName').value = 'Part of my song'; $('#srPlay').hidden = false; $('#srSave').disabled = false;
+  $('#srSheet').hidden = false;
+});
+
+// a yes/no question; resolves true for yes
+let confirmResolve = null;
+function askConfirm(title, text, yes){
+  return new Promise((res) => {
+    confirmResolve = res;
+    $('#confirmTitle').textContent = title; $('#confirmText').textContent = text; $('#confirmYes').textContent = yes || 'Delete';
+    $('#confirmSheet').hidden = false;
+  });
+}
+function closeConfirm(v){ $('#confirmSheet').hidden = true; const r = confirmResolve; confirmResolve = null; if (r) r(v); }
+$('#confirmNo').addEventListener('click', () => closeConfirm(false));
+$('#confirmYes').addEventListener('click', () => closeConfirm(true));
+// hold a sound effect in the list to delete it (asks first)
+async function deleteSfxItem(it){
+  const selling = it.forSale && (it.source === 'take' || it.source === 'file');
+  const ok = await askConfirm('Delete "' + it.name + '"?', (selling ? 'It\'s for sale on Discover, and deleting it takes it off sale. ' : '') + 'It will also be taken out of this song. This can\'t be undone.', 'Delete');
+  if (!ok) return;
+  lib.sfx = lib.sfx.filter((x) => x !== it); store.del('blob:' + it.id); bufCache.delete(it.id); saveLib();
+  state.sfx2 = state.sfx2.filter((p) => p.item !== it);
+  renderSfxPanel(); renderPins(); drawTimeline(); syncResultSfx(); scheduleAutosave();
+  setStatus($('#status2'), 'Deleted "' + it.name + '".', 'ok');
+}
+
 /* Step 2: sound effects placed on your song; they're layered into the finished mix */
 const introOf = (plan) => 4 * 60 / plan.tempo;
 function syncResultSfx(){
@@ -4291,9 +4427,14 @@ function renderSfxPanel(){
   const row = (it) => {
     const play = h('button', { type:'button', class:'btn small round', 'aria-label':'Play ' + it.name }, 'Play');
     play.addEventListener('click', () => previewToggle('sfx:' + it.id, () => getSfxBuffer(it), play));
-    return h('div', { class:'item' }, play,
-      h('div', { class:'item-main' }, h('span', { class:'item-title', text:it.name }), h('span', { class:'item-meta', text:sourceLabel(it) })),
+    const row = h('div', { class:'item', title:'Hold to delete' }, play,
+      h('div', { class:'item-main' }, h('span', { class:'item-title', text:it.name }), h('span', { class:'item-meta', text:sourceLabel(it) + (it.forSale && (it.source === 'take' || it.source === 'file') ? ' · for sale ' + money(it.price) : '') })),
       h('button', { type:'button', class:'btn small', onclick:() => placeSfx(it) }, 'Add'));
+    let timer = 0;
+    row.addEventListener('pointerdown', (e) => { if (e.target.closest('button')) return; timer = setTimeout(() => { if (navigator.vibrate) navigator.vibrate(12); deleteSfxItem(it); }, 600); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => row.addEventListener(ev, () => clearTimeout(timer)));
+    row.addEventListener('contextmenu', (e) => e.preventDefault());
+    return row;
   };
   $('#sfxLib').replaceChildren(
     ...(got.length ? [h('span', { class:'label', style:'margin:4px 0 0' }, 'Bought and saved on Discover')].concat(got.map(row)) : []),
@@ -4308,9 +4449,11 @@ const sourceLabel = (it) => it.source === 'take' ? 'From your takes' : it.source
 function placeSfx(it){
   if (state.busy) return;
   const at = state.playhead2;
-  state.sfx2.push({ id:uid('p'), item:it, name:it.name, at });
-  renderSfxPanel(); drawTimeline(); syncResultSfx(); scheduleAutosave();
-  setStatus($('#status2'), 'Added "' + it.name + '" at ' + fmtT(at) + '.', 'ok');
+  const np = { id:uid('p'), item:it, name:it.name, at };
+  state.sfx2.push(np); sfxSel = null;
+  renderSfxPanel(); renderPins(); drawTimeline(); syncResultSfx(); scheduleAutosave();
+  setStatus($('#status2'), 'Drag the gold note along your song to place it.', '');
+  $('.tl-card').scrollIntoView({ block:'center', behavior:'smooth' });
 }
 async function applySfx(){
   const r = state.result; if (!r) return;
@@ -4982,7 +5125,7 @@ const TOURS = {
   ],
   p2:[
     { sel:'.tl-card', title:'Your song timeline', text:'Scroll through your song. Tap the wave, then + to pin a note for the AI, like "beat drops here". Add duration to turn a note into a box you can slide and stretch over a whole part.' },
-    { sel:'#sfxHead', title:'Sound effects', text:'Add sounds you made, uploaded, bought or saved on Discover. Put the red line where you want one, then press Add. Tap + to record your own sound effect, name it, and set a price to sell it (Premium).' },
+    { sel:'#sfxHead', title:'Sound effects', text:'Press Add on a sound, then drag its gold note along your song to place it. Tap a note to delete it from the song. Hold a sound in the list to delete it for good. Tap + to record a sound effect, upload one, or cut one from part of your song, then name it and set a price to sell it (Premium).' },
     { sel:'#vibe', title:'Generation prompt', text:'Words like slow, dance, acoustic, 80s synth or dark shape the music. The key comes from your voice, or write one here, like "in A minor".' },
     { sel:'#artists', title:'Artists you like', text:'Artists are style hints only: tempo, sound and mood. The app never copies their songs, recordings or voice.' },
     { sel:'.ref-box', title:'A song you like', text:'Upload a song file and the app matches its tempo and energy. A link is passed to the AI as a hint; the app can\'t open links.' },
