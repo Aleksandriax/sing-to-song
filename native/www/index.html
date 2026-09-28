@@ -248,6 +248,27 @@ body:not(.recording) #page1 .rec-core{width:30px;height:30px}
 .tile svg{width:30px;height:30px;fill:none;stroke:var(--accent-b);stroke-width:1.8;stroke-linejoin:round;margin-bottom:auto}
 .tile[aria-expanded="true"]{border-color:var(--accent-b)}
 .tile-new{border:0;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:#fff;box-shadow:0 10px 30px var(--glow)}
+.tile.tile-melody{grid-column:1 / -1;aspect-ratio:auto;min-height:96px;border:1.5px solid transparent;background:radial-gradient(circle at 85% 20%,rgba(236,72,153,.25),transparent 55%) padding-box,linear-gradient(var(--surface),var(--surface)) padding-box,linear-gradient(135deg,#a855f7,#ec4899) border-box}
+.tile.tile-melody svg{width:30px;height:30px;fill:none;stroke:#f0abfc;stroke-width:1.8;margin-bottom:auto}
+.md-view .md-body{max-width:520px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:16px}
+.md-form,.md-result{display:flex;flex-direction:column;gap:14px}
+.md-form[hidden],.md-result[hidden]{display:none}
+.md-panel{gap:8px}
+.md-label{font-weight:800;font-size:15px}
+.md-opt{font-size:12px;font-weight:700;color:var(--muted);margin-left:6px}
+.md-view textarea{width:100%;box-sizing:border-box}
+.md-info{font-size:12px;color:var(--muted)}
+.md-player{gap:12px}
+.md-play-row{display:flex;align-items:center;gap:10px}
+.md-play-row input{flex:1;accent-color:#ec4899}
+.md-time{font-size:12px;color:var(--muted);min-width:78px;text-align:right}
+.btn.small.round.ic-play.md-playbtn{width:48px;height:48px;min-width:48px;border-color:transparent;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:#fff}
+.md-parts{display:flex;flex-direction:column;gap:6px}
+.md-part{padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2)}
+.md-part b{font-size:13px}
+.md-part .t{font-size:12px;color:var(--muted);margin-left:6px}
+.md-part p{margin:4px 0 0;font-size:13px;color:var(--text);white-space:pre-line}
+.md-part.now{border-color:#ec4899;background:color-mix(in srgb,#ec4899 14%,var(--surface-2))}
 .tile-plus{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:44px;font-weight:800;line-height:1;margin-bottom:auto}
 .tile-title{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:19px}
 .tile-sub{font-size:13px;opacity:.8}
@@ -842,6 +863,7 @@ legend{padding:0}
         <span class="tile-plus" aria-hidden="true">+</span>
         <span class="tile-title">Create new</span><span class="tile-sub">start a song</span>
       </button>
+      <button type="button" id="tileMelody" class="tile tile-melody"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5.5l10-2.2V16"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg><span class="tile-title">Create a melody</span><span class="tile-sub">AI writes a 2–3 minute melody from your words and lyrics</span></button>
     </div>
     <div id="homeStatus" class="status" role="status" aria-live="polite"></div>
     <section id="draftsPanel" class="panel" hidden aria-labelledby="draftsHead">
@@ -1280,6 +1302,56 @@ legend{padding:0}
     <button type="button" class="tab" data-sec="profile"><span class="tab-ring"><svg class="art" viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="profGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a855f7"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><circle cx="12" cy="8.6" r="3.9" class="a-fill2"/><path d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0z" class="a-fill2"/><circle cx="12" cy="8.6" r="3.9" class="a-line"/><path d="M4.8 20.2a7.2 7.2 0 0 1 14.4 0" class="a-line"/></svg></span>Profile</button>
   </div>
 </nav>
+
+<div id="mdView" class="pub-view md-view" hidden role="dialog" aria-modal="true" aria-labelledby="mdTitle">
+  <div class="md-body">
+    <div class="md-top"><button type="button" id="mdClose" class="back-top" aria-label="Back to Studio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button></div>
+    <div id="mdForm" class="md-form">
+      <div><h1 id="mdTitle">Create a new melody</h1><p class="lede">Describe it, add lyrics if you have them, and the AI writes a full melody with music around it.</p></div>
+      <section class="panel md-panel">
+        <label class="md-label" for="mdVibe">What should it sound like?</label>
+        <textarea id="mdVibe" rows="3" maxlength="300" placeholder="A dreamy late-night pop song, soft piano and a slow beat…"></textarea>
+      </section>
+      <section class="panel md-panel">
+        <label class="md-label" for="mdLyrics">Lyrics <span class="md-opt">optional</span></label>
+        <p class="hint" style="margin:0">Each line becomes a line of the melody, one note per syllable, and the words set the mood. Mark parts with [Verse], [Chorus] and [Bridge], or leave a blank line between them.</p>
+        <textarea id="mdLyrics" rows="9" maxlength="3000" placeholder="[Verse]&#10;Streetlights humming on my way home&#10;…&#10;&#10;[Chorus]&#10;…"></textarea>
+        <div id="mdLyricsInfo" class="md-info"></div>
+      </section>
+      <section class="panel md-panel">
+        <label class="md-label" for="mdInspo">Inspiration and artists</label>
+        <textarea id="mdInspo" rows="2" maxlength="300" placeholder="What inspired it? Artists you like, like Taylor Swift, Frank Ocean…"></textarea>
+        <div id="mdArtistChips" class="artist-chips"></div>
+      </section>
+      <section class="panel md-panel">
+        <span class="md-label">How long?</span>
+        <div class="seg" role="radiogroup" aria-label="Length">
+          <input type="radio" name="mdLen" id="mdLen120" value="120"><label for="mdLen120">2:00</label>
+          <input type="radio" name="mdLen" id="mdLen150" value="150" checked><label for="mdLen150">2:30</label>
+          <input type="radio" name="mdLen" id="mdLen180" value="180"><label for="mdLen180">3:00</label>
+        </div>
+      </section>
+      <div id="mdStatus" class="status" role="status" aria-live="polite"></div>
+      <button type="button" id="mdGo" class="btn primary big">Create my melody</button>
+    </div>
+    <div id="mdResult" class="md-result" hidden>
+      <div><h1 id="mdResTitle">Your melody</h1><p id="mdResSub" class="lede"></p></div>
+      <section class="panel md-player">
+        <div class="md-play-row"><button type="button" id="mdPlay" class="btn small round ic-play md-playbtn" aria-label="Play"></button><input type="range" id="mdScrub" min="0" max="1" step="0.01" value="0" aria-label="Position"><span id="mdTime" class="mono md-time">0:00</span></div>
+        <div id="mdParts" class="md-parts"></div>
+      </section>
+      <section class="panel md-panel"><h2 style="margin:0">How it was made</h2><p id="mdHow" class="summary" style="margin:0"></p></section>
+      <div id="mdStatus2" class="status" role="status" aria-live="polite"></div>
+      <button type="button" id="mdSing" class="btn primary big">Sing over it</button>
+      <div class="downloads">
+        <button type="button" id="mdSave" class="btn">Save to my songs</button>
+        <button type="button" id="mdDl" class="btn">Save audio (.wav)</button>
+      </div>
+      <div id="mdShare" class="share-box" hidden><p id="mdShareText" class="summary"></p><button type="button" id="mdShareBtn" class="btn primary">Save to my phone</button></div>
+      <div class="actions"><button type="button" id="mdAgain" class="btn">Make another version</button><button type="button" id="mdEdit" class="btn">Change the words</button></div>
+    </div>
+  </div>
+</div>
 
 <div id="pubView" class="pub-view" hidden role="dialog" aria-modal="true" aria-label="Your profile as others see it">
   <div class="pub-top">
@@ -3087,6 +3159,213 @@ $('#speedGo').addEventListener('click', async () => {
   } catch (err){ setStatus($('#status1'), 'The speed couldn\'t be changed: ' + (err.message || err), 'error'); }
   finally { paint.busy = false; document.body.classList.remove('painting'); renderClips(); renderMarkerList(); }
 });
+
+/* ---------- Create a melody: a 2–3 minute song from your words, lyrics and inspiration ----------
+   The app plans the song (intro, verses, choruses with a hook that repeats, a bridge, an outro),
+   writes a melody (one note per syllable of your lyrics), then arranges and mixes it. */
+const syllables = (w) => { w = w.toLowerCase().replace(/[^a-z]/g, ''); if (!w) return 0; if (w.length <= 3) return 1; w = w.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, ''); const m = w.match(/[aeiouy]{1,2}/g); return Math.max(1, m ? m.length : 1); };
+function parseLyrics(text){
+  const out = []; let cur = null;
+  const push = (kind) => { cur = { kind, lines:[] }; out.push(cur); };
+  const blocks = (text || '').replace(/\r/g, '').split('\n');
+  for (let raw of blocks){
+    const line = raw.trim();
+    const tag = /^\[?\s*(verse|chorus|hook|bridge|pre-?chorus|intro|outro)[^\]]*\]?\s*:?$/i.exec(line);
+    if (tag){ const k = tag[1].toLowerCase(); push(k === 'hook' ? 'chorus' : /pre/.test(k) ? 'verse' : k === 'intro' || k === 'outro' ? 'verse' : k); continue; }
+    if (!line){ if (cur && cur.lines.length) cur = null; continue; }
+    if (!cur) push(null);
+    cur.lines.push(line);
+  }
+  // untagged blocks: verse, chorus, verse, bridge, chorus...
+  const order = ['verse', 'chorus', 'verse', 'bridge', 'chorus'];
+  let u = 0; out.forEach((b) => { if (!b.kind) b.kind = order[Math.min(u++, order.length - 1)]; });
+  return out.filter((b) => b.lines.length);
+}
+const LYRIC_MOOD = { sad:['cry','tears','alone','lonely','goodbye','lost','broken','cold','empty','miss','gone','hurt','rain','sorry','dark','night'], happy:['love','dance','sun','smile','happy','shine','fly','together','summer','party','bright','alive','free','gold'] };
+function composeMelody(opts){
+  const { vibe, lyrics, inspo, seconds, seed } = opts, R = mulberry(seed), pick = (a) => a[Math.floor(R() * a.length)];
+  const lyr = parseLyrics(lyrics), words = tokensOf(lyrics);
+  const sadN = words.filter((w) => LYRIC_MOOD.sad.some((x) => w.startsWith(x))).length, hapN = words.filter((w) => LYRIC_MOOD.happy.some((x) => w.startsWith(x))).length;
+  const artists = inspo.split(/[,;\n]/).map((x) => findArtist(x.trim())).filter(Boolean);
+  const text = vibe + ' ' + inspo + ' ' + artists.map((a) => a.style).join(' ') + (sadN > hapN + 1 ? ' slow sad' : hapN > sadN + 1 ? ' upbeat' : '');
+  const m = analyzeMood(text, 92 + Math.floor(R() * 12));
+  const keyTxt = parseKeyText(vibe + ' ' + inspo);
+  let root = keyTxt ? +keyTxt.split(':')[0] : pick([57, 58, 60, 62, 63, 64, 65]), scale = keyTxt ? keyTxt.split(':')[1] : (m.forceMinor || sadN > hapN + 1 ? 'minor' : 'major');
+  let instruments = instrOf(text); if (instruments.includes('drums')) m.beat = true; instruments = instruments.filter((x) => x !== 'drums');
+  if (!instruments.length) instruments = pick(COMBOS).slice();
+  const tempo = clamp(Math.round(m.tempo), 64, 150), beat = 60 / tempo, bar = beat * 4, want = Math.round(seconds / bar);
+  // the song's plan: sections in bars
+  const secs = [['intro', 4], ['verse', 8], ['chorus', 8], ['verse', 8], ['chorus', 8]];
+  const total = () => secs.reduce((a, x) => a + x[1], 0);
+  if (want - total() >= 12){ secs.push(['bridge', 8], ['chorus', 8]); }
+  while (want - total() >= 20) secs.splice(secs.length - 2, 0, ['verse', 8], ['chorus', 8]);
+  if (want - total() >= 10) secs.push(['chorus', 8]);   // a last chorus if there's room
+  secs.push(['outro', 4]);
+  const iv = SCALES[scale], rootPc = ((root % 12) + 12) % 12;
+  const progs = PROGS[scale], verseP = pick(progs); let chorusP = pick(progs); for (let k = 0; k < 5 && chorusP === verseP; k++) chorusP = pick(progs);
+  const bridgeP = scale === 'major' ? [5, 3, 0, 4] : [5, 6, 3, 4];
+  // lyric lines for each kind of part
+  const pool = { verse:[], chorus:[], bridge:[] }; lyr.forEach((b) => pool[b.kind] && pool[b.kind].push(b.lines));
+  const center = root + (scale === 'minor' ? 7 : 7) + 5;   // around a comfortable singing range, played an octave up
+  const inScale = (mm) => iv.includes((((mm - rootPc) % 12) + 12) % 12);
+  const stepS = (mm, k) => { let n = mm, dir = Math.sign(k); for (let i = 0; i < Math.abs(k); i++){ n += dir; while (!inScale(n)) n += dir; } return n; };
+  const chordTones = (deg) => [0, 2, 4].map((q) => (rootPc + iv[(deg + q) % 7]) % 12);
+  const nearestTone = (mm, deg) => { const cp = chordTones(deg); for (let d = 0; d < 7; d++){ if (cp.includes(((mm + d) % 12 + 12) % 12)) return mm + d; if (cp.includes(((mm - d) % 12 + 12) % 12)) return mm - d; } return mm; };
+  // one line of melody over 2 bars: a rhythm from the syllables, a shape that rises and settles
+  const phrase = (sylls, degA, degB, lift, endHome) => {
+    const n = clamp(sylls || (4 + Math.floor(R() * 6)), 3, 12), slots = [];
+    const grid8 = 16;   // eighth notes in 2 bars
+    const start = R() < 0.3 ? 1 : 0, room = 13 - start;
+    for (let i = 0; i < n; i++) slots.push(start + Math.round((i * room) / n));
+    const notes = []; let mm = nearestTone(center + lift, degA);
+    for (let i = 0; i < n; i++){
+      const pos = slots[i], deg = pos < 8 ? degA : degB, strong = pos % 2 === 0;
+      if (i > 0){ const dir = i < n * 0.55 ? (R() < 0.7 ? 1 : -1) : (R() < 0.7 ? -1 : 1); mm = stepS(mm, dir * (R() < 0.75 ? 1 : 2)); }
+      mm = clamp(mm, center + lift - 7, center + lift + 9);
+      if (strong) mm = nearestTone(mm, deg);
+      const next = i < n - 1 ? slots[i + 1] : grid8;
+      notes.push({ pos, len:Math.max(1, next - pos), m:mm });
+    }
+    const last = notes[notes.length - 1];
+    last.m = endHome ? nearestTone(root + 12 * Math.round((last.m - root) / 12), 0) : nearestTone(last.m, degB);
+    last.len = Math.max(last.len, 3);
+    return notes;
+  };
+  const sylOf = (line) => line ? line.split(/\s+/).reduce((a, w) => a + syllables(w), 0) : 0;
+  const notes = [], parts = [], chords = [], sections = [];
+  let bar0 = 0, hook = null, nVerse = 0, nChorus = 0;
+  for (const [kind, bars] of secs){
+    const prog = kind === 'chorus' ? chorusP : kind === 'bridge' ? bridgeP : verseP;
+    for (let b = 0; b < bars; b++) chords[bar0 + b] = kind === 'outro' && b === bars - 1 ? 0 : prog[b % prog.length];
+    const idx = kind === 'verse' ? nVerse++ : kind === 'chorus' ? nChorus++ : 0;
+    const lines = kind === 'chorus' ? (pool.chorus[0] || []) : kind === 'verse' ? (pool.verse[idx] || pool.verse[idx % Math.max(1, pool.verse.length)] || []) : kind === 'bridge' ? (pool.bridge[0] || []) : [];
+    parts.push({ kind, label:kind === 'verse' ? 'Verse ' + nVerse : kind === 'chorus' ? 'Chorus' : kind.charAt(0).toUpperCase() + kind.slice(1), t:bar0 * bar, dur:bars * bar, lines:lines.slice(0, bars / 2) });
+    sections.push({ at:bar0 * bar, until:(bar0 + bars) * bar, beat:kind === 'intro' || kind === 'outro' ? false : kind === 'verse' && idx === 0 ? (m.beat ? true : null) : true, energy:kind === 'chorus' ? 1 : kind === 'bridge' ? 0.6 : kind === 'intro' || kind === 'outro' ? 0.45 : 0.7, instr:null, only:false });
+    if (kind !== 'intro' && kind !== 'outro'){
+      const lift = kind === 'chorus' ? 4 : kind === 'bridge' ? 2 : 0;
+      let lineNotes;
+      if (kind === 'chorus' && hook) lineNotes = hook;   // the hook: same every chorus
+      else {
+        lineNotes = [];
+        for (let ph = 0; ph < bars / 2; ph++){
+          const l = lines[ph % Math.max(1, lines.length)], d1 = chords[bar0 + ph * 2], d2 = chords[bar0 + ph * 2 + 1];
+          lineNotes.push(ph === 1 && kind !== 'bridge' && lineNotes[0] ? lineNotes[0].map((x) => Object.assign({}, x, { m:nearestTone(x.m, x.pos < 8 ? d1 : d2) })) : phrase(sylOf(l), d1, d2, lift, kind === 'chorus' && ph === bars / 2 - 1));
+        }
+        if (kind === 'chorus') hook = lineNotes;
+      }
+      lineNotes.forEach((ln, ph) => ln.forEach((x) => notes.push([+(((bar0 + ph * 2) * bar) + x.pos * beat / 2).toFixed(3), +(x.len * beat / 2 * 0.95).toFixed(3), x.m, kind])));
+    } else if (kind === 'intro' && hook == null){
+      // the intro teases the chorus shape softly (filled in after the first chorus is written)
+    }
+    bar0 += bars;
+  }
+  // intro: play the first two bars of the hook as a teaser
+  if (hook && hook[0]) hook[0].forEach((x) => notes.push([+(bar * 2 + x.pos * beat / 2).toFixed(3), +(x.len * beat / 2 * 0.95).toFixed(3), x.m, 'intro']));
+  notes.sort((a, b) => a[0] - b[0]);
+  const summary = 'Wrote a ' + fmt(bar0 * bar) + ' song at ' + tempo + ' BPM in ' + NOTE_NAMES[rootPc] + ' ' + scale + ': ' + secs.map((x) => x[0]).join(', ') + '. ' +
+    (lyr.length ? 'Your lyrics set the rhythm (one note per syllable) and the ' + (sadN > hapN ? 'mood leans sad, so it\'s darker' : hapN > sadN ? 'mood is bright' : 'mood is balanced') + '. ' : 'No lyrics, so the melody lines are free. ') +
+    'The chorus hook repeats every time so it sticks. ' + (artists.length ? 'Style from ' + artists.map((a) => a.name).join(', ') + '. ' : '') +
+    'Instruments: ' + instruments.map((x) => INSTR_NAMES[x]).join(', ') + (m.beat ? ', drums' : '') + '.';
+  return {
+    plan:{ source:'keywords', mode:'melody', fit:1, introBars:0, voiceAt:0, tempo, wave:m.wave, detune:m.detune, reverbSec:m.reverbSec, wet:m.wet, beat:m.beat, root, scale,
+      brightness:m.wave === 'sawtooth' ? 0.6 : 0.45, harmony:0, seed, instruments, progression:verseP, chords, sections, notes, summary },
+    parts, length:bar0 * bar
+  };
+}
+const md = { buf:null, plan:null, parts:null, wav:null, url:null, audio:null, seed:0 };
+function mdArtistChips(){
+  const items = $('#mdInspo').value.split(/[,;\n]/).map((x) => x.trim()).filter((x) => x.length >= 2);
+  $('#mdArtistChips').replaceChildren(...items.map((it) => findArtist(it)).filter(Boolean).map((a) => h('span', { class:'a-chip' }, icon('check'), h('b', { text:a.name }), ' ' + sayStyle(a.style))));
+}
+function mdLyricsInfo(){
+  const b = parseLyrics($('#mdLyrics').value);
+  $('#mdLyricsInfo').textContent = b.length ? 'Found ' + b.map((x) => x.kind).join(', ') + ' (' + b.reduce((a, x) => a + x.lines.length, 0) + ' lines).' : '';
+}
+$('#mdInspo').addEventListener('input', mdArtistChips);
+$('#mdLyrics').addEventListener('input', mdLyricsInfo);
+function openMelody(){ stopAllPlayback(); $('#mdView').hidden = false; $('#mdView').scrollTop = 0; setTimeout(() => $('#mdVibe').focus(), 50); }
+function closeMelody(){ mdStop(); $('#mdView').hidden = true; }
+$('#tileMelody').addEventListener('click', openMelody);
+$('#mdClose').addEventListener('click', () => { if (!$('#mdResult').hidden){ mdStop(); $('#mdResult').hidden = true; $('#mdForm').hidden = false; } else closeMelody(); });
+$('#mdEdit').addEventListener('click', () => { mdStop(); $('#mdResult').hidden = true; $('#mdForm').hidden = false; $('#mdView').scrollTop = 0; });
+async function mdCreate(again){
+  const vibe = $('#mdVibe').value.trim(), lyrics = $('#mdLyrics').value, inspo = $('#mdInspo').value.trim();
+  if (!vibe && !lyrics.trim() && !inspo){ setStatus($('#mdStatus'), 'Tell it something first: what it should sound like, some lyrics, or an artist you like.', 'error'); return; }
+  const secs = +document.querySelector('input[name=mdLen]:checked').value;
+  const btn = $('#mdGo'); btn.disabled = true; $('#mdAgain').disabled = true; mdStop();
+  try {
+    setStatus($('#mdStatus'), 'Writing your melody…'); setStatus($('#mdStatus2'), again ? 'Writing another version…' : '');
+    await nextTick();
+    md.seed = freshSeed();
+    const c = composeMelody({ vibe, lyrics, inspo, seconds:secs, seed:md.seed }), sr = ctx().sampleRate;
+    setStatus($('#mdStatus'), 'Arranging and mixing it (this takes a few seconds)…'); if (again) setStatus($('#mdStatus2'), 'Arranging and mixing it…');
+    await nextTick();
+    const silent = new Float32Array(Math.ceil(c.length * sr));
+    const buf = await mixSong(silent, null, null, sr, c.plan, { instrumental:true });
+    Object.assign(md, { buf, plan:c.plan, parts:c.parts, wav:null });
+    if (md.url) URL.revokeObjectURL(md.url);
+    md.wav = bufferToWav(buf); md.url = URL.createObjectURL(md.wav);
+    md.audio = new Audio(md.url); md.audio.preload = 'auto';
+    md.audio.addEventListener('timeupdate', mdTick); md.audio.addEventListener('ended', () => { setBtnState($('#mdPlay'), 'stop'); mdTick(); });
+    $('#mdResTitle').textContent = vibe ? vibe.split(/[.,\n]/)[0].slice(0, 40) : 'Your melody';
+    $('#mdResSub').textContent = fmt(buf.duration) + ' · ' + c.plan.tempo + ' BPM · ' + NOTE_NAMES[((c.plan.root % 12) + 12) % 12] + ' ' + c.plan.scale;
+    $('#mdHow').textContent = c.plan.summary;
+    $('#mdParts').replaceChildren(...c.parts.map((p, i) => h('div', { class:'md-part', 'data-i':i }, h('b', { text:p.label }), h('span', { class:'t', text:fmt(p.t) }), p.lines.length ? h('p', { text:p.lines.join('\n') }) : null)));
+    $('#mdScrub').max = buf.duration.toFixed(2); $('#mdScrub').value = 0; mdTick();
+    if (!$('#mdPlay').dataset.aria){ $('#mdPlay').innerHTML = PLAY_SVG; $('#mdPlay').dataset.aria = 'Play'; }
+    setStatus($('#mdStatus'), ''); setStatus($('#mdStatus2'), '');
+    $('#mdForm').hidden = true; $('#mdResult').hidden = false; $('#mdView').scrollTop = 0;
+  } catch (err){ setStatus($('#mdStatus'), 'The melody couldn\'t be made: ' + (err.message || err), 'error'); }
+  finally { btn.disabled = false; $('#mdAgain').disabled = false; }
+}
+function mdTick(){
+  const a = md.audio; if (!a) return;
+  const t = a.currentTime || 0; if (!mdScrubbing) $('#mdScrub').value = t;
+  $('#mdTime').textContent = fmt(t) + ' / ' + fmt(md.buf ? md.buf.duration : 0);
+  document.querySelectorAll('#mdParts .md-part').forEach((el) => { const p = md.parts[+el.dataset.i]; el.classList.toggle('now', !a.paused && t >= p.t && t < p.t + p.dur); });
+}
+let mdScrubbing = false;
+function mdStop(){ if (md.audio && !md.audio.paused) md.audio.pause(); setBtnState($('#mdPlay'), 'stop'); }
+$('#mdPlay').addEventListener('click', () => { const a = md.audio; if (!a) return; if (a.paused){ stopAllPlayback(); a.play(); setBtnState($('#mdPlay'), 'play'); } else mdStop(); });
+$('#mdScrub').addEventListener('input', () => { mdScrubbing = true; if (md.audio) md.audio.currentTime = +$('#mdScrub').value; mdTick(); });
+$('#mdScrub').addEventListener('change', () => { mdScrubbing = false; });
+$('#mdGo').addEventListener('click', () => mdCreate(false));
+$('#mdAgain').addEventListener('click', () => mdCreate(true));
+$('#mdDl').addEventListener('click', async () => {
+  if (!md.wav) return; saveCtx = { status:'#mdStatus2', box:'#mdShare', text:'#mdShareText' };
+  const res = dlCap ? await saveFile('sing-to-song-melody.zip', await zipOne('sing-to-song-melody.wav', md.wav)) : await saveFile('sing-to-song-melody.wav', md.wav, true);
+  if (res === 'done') showAd();
+});
+$('#mdShareBtn').addEventListener('click', () => { saveCtx = { status:'#mdStatus2', box:'#mdShare', text:'#mdShareText' }; shareTap(); });
+$('#mdSave').addEventListener('click', async () => {
+  if (!md.wav) return;
+  const id = uid('song'), title = $('#mdResTitle').textContent || 'My melody';
+  await store.set('blob:' + id, md.wav);
+  lib.songs.unshift({ id, title, dur:md.buf.duration, created:Date.now(), isPublic:false, allowSave:true, desc:$('#mdLyrics').value.trim().slice(0, 300), cover:null });
+  saveLib(); renderHome();
+  setStatus($('#mdStatus2'), 'Saved "' + title + '" to your songs (private). Make it public in Profile.', 'ok'); toast('Saved to your songs');
+});
+// sing over it: the melody becomes layer 1 of a new song, and you record on layer 2
+$('#mdSing').addEventListener('click', async () => {
+  if (!md.buf || state.busy || rec.state !== 'idle') return;
+  mdStop();
+  const b = $('#mdSing'); b.disabled = true;
+  try {
+    if (hasWork(projectDoc())) await saveCurrentAsDraft();
+    resetProject();
+    const d0 = md.buf.getChannelData(0), d1 = md.buf.numberOfChannels > 1 ? md.buf.getChannelData(1) : d0, raw = new Float32Array(d0.length);
+    for (let i = 0; i < raw.length; i++) raw[i] = (d0[i] + d1[i]) * 0.5;
+    const src = await makeSrc(raw, md.buf.sampleRate, [{ at:0, params:Object.assign({}, NEUTRAL) }], 'your melody');
+    state.layers[0].segs.push({ id:nextId++, src, start:0, end:raw.length / md.buf.sampleRate, at:0 });
+    state.layers.push({ id:nextId++, segs:[] }); state.activeLayer = 1; state.playhead1 = 0; state.cursorOn = true;
+    $('#vibe').value = $('#mdVibe').value; $('#artists').value = $('#mdInspo').value;
+    histNext = 'Added your melody'; renderClips();
+    closeMelody(); showPage(1);
+    setStatus($('#status1'), 'Your melody is on layer 1. Press record to sing on layer 2 while it plays. Headphones help so the melody doesn\'t leak into your recording.', 'ok');
+  } catch (err){ setStatus($('#mdStatus2'), 'It couldn\'t be opened: ' + (err.message || err), 'error'); }
+  finally { b.disabled = false; }
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#mdView').hidden) closeMelody(); });
 
 /* ---------- song structure ---------- */
 const segLen = (s) => s.end - s.start;
@@ -5109,6 +5388,7 @@ async function melodyChords(voc, sr, plan){
    with patterns, a motif and entries picked from the song's seed. */
 function arrange(oc, music, verb, plan, o){
   const R = mulberry(plan.seed || 1), sr = oc.sampleRate, { songEnd, bar, beat, intro, at } = o, vAt = o.vAt != null ? o.vAt : intro;
+  const later = [], sched = (t, fn) => later.push([t, fn]);   // notes made just before they're needed (see the end)
   const iv = SCALES[plan.scale], rootPc = ((plan.root % 12) + 12) % 12, prog = plan.progression, nBars = Math.round(songEnd / bar);
   const pick = (arr) => arr[Math.floor(R() * arr.length)];
   const jit = () => (R() - 0.5) * 0.016;
@@ -5188,6 +5468,7 @@ function arrange(oc, music, verb, plan, o){
      and brings your hook back at the end. Every note is in the key and leans on the chord. */
   function writeMelody(){
     if (!plan.fit || !plan.notes || plan.notes.length < 3) return false;
+    if (plan.mode === 'melody') return playComposed();
     const sc = SCALES[plan.scale], pcs = sc.map((x) => (rootPc + x) % 12);
     const vn = plan.notes.map(([t, d, m]) => ({ t:t + vAt, d, m })).filter((n) => n.t >= 0 && n.t < songEnd);
     if (vn.length < 3) return false;
@@ -5202,7 +5483,8 @@ function arrange(oc, music, verb, plan, o){
     const chordPcs = (t) => { const dg = degs[clamp(Math.floor(t / bar), 0, nBars - 1)]; return [0, 2, 4].map((kk) => (rootPc + sc[(dg + kk) % 7]) % 12); };
     const toChord = (m, t) => { const cp = chordPcs(t); for (let d = 0; d < 7; d++){ if (cp.includes(((m + d) % 12 + 12) % 12)) return m + d; if (cp.includes(((m - d) % 12 + 12) % 12)) return m - d; } return m; };
     const q8 = beat / 2, grid = (t) => Math.round(t / q8) * q8, strong = (t) => Math.abs((t / beat) - Math.round(t / beat)) < 0.01;
-    const play = (m, t, len, vel) => {
+    const play = (m, t, len, vel) => sched(t, () => playNow(m, t, len, vel));
+    const playNow = (m, t, len, vel) => {
       if (t < 0 || t >= songEnd - 0.05) return;
       m = strong(t) ? toChord(snap(m), t) : snap(m);
       if (kind === 'piano') piano(m, t, len, vel);
@@ -5254,6 +5536,24 @@ function arrange(oc, music, verb, plan, o){
     if (room >= beat * 2){ const n = line(phrases[0], outro, room - beat, 0.42, 0); wrote += n; let home = toReg(60 + rootPc); play(home, grid(outro + room - beat * 1.5), beat * 2, 0.45); }
     return wrote > 0;
   }
+  // melody mode: the composed melody is the lead, with a soft octave doubling in the choruses
+  function playComposed(){
+    const ins = plan.instruments || [];
+    const kind = ins.includes('synth') ? 'synth' : ins.includes('strings') && plan.tempo < 100 ? 'string' : ins.includes('bells') && plan.tempo > 110 ? 'bell' : 'piano';
+    const leadNote = (m, t, len, vel) => {
+      if (kind === 'piano') piano(m, t, len, vel);
+      else if (kind === 'bell') bell(m, t, vel * 0.9);
+      else if (kind === 'string') sustained([m], t, Math.max(len, beat * 0.5), B.lead, ['sawtooth', 'triangle'], 0.05, 0.3, 8, true, vel * 0.85);
+      else { const osc = oc.createOscillator(), f = oc.createBiquadFilter(), g = oc.createGain(); osc.type = 'sawtooth'; osc.frequency.value = hz(m); f.type = 'lowpass'; f.Q.value = 2; f.frequency.setValueAtTime(2800 * bright, t); f.frequency.exponentialRampToValueAtTime(900, t + Math.max(0.15, len));
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel * 0.5, t + 0.02); g.gain.setValueAtTime(vel * 0.42, t + Math.max(0.03, len * 0.75)); g.gain.linearRampToValueAtTime(0, t + len + 0.1); osc.connect(f); f.connect(g); g.connect(B.lead); osc.start(t); osc.stop(t + len + 0.2); }
+    };
+    plan.notes.forEach(([t, d, m, part]) => sched(t, () => {
+      const e = at(t).energy, vel = 0.5 + 0.35 * e;
+      leadNote(m, t, d, vel);
+      if (part === 'chorus') sustained([m - 12], t, Math.max(d, beat * 0.5), B.lead, ['triangle'], 0.02, 0.2, 0, false, 0.18);
+    }));
+    return true;
+  }
   // chords: voice-led so each one moves as little as possible from the last
   let center = 60 + Math.floor(R() * 4);
   const voicing = (deg) => {
@@ -5273,7 +5573,7 @@ function arrange(oc, music, verb, plan, o){
     if (k === nBars - 1) dg = 0; degs.push(dg);
   }
   const hasLead = writeMelody();
-  for (let k = 0; k < nBars; k++){
+  const barJob = (k) => {
     const t = k * bar, last = k === nBars - 1;
     const deg = degs[k];
     const st = at(t), e = t < intro ? 0.5 : st.energy, v = voicing(deg), bm = bassOf(deg);
@@ -5317,6 +5617,18 @@ function arrange(oc, music, verb, plan, o){
         else { if (bt === 0 || bt === 2 || (bt === 3 && R() < 0.35)) kick(tb + (bt === 3 ? beat / 2 : 0), dv); if (bt % 2) snare(tb, dv * 0.85); hat(tb, dv * 0.28); hat(tb + beat / 2, dv * 0.16); }
       }
     }
+  };
+  /* Make each few bars' notes just before they play (the render pauses to add them). Creating every
+     note up front made long songs crawl, because every waiting note was processed the whole time. */
+  later.sort((p, q) => p[0] - q[0]); let li = 0;
+  const runUntil = (tEnd) => { while (li < later.length && later[li][0] < tEnd) later[li++][1](); };
+  const CH = 4, job = (k0) => { for (let k = k0; k < Math.min(nBars, k0 + CH); k++) barJob(k); runUntil(k0 + CH >= nBars ? Infinity : (k0 + CH) * bar); };
+  job(0);
+  for (let k0 = CH; k0 < nBars; k0 += CH){
+    const ts = Math.max(0, k0 * bar - bar * 1.5);
+    let ok = typeof oc.suspend === 'function';
+    if (ok){ try { oc.suspend(ts).then(() => { job(k0); oc.resume(); }); } catch (_) { ok = false; } }
+    if (!ok) job(k0);
   }
 }
 async function mixSong(voc, harmUp, harmDown, sr, plan, opts){
@@ -7386,6 +7698,7 @@ $('#obCreate').addEventListener('click', () => {
 const TOURS = {
   home:[
     { sel:'#tileNew', title:'Create new', text:'Start a new song. If you were in the middle of one, it goes to Drafts first, so nothing is lost.' },
+    { sel:'#tileMelody', title:'Create a melody', text:'Describe a song, add lyrics if you have them, name artists you like, and pick 2 to 3 minutes. The AI writes a full melody with an intro, verses, a chorus hook that repeats, a bridge and an ending, then arranges it. Sing over it to record your voice on top.' },
     { sel:'#tileDrafts', title:'Drafts', text:'Songs you saved to finish later. Tap play to hear one before you open it. The two icons duplicate it and rename it, Open picks up where you left off, and the x deletes it.' },
     { sel:'#libHead', title:'Your songs', text:'Finished songs you saved live here. Tap play to listen, and add an album photo.' },
     { sel:'.tabbar', title:'Menu', text:'Discover to find singers, songs and sounds. Studio to make songs. Profile for your account. Everything saves on this device as you go.' }
