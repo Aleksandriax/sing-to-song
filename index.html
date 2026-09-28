@@ -5034,13 +5034,61 @@ function makeIR(c, sec, sr){
   return b;
 }
 // Pick a chord for each bar from the notes sung in it (diatonic triads, skipping the diminished one).
+/* The music follows the singer: find the notes you sang, the tempo and beat you sang at,
+   and where your voice should start so your notes land on the beat. */
+async function voiceNotes(voc, sr){
+  const N = 2048, hop = voc.length / sr > 60 ? 2048 : 1024, fr = [];
+  let last = performance.now();
+  for (let p = 0; p + N <= voc.length; p += hop){
+    let e = 0; for (let i = p; i < p + N; i += 4) e += voc[i] * voc[i]; e = Math.sqrt(e / (N / 4));
+    const f0 = e > 0.012 ? Engine.detect(voc.subarray(p, p + N), sr) : 0;
+    fr.push({ t:p / sr, m:f0 > 60 && f0 < 1300 ? 69 + 12 * Math.log2(f0 / 440) : null, e });
+    if (performance.now() - last > 40){ await nextTick(); last = performance.now(); }
+  }
+  const notes = [], step = hop / sr; let cur = null;
+  const close = () => { if (cur && cur.ms.length >= 2){ const ms = cur.ms.slice().sort((a, b) => a - b); notes.push({ t:cur.t, dur:cur.end - cur.t, m:Math.round(ms[ms.length >> 1]), e:cur.e / cur.ms.length }); } cur = null; };
+  for (const f of fr){
+    if (f.m == null){ close(); continue; }
+    if (cur && Math.abs(f.m - cur.ms[cur.ms.length - 1]) < 0.9){ cur.ms.push(f.m); cur.end = f.t + step; cur.e += f.e; }
+    else { close(); cur = { t:f.t, end:f.t + step, ms:[f.m], e:f.e }; }
+  }
+  close();
+  return notes.filter((n) => n.dur >= 0.07);
+}
+function fitVoiceGrid(notes, guessBpm){
+  const on = notes.map((n) => ({ t:n.t, w:Math.min(1, n.dur / 0.25) * Math.min(1, n.e * 12) })).filter((o) => o.w > 0.05);
+  if (on.length < 4) return null;
+  let best = null;
+  for (let bpm = 60; bpm <= 170; bpm += 0.5){
+    const bt = 60 / bpm; let cx = 0, cy = 0, W = 0;
+    for (const o of on){ const a = 2 * Math.PI * o.t / bt; cx += o.w * Math.cos(a); cy += o.w * Math.sin(a); W += o.w; }
+    const R = Math.hypot(cx, cy) / W, pref = 1 - 0.18 * Math.min(1, Math.abs(Math.log2(bpm / guessBpm)));
+    if (!best || R * pref > best.sc) best = { bpm, sc:R * pref, R, phase:(((Math.atan2(cy, cx) / (2 * Math.PI)) * bt) % bt + bt) % bt };
+  }
+  return best;
+}
+// sets the tempo, the intro, where the voice starts, and the notes the melody writer answers
+async function fitToVoice(voc, sr, plan){
+  const notes = await voiceNotes(voc, sr);
+  plan.fit = 1; plan.notes = notes.slice(0, 2000).map((n) => [+n.t.toFixed(3), +n.dur.toFixed(3), n.m]);
+  const g = fitVoiceGrid(notes, plan.tempo);
+  if (g && g.R > 0.42){ plan.tempo = Math.round(g.bpm); plan.grid = 'voice'; }
+  const beat = 60 / plan.tempo, bar = beat * 4;
+  plan.introBars = bar < 2.6 ? 2 : 1;
+  const intro = plan.introBars * bar, t0 = notes.length ? notes[0].t : 0, phase = g && g.R > 0.42 ? g.phase : t0 % beat;
+  // the first note lands on the downbeat after the intro, nudged so the rest of your notes sit on the beat
+  const off0 = intro - t0, r = (((off0 + phase) % beat) + beat) % beat;
+  plan.voiceAt = r > beat / 2 ? off0 + (beat - r) : off0 - r;
+  return notes;
+}
+const voiceAtOf = (plan) => plan.voiceAt != null ? plan.voiceAt : 4 * 60 / plan.tempo;
 async function melodyChords(voc, sr, plan){
   const bar = 4 * 60 / plan.tempo, iv = SCALES[plan.scale], rootPc = ((plan.root % 12) + 12) % 12, N = 2048;
-  const hists = Array.from({ length:Math.ceil(voc.length / sr / bar) + 1 }, () => new Array(12).fill(0));
+  const hists = Array.from({ length:Math.ceil((voc.length / sr + (plan.fit ? voiceAtOf(plan) : 0)) / bar) + 2 }, () => new Array(12).fill(0));
   let last = performance.now();
   for (let p = 0; p + N <= voc.length; p += N){
     const f0 = Engine.detect(voc.subarray(p, p + N), sr);
-    if (f0 > 0){ const m = 69 + 12 * Math.log2(f0 / 440); hists[Math.floor(p / sr / bar)][((Math.round(m) % 12) + 12) % 12] += 1; }
+    if (f0 > 0){ const m = 69 + 12 * Math.log2(f0 / 440), bi = Math.floor((p / sr + (plan.fit ? voiceAtOf(plan) : 0)) / bar); if (hists[bi]) hists[bi][((Math.round(m) % 12) + 12) % 12] += 1; }
     if (performance.now() - last > 40){ await nextTick(); last = performance.now(); }
   }
   const skip = plan.scale === 'major' ? 6 : 1;
@@ -5060,7 +5108,7 @@ async function melodyChords(voc, sr, plan){
 /* The arranger: plays the chords with real-sounding instruments, voice-led so chords flow,
    with patterns, a motif and entries picked from the song's seed. */
 function arrange(oc, music, verb, plan, o){
-  const R = mulberry(plan.seed || 1), sr = oc.sampleRate, { songEnd, bar, beat, intro, at } = o;
+  const R = mulberry(plan.seed || 1), sr = oc.sampleRate, { songEnd, bar, beat, intro, at } = o, vAt = o.vAt != null ? o.vAt : intro;
   const iv = SCALES[plan.scale], rootPc = ((plan.root % 12) + 12) % 12, prog = plan.progression, nBars = Math.round(songEnd / bar);
   const pick = (arr) => arr[Math.floor(R() * arr.length)];
   const jit = () => (R() - 0.5) * 0.016;
@@ -5075,7 +5123,7 @@ function arrange(oc, music, verb, plan, o){
   const bright = 0.6 + plan.brightness * 0.8;
   const B = {
     piano:bus(0.16, 4200 * bright, 0.35, -0.12), strings:bus(0.035, 2400 * bright, 0.7, 0.18), pad:bus(0.045, 1300 * bright, 0.9, 0),
-    harp:bus(0.2, 5200 * bright, 0.5, 0.3), bells:bus(0.05, 9000, 0.75, -0.3), synth:bus(0.04, null, 0.45, 0.22),
+    harp:bus(0.2, 5200 * bright, 0.5, 0.3), bells:bus(0.05, 9000, 0.75, -0.3), synth:bus(0.04, null, 0.45, 0.22), lead:bus(0.15, 5200 * bright, 0.5, 0.14),
     bass:bus(0.2, 520, 0.05, 0), drums:bus(0.42, null, 0.08, 0)
   };
   // style choices for this song
@@ -5135,6 +5183,77 @@ function arrange(oc, music, verb, plan, o){
     const osc = oc.createOscillator(), og = oc.createGain(); osc.frequency.setValueAtTime(200, t); osc.frequency.exponentialRampToValueAtTime(140, t + 0.08); og.gain.setValueAtTime(vel * 0.35, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.1); osc.connect(og); og.connect(B.drums); osc.start(t); osc.stop(t + 0.12);
   };
 
+  /* A new melody written from yours: it quotes your opening line in the intro so your voice
+     enters as the answer, answers each of your phrases in the gaps, harmonizes softly under you,
+     and brings your hook back at the end. Every note is in the key and leans on the chord. */
+  function writeMelody(){
+    if (!plan.fit || !plan.notes || plan.notes.length < 3) return false;
+    const sc = SCALES[plan.scale], pcs = sc.map((x) => (rootPc + x) % 12);
+    const vn = plan.notes.map(([t, d, m]) => ({ t:t + vAt, d, m })).filter((n) => n.t >= 0 && n.t < songEnd);
+    if (vn.length < 3) return false;
+    const ins = plan.instruments || [];
+    const kind = ins.includes('synth') ? 'synth' : ins.includes('bells') ? 'bell' : ins.includes('strings') && plan.tempo < 100 ? 'string' : ins.includes('harp') ? 'harp' : 'piano';
+    const sortedM = vn.map((n) => n.m).sort((a, b) => a - b), vMed = sortedM[sortedM.length >> 1];
+    const center = clamp(vMed + 12, 64, 81);
+    const toReg = (m) => { while (m < center - 7) m += 12; while (m > center + 7) m -= 12; return m; };
+    const inScale = (m) => pcs.includes(((m % 12) + 12) % 12);
+    const snap = (m) => { m = Math.round(m); for (let d = 0; d < 3; d++){ if (inScale(m + d)) return m + d; if (inScale(m - d)) return m - d; } return m; };
+    const stepScale = (m, k) => { m = snap(m); let n = m, dir = Math.sign(k); for (let i = 0; i < Math.abs(k); i++){ n += dir; while (!inScale(n)) n += dir; } return n; };
+    const chordPcs = (t) => { const dg = degs[clamp(Math.floor(t / bar), 0, nBars - 1)]; return [0, 2, 4].map((kk) => (rootPc + sc[(dg + kk) % 7]) % 12); };
+    const toChord = (m, t) => { const cp = chordPcs(t); for (let d = 0; d < 7; d++){ if (cp.includes(((m + d) % 12 + 12) % 12)) return m + d; if (cp.includes(((m - d) % 12 + 12) % 12)) return m - d; } return m; };
+    const q8 = beat / 2, grid = (t) => Math.round(t / q8) * q8, strong = (t) => Math.abs((t / beat) - Math.round(t / beat)) < 0.01;
+    const play = (m, t, len, vel) => {
+      if (t < 0 || t >= songEnd - 0.05) return;
+      m = strong(t) ? toChord(snap(m), t) : snap(m);
+      if (kind === 'piano') piano(m, t, len, vel);
+      else if (kind === 'bell') bell(m, t, vel * 0.9);
+      else if (kind === 'harp') harp(m, t, vel);
+      else if (kind === 'string') sustained([m], t, Math.max(len, beat), B.lead, ['sawtooth', 'triangle'], 0.06, 0.35, 8, true, vel * 0.8);
+      else { const osc = oc.createOscillator(), f = oc.createBiquadFilter(), g = oc.createGain(); osc.type = 'sawtooth'; osc.frequency.value = hz(m); f.type = 'lowpass'; f.Q.value = 2; f.frequency.setValueAtTime(2600 * bright, t); f.frequency.exponentialRampToValueAtTime(900, t + Math.max(0.15, len));
+        g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel * 0.5, t + 0.02); g.gain.setValueAtTime(vel * 0.4, t + Math.max(0.03, len * 0.7)); g.gain.linearRampToValueAtTime(0, t + len + 0.12); osc.connect(f); f.connect(g); g.connect(B.lead); osc.start(t); osc.stop(t + len + 0.2); }
+    };
+    // your phrases (a new phrase starts after a breath)
+    const phrases = []; let ph = [vn[0]];
+    for (let i = 1; i < vn.length; i++){ if (vn[i].t - (vn[i - 1].t + vn[i - 1].d) > Math.max(beat * 0.9, 0.35)){ phrases.push(ph); ph = []; } ph.push(vn[i]); }
+    phrases.push(ph);
+    // a phrase as a short line on the eighth-note grid, starting at `start`, no longer than `room`
+    const line = (p, start, room, vel, shiftSteps) => {
+      const s0 = p[0].t; let lastEnd = start, n = 0;
+      for (const x of p){
+        const t = grid(start + (x.t - s0)); if (t < lastEnd - 1e-6 || t >= start + room - q8 * 0.5) continue;
+        const len = Math.max(q8 * 0.9, Math.min(beat * 1.5, grid(x.d) || q8));
+        play(stepScale(toReg(x.m), shiftSteps), t, Math.min(len, start + room - t), vel);
+        lastEnd = t + q8; if (++n >= 8) break;
+      }
+      return n;
+    };
+    let wrote = 0;
+    // 1. intro: quote your opening line so your voice comes in as the answer
+    const introRoom = Math.max(0, vAt - beat * 0.5 - (vAt >= bar * 2 ? bar : 0));
+    if (introRoom >= beat * 2) wrote += line(phrases[0], vAt >= bar * 2 ? bar : 0, introRoom, 0.75, 0);
+    // 2. answers in the breaths between your phrases (the melody moves a step, so it answers instead of copying)
+    for (let i = 0; i < phrases.length - 1; i++){
+      const pe = phrases[i][phrases[i].length - 1], gapStart = grid(pe.t + pe.d + beat * 0.25), gapEnd = phrases[i + 1][0].t - beat * 0.5;
+      if (gapEnd - gapStart < beat * 1.2) continue;
+      const tail = phrases[i].slice(-4), move = R() < 0.5 ? 1 : -1;
+      const n = line(tail, gapStart, gapEnd - gapStart, 0.5, move);
+      // land on a chord tone to close the answer
+      if (n) { const endT = grid(Math.min(gapEnd - q8, gapStart + (tail[tail.length - 1].t - tail[0].t) + beat)); if (endT > gapStart) play(toChord(toReg(tail[tail.length - 1].m), endT), endT, beat * 1.5, 0.45); }
+      wrote += n;
+    }
+    // 3. under your voice: soft long notes a third below what you sing, on beats 1 and 3
+    const energyOK = (t) => at(t).energy >= 0.6;
+    for (let k = 0; k < nBars; k++) for (const bt of [0, 2]){
+      const t = k * bar + bt * beat, sung = vn.find((x) => x.t <= t + 0.05 && x.t + x.d > t + 0.05);
+      if (!sung || !energyOK(t)) continue;
+      const under = toChord(stepScale(toReg(sung.m) - 12, -2), t);
+      play(under, t, beat * 1.8, 0.22); wrote++;
+    }
+    // 4. after your last line: your hook comes back and settles on the home note
+    const lastN = vn[vn.length - 1], outro = grid(lastN.t + lastN.d + beat * 0.5), room = songEnd - bar * 0.5 - outro;
+    if (room >= beat * 2){ const n = line(phrases[0], outro, room - beat, 0.42, 0); wrote += n; let home = toReg(60 + rootPc); play(home, grid(outro + room - beat * 1.5), beat * 2, 0.45); }
+    return wrote > 0;
+  }
   // chords: voice-led so each one moves as little as possible from the last
   let center = 60 + Math.floor(R() * 4);
   const voicing = (deg) => {
@@ -5146,10 +5265,17 @@ function arrange(oc, music, verb, plan, o){
   };
   const bassOf = (deg) => { let m = 36 + ((rootPc + iv[deg]) % 12); if (m > 45) m -= 12; return m; };
 
+  // the chord for every bar (from your melody where you sing)
+  const degs = [];
   for (let k = 0; k < nBars; k++){
-    const t = k * bar, last = k === nBars - 1, vb = k - 1;
-    let deg = plan.chords && vb >= 0 && plan.chords[vb] != null ? plan.chords[vb] : prog[k % prog.length];
-    if (last) deg = 0;
+    const ci = plan.fit ? k : k - 1;
+    let dg = plan.chords && ci >= 0 && plan.chords[ci] != null ? plan.chords[ci] : prog[k % prog.length];
+    if (k === nBars - 1) dg = 0; degs.push(dg);
+  }
+  const hasLead = writeMelody();
+  for (let k = 0; k < nBars; k++){
+    const t = k * bar, last = k === nBars - 1;
+    const deg = degs[k];
     const st = at(t), e = t < intro ? 0.5 : st.energy, v = voicing(deg), bm = bassOf(deg);
     const on = (x) => st.ins.has(x) && (t < intro ? entry[x] === 0 : k - 1 >= entry[x]);
     const len = last ? bar * 2.5 : bar;
@@ -5167,7 +5293,7 @@ function arrange(oc, music, verb, plan, o){
       if (harpStyle === 'triplet') for (let i = 0; i < 12; i++) harp(up[i % up.length], t + i * beat / 3, hv * (i % 3 ? 0.7 : 1));
       else { const seq = harpStyle === 'up' ? up.slice(0, 8) : up.slice(0, 5).concat(up.slice(1, 4).reverse()); seq.forEach((m, i) => harp(m, t + i * beat / 2, hv * (i % 2 ? 0.75 : 1))); }
     } else if (on('harp') && last) v.forEach((m, i) => harp(m + 12, t + i * 0.09, 0.6));
-    if (on('bells') && !last && e >= 0.45 && (k % 4 !== 3 || R() < 0.5)){
+    if (on('bells') && !hasLead && !last && e >= 0.45 && (k % 4 !== 3 || R() < 0.5)){
       const tones = v.map((m) => m + 12).concat([v[0] + 24, v[1] + 24]);
       motif.forEach((mo) => { if ((k % 2) * 8 <= mo.pos && mo.pos < (k % 2) * 8 + 8) bell(tones[mo.tone % tones.length], t + (mo.pos % 8) * beat / 2, 0.45 + 0.3 * e); });
     }
@@ -5195,12 +5321,13 @@ function arrange(oc, music, verb, plan, o){
 }
 async function mixSong(voc, harmUp, harmDown, sr, plan, opts){
   const inst = !!(opts && opts.instrumental);   // the music only: no voice, no sung harmonies
-  const beat = 60 / plan.tempo, bar = beat * 4, intro = bar;
-  const songEnd = Math.ceil((intro + voc.length / sr) / bar) * bar + bar;
+  const beat = 60 / plan.tempo, bar = beat * 4, intro = plan.fit ? (plan.introBars || 1) * bar : bar;
+  const vAt = plan.fit ? voiceAtOf(plan) : intro;   // where the voice starts in the song
+  const songEnd = Math.ceil((Math.max(intro, vAt + voc.length / sr)) / bar) * bar + bar * (plan.fit ? 2 : 1);
   const oc = offline(2, Math.ceil((songEnd + plan.reverbSec + 0.3) * sr), sr);
   // arrangement state at a song time, from the plan's sections (vocal time + intro)
   // a section with `until` applies only inside its range; later sections win
-  const secs = plan.sections.map((s) => ({ t:intro + s.at, until:s.until != null && s.until > s.at ? intro + s.until : null, beat:s.beat, energy:s.energy, instr:s.instr || null, only:!!s.only }));
+  const secs = plan.sections.map((s) => ({ t:vAt + s.at, until:s.until != null && s.until > s.at ? vAt + s.until : null, beat:s.beat, energy:s.energy, instr:s.instr || null, only:!!s.only }));
   const at = (t) => {
     let b = plan.beat, e = 0.8, ins = new Set(plan.instruments || ['piano', 'strings']);
     for (const s of secs){
@@ -5228,7 +5355,7 @@ async function mixSong(voc, harmUp, harmDown, sr, plan, opts){
     if (oc.createStereoPanner){ const p = oc.createStereoPanner(); p.pan.value = pan; g.connect(p); out = p; }
     out.connect(master);
     const sg = oc.createGain(); sg.gain.value = send; out.connect(sg); sg.connect(verb);
-    s.start(intro);
+    if (vAt >= 0) s.start(vAt); else s.start(0, -vAt);
   };
   const polish = (inp) => {
     const f = (type, freq, gain, q) => { const b = oc.createBiquadFilter(); b.type = type; b.frequency.value = freq; if (gain != null) b.gain.value = gain; if (q) b.Q.value = q; return b; };
@@ -5245,12 +5372,12 @@ async function mixSong(voc, harmUp, harmDown, sr, plan, opts){
     const win = Math.floor(sr * 0.05), env = [];
     for (let p = 0; p < voc.length; p += win){ let e = 0; for (let i = p; i < Math.min(voc.length, p + win); i += 4) e += voc[i] * voc[i]; env.push(Math.sqrt(e / (win / 4))); }
     const emax = Math.max(...env, 1e-6); let lastG = 1;
-    env.forEach((e, i) => { const gv = 1 - 0.35 * Math.min(1, (e / emax) * 1.6); if (Math.abs(gv - lastG) > 0.03){ music.gain.setTargetAtTime(gv, intro + i * 0.05, 0.08); lastG = gv; } });
+    env.forEach((e, i) => { const gv = 1 - 0.35 * Math.min(1, (e / emax) * 1.6); if (Math.abs(gv - lastG) > 0.03){ music.gain.setTargetAtTime(gv, Math.max(0, vAt + i * 0.05), 0.08); lastG = gv; } });
   }
   if (harmUp && !inst) addVoice(harmUp, 0.3 * plan.harmony, -0.5, 1, true);
   if (harmDown && !inst) addVoice(harmDown, 0.26 * plan.harmony, 0.5, 1, true);
 
-  arrange(oc, music, verb, plan, { songEnd, bar, beat, intro, at });
+  arrange(oc, music, verb, plan, { songEnd, bar, beat, intro, at, vAt });
 
   const out = await renderOffline(oc);
   let peak = 0;
@@ -5315,6 +5442,10 @@ async function generate(regenerate){
     }
     if (!plan){ setProgress(1); plan = keywordPlan(state.variation, seed); await nextTick(); }
     plan.blend = lib.premium && state.blend;
+    setProgress(1, 0.85, 'Finding your beat and your melody');
+    await fitToVoice(voc, sr, plan);
+    if (plan.grid === 'voice' && plan.summary) plan.summary = plan.summary.replace(/about \d+ BPM/, 'about ' + plan.tempo + ' BPM');
+    plan.summary = (plan.summary || '') + ' ' + (plan.grid === 'voice' ? 'Found the beat you sang at (' + plan.tempo + ' BPM) and lined the music up so your notes land on it.' : 'Lined your first note up with the downbeat.') + ' Wrote a new melody from yours: it plays your opening line in the intro so your voice comes in as the answer, answers you between phrases, harmonizes softly under you, and brings your hook back at the end.';
     setProgress(1, 0.9, 'Fitting chords to your melody');
     plan.chords = await melodyChords(voc, sr, plan);
 
@@ -6072,7 +6203,7 @@ async function deleteSfxItem(it){
 }
 
 /* Step 2: sound effects placed on your song; they're layered into the finished mix */
-const introOf = (plan) => plan.plain ? 0 : 4 * 60 / plan.tempo;
+const introOf = (plan) => plan.plain ? 0 : voiceAtOf(plan);
 function syncResultSfx(){
   const r = state.result; if (!r) return;
   r.sfx = state.sfx2.map((p) => Object.assign({}, p, { at:p.at + introOf(r.plan) }));
