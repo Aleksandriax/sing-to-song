@@ -75,7 +75,7 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 
 /* effect pads */
 .pads{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:18px;overflow:hidden}
-.pad{--pad:#ec4899;position:relative;overflow:hidden;appearance:none;aspect-ratio:1/0.8;border-radius:0;border:0;background:var(--surface);color:var(--text);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;transition:transform .08s,box-shadow .15s,background-color .15s}
+.pad{--pad:#ec4899;position:relative;overflow:hidden;appearance:none;aspect-ratio:1/0.64;border-radius:0;border:0;background:var(--surface);color:var(--text);font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;transition:transform .08s,box-shadow .15s,background-color .15s}
 .pad::before{content:"";position:absolute;inset:0;background:var(--pad);opacity:.08;pointer-events:none}
 .pad:active{filter:brightness(1.25)}
 .pad-name{position:relative;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:15px;letter-spacing:-.01em}
@@ -134,7 +134,28 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .lv-val{font-size:12px;color:var(--muted);min-width:40px;text-align:right}
 .recording .layer-vol{display:none!important}
 .ed-links{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.switch.mon-switch + .switch.mon-switch{flex-basis:100%;justify-content:flex-end}
+.ed-links:not(:has(> :not([hidden]))){display:none}
+/* step 1 fits on a phone: back arrow beside the record button, the play bar right on top of the wave */
+body:not(.recording) #page1{position:relative;gap:12px}
+body:not(.recording) #page1 > .back-top{position:absolute;top:8px;left:0;z-index:2;margin:0}
+body:not(.recording) #page1 .editor{gap:8px}
+body:not(.recording) #page1 .recorder{padding-block:0 2px}
+body:not(.recording) #page1 .rec{width:76px;height:76px}
+body:not(.recording) #page1 .rec-core{width:30px;height:30px}
+.btn.small.round.ic-play.ed-play{width:38px;height:38px;min-width:38px;min-height:38px;border-color:transparent;background:linear-gradient(135deg,var(--accent-a),var(--accent-b));color:#fff}
+.ed-play svg{width:18px;height:18px;fill:#fff}
+.pad-foot{row-gap:8px}
+.pad{aspect-ratio:auto;min-height:74px;padding:8px 4px}
+.pad .pad-sub{font-size:11.5px;line-height:1.2}
+.switch.mon-switch{font-size:13px}
+.switch.mon-switch + .switch.mon-switch{flex-basis:auto}
+.pad-foot .mon-switch{margin-left:0}
+.pad-switches{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex-basis:100%}
+.pad-switches .switch{justify-content:space-between;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);line-height:1.2}
+.blend-btn{display:inline-flex;align-items:center;gap:6px}
+.blend-btn[hidden]{display:none}
+.blend-btn .ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.blend-btn[aria-pressed="true"]{background:#fbbf24;border-color:#fbbf24;color:#241a05}
 .danger-link{color:var(--err)}
 .avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block}
 .me-photo{display:flex;flex-direction:column;align-items:center;gap:2px}
@@ -184,6 +205,20 @@ body:not(.recording) #page1 .rec-core{width:32px;height:32px}
 .fx-row input[type=range]{width:100%;accent-color:var(--c);height:28px;margin:0}
 .fx-row.removed .fx-name{text-decoration:line-through;color:var(--faint)}
 .fx-row.removed input{opacity:.3}
+#fxSheet .sheet{max-height:88vh;overflow-y:auto}
+.btn.small.fx-addmore{align-self:flex-start;border-color:#fbbf24;color:#fbbf24}
+.fx-adds{display:flex;flex-direction:column;gap:6px}
+.fx-adds:empty{display:none}
+.fx-add-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;background:color-mix(in srgb,var(--c) 14%,var(--surface-2));border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
+.fx-add-row .fx-name{flex:1}
+.fx-add-row .tag{font-size:11px}
+.fx-picker{display:flex;flex-direction:column;gap:6px}
+.fx-picker[hidden]{display:none}
+.fx-picker h3{margin:6px 0 0;font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.fx-chips{display:flex;flex-wrap:wrap;gap:6px}
+.fx-chip{appearance:none;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px 0 9px;border-radius:99px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.fx-chip .dot{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.fx-chip[aria-pressed="true"]{border-color:var(--c);background:color-mix(in srgb,var(--c) 22%,var(--surface-2))}
 .d-subrow{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:-6px}
 .d-subrow .subseg{margin-top:0}
 .icon-btn{display:grid;place-items:center;width:40px;height:40px;border-radius:99px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);cursor:pointer;flex:none}
@@ -818,13 +853,6 @@ legend{padding:0}
 
 
     <section class="editor" aria-label="Your song">
-      <div class="tl-bar">
-        <button type="button" id="edPlay" class="btn small" style="min-width:64px">Play</button>
-        <span id="edTime" class="tl-time mono">0:00.0 / 0:00.0</span>
-        <span class="spacer"></span>
-        <button type="button" id="edZoomOut" class="btn small" style="min-width:36px" aria-label="Zoom out">−</button>
-        <button type="button" id="edZoomIn" class="btn small" style="min-width:36px" aria-label="Zoom in">+</button>
-      </div>
       <div class="rec-top">
         <button type="button" id="recBack" class="back-top" aria-label="Back to editing"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
         <div class="rec-zoom"><button type="button" id="rzOut" aria-label="Zoom out">−</button><button type="button" id="rzIn" aria-label="Zoom in">+</button></div>
@@ -839,6 +867,14 @@ legend{padding:0}
         </div>
         <button type="button" id="recDone" class="btn primary rec-done" hidden>Done</button>
         <div id="recHint" class="rec-hint sr-only">Tap to start, tap again to stop. Or hold, then release.</div>
+      </div>
+      <div class="tl-bar">
+        <button type="button" id="edPlay" class="btn small round ic-play ed-play" aria-label="Play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></button>
+        <span id="edTime" class="tl-time mono">0:00.0 / 0:00.0</span>
+        <span class="spacer"></span>
+<button type="button" id="edBlend" class="btn small blend-btn" aria-pressed="false" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h6c3 0 3 10 6 10h6"/><path d="M3 17h6c3 0 3-10 6-10h6"/></svg>Blend</button>
+        <button type="button" id="edZoomOut" class="btn small" style="min-width:36px" aria-label="Zoom out">−</button>
+        <button type="button" id="edZoomIn" class="btn small" style="min-width:36px" aria-label="Zoom in">+</button>
       </div>
       <div class="ed-wrap">
         <canvas id="edCanvas" aria-label="Your song's wave. Tap to move the playhead, swipe quickly to scroll, drag slowly to select a part."></canvas>
@@ -879,8 +915,10 @@ legend{padding:0}
         <button type="button" id="fxEditBtn" class="btn small" aria-pressed="false">Edit</button>
         <button type="button" id="fxLibBtn" class="btn small">Effects library</button>
       </div>
-      <label class="switch mon-switch" id="monitorBtn" for="monitorSw"><span>Hear yourself</span><input type="checkbox" id="monitorSw" role="switch"></label>
-      <label class="switch mon-switch" id="cleanBtn" for="cleanSw"><span>Clear background noise</span><input type="checkbox" id="cleanSw" role="switch"></label>
+      <div class="pad-switches">
+        <label class="switch mon-switch" id="monitorBtn" for="monitorSw"><span>Hear yourself</span><input type="checkbox" id="monitorSw" role="switch"></label>
+        <label class="switch mon-switch" id="cleanBtn" for="cleanSw"><span>Clear background noise</span><input type="checkbox" id="cleanSw" role="switch"></label>
+      </div>
     </div>
 
     <div id="status1" class="status" role="status" aria-live="polite"></div>
@@ -1284,6 +1322,9 @@ legend{padding:0}
     <h2 id="fxTitle">Effects here</h2>
     <p id="fxWhen" class="summary"></p>
     <div id="fxRows"></div>
+    <div id="fxAdds" class="fx-adds"></div>
+    <button type="button" id="fxAddMore" class="btn small fx-addmore" aria-expanded="false">+ Add more</button>
+    <div id="fxPicker" class="fx-picker" hidden></div>
     <div class="actions">
       <button type="button" id="fxCancel" class="btn">Cancel</button>
       <button type="button" id="fxSave" class="btn primary">Save</button>
@@ -2634,6 +2675,7 @@ function updateAllFx(){
   btn.hidden = !has; if (!has) return;
   const on = padsOn();
   btn.classList.toggle('none', !on.length);
+  if (!on.length){ btn.hidden = true; return; }   // it shows once a pad is on
   $('#allFxSub').textContent = !on.length ? 'Turn on pads or load a preset first' : on.map((q) => q.name).join(' · ') + (state.sel1 ? ' · until the end of your selection' : '');
 }
 {
@@ -2882,6 +2924,57 @@ async function makeSrc(raw, sr, events, label){
   return src;
 }
 
+/* ---------- Blend: tie two clips together where they meet ----------
+   A short crossfade: the first fades out while the second fades in. Where you trimmed audio away,
+   a little of it is borrowed so the sound carries across the cut. The two become one clip. */
+let blendMode = false;
+function hasJoins(){ return state.layers.some((l) => { const sg = l.segs.slice().sort((p, q) => p.at - q.at); for (let i = 0; i < sg.length - 1; i++) if (Math.abs(segEnd(sg[i]) - sg[i + 1].at) <= 0.03) return true; return false; }); }
+function setBlendMode(on){
+  blendMode = on; $('#edBlend').setAttribute('aria-pressed', on ? 'true' : 'false');
+  if (on){ state.sel1 = null; setStatus($('#status1'), 'Tap a gold circle, where two clips meet, to blend them into one smooth clip.', ''); }
+  else setStatus($('#status1'), '');
+  drawEditor();
+}
+$('#edBlend').addEventListener('click', () => { if (state.busy || rec.state !== 'idle') return; setBlendMode(!blendMode); });
+async function blendJoin(j){
+  const A = j.a, B = j.b, layer = state.layers[j.lane];
+  if (A.src.sr !== B.src.sr){ A.fadeOut = 0.02; B.fadeIn = 0.02; histNext = 'Blended two clips'; setBlendMode(false); renderClips(); return; }
+  stopAllPlayback();
+  const sr = A.src.sr, XF = 0.12;
+  const aHi = A.hi == null ? A.src.raw.length / sr : Math.max(A.hi, A.end), bLo = B.lo == null ? 0 : Math.min(B.lo, B.start);
+  const extA = Math.max(0, Math.min(XF / 2, aHi - A.end)), preB = Math.max(0, Math.min(XF / 2, B.start - bLo));
+  const lenA = segLen(A), lenB = segLen(B), n = Math.round((lenA + lenB) * sr), raw = new Float32Array(n);
+  const a0 = Math.round(A.start * sr), b0 = Math.round((B.start - preB) * sr), joinI = Math.round(lenA * sr);
+  const o0 = joinI - Math.round(preB * sr), o1 = joinI + Math.round(extA * sr), ov = Math.max(1, o1 - o0);
+  // when there's no hidden audio on either side, fade each side a little so the join doesn't click
+  const hardA = Math.round(0.012 * sr);
+  for (let i = 0; i < n; i++){
+    const va = i < o1 ? (A.src.raw[a0 + i] || 0) : 0;
+    const vb = i >= o0 ? (B.src.raw[b0 + (i - o0)] || 0) : 0;
+    let wa = 1, wb = 1;
+    if (i >= o0 && i < o1 && o1 - o0 > 8){ const t = (i - o0) / ov; wa = Math.cos(t * Math.PI / 2); wb = Math.sin(t * Math.PI / 2); }
+    else if (o1 - o0 <= 8){ if (i < joinI && joinI - i < hardA) wa = (joinI - i) / hardA; if (i >= joinI && i - joinI < hardA) wb = (i - joinI) / hardA; }
+    raw[i] = (i < o1 ? va * wa : 0) + (i >= o0 ? vb * wb : 0);
+  }
+  // keep each side's voice effects: the first clip's up to the join, the second's after it
+  const at = (evs, t) => { let q = NEUTRAL; for (const e of evs.slice().sort((x, y) => x.at - y.at)){ if (e.at <= t) q = e.params; else break; } return q; };
+  const evA = A.src.events.length ? A.src.events : [{ at:0, params:Object.assign({}, NEUTRAL) }], evB = B.src.events.length ? B.src.events : [{ at:0, params:Object.assign({}, NEUTRAL) }];
+  const events = [{ at:0, params:Object.assign({}, at(evA, a0)) }];
+  evA.forEach((e) => { if (e.at > a0 && e.at < a0 + joinI) events.push({ at:e.at - a0, params:e.params }); });
+  const bs = Math.round(B.start * sr);
+  events.push({ at:joinI, params:Object.assign({}, at(evB, bs)) });
+  evB.forEach((e) => { if (e.at > bs && e.at < bs + Math.round(lenB * sr)) events.push({ at:e.at - bs + joinI, params:e.params }); });
+  $('#edBlend').disabled = true;
+  try {
+    const ns = await makeSrc(raw, sr, events, 'the blend');
+    const seg = { id:nextId++, src:ns, start:0, end:n / sr, at:A.at, lo:0, hi:n / sr, fadeIn:A.fadeIn || 0, fadeOut:B.fadeOut || 0 };
+    layer.segs.splice(layer.segs.indexOf(A), 1, seg); layer.segs.splice(layer.segs.indexOf(B), 1);
+    peakCache.clear(); invalidateJoined();
+    histNext = 'Blended two clips'; setStatus($('#status1'), 'Blended. The two clips are one smooth clip now. Undo splits them back.', 'ok'); toast('Blended');
+  } catch (err){ setStatus($('#status1'), 'Couldn\'t blend: ' + (err.message || err), 'error'); }
+  finally { $('#edBlend').disabled = false; blendMode = false; $('#edBlend').setAttribute('aria-pressed', 'false'); renderClips(); }
+}
+
 /* ---------- song structure ---------- */
 const segLen = (s) => s.end - s.start;
 const segEnd = (s) => s.at + segLen(s);
@@ -3111,6 +3204,18 @@ function drawEditor(){
     g.beginPath(); g.moveTo(cx - k + 1.5, cy); g.lineTo(cx + k, cy - k); g.lineTo(cx + k, cy + k); g.closePath(); g.fill();
     ed.starts.push({ x:cx, y:cy, r:r + 5, lane:li });
   });
+  // Blend: gold circles where two clips meet
+  ed.joins = [];
+  if (blendMode) state.layers.forEach((layer, li) => {
+    const sg = layer.segs.slice().sort((p, q) => p.at - q.at), { y, h:lh } = box(li), cy = y + lh / 2;
+    for (let i = 0; i < sg.length - 1; i++){
+      if (Math.abs(segEnd(sg[i]) - sg[i + 1].at) > 0.03) continue;
+      const x = X(sg[i + 1].at); if (x < ED_L - 4 || x > w + 4) continue;
+      g.beginPath(); g.arc(x, cy, 14, 0, Math.PI * 2); g.fillStyle = 'rgba(251,191,36,.28)'; g.fill(); g.lineWidth = 2.5; g.strokeStyle = '#fbbf24'; g.stroke();
+      g.beginPath(); g.moveTo(x - 7, cy - 4); g.bezierCurveTo(x - 1, cy - 4, x + 1, cy + 4, x + 7, cy + 4); g.moveTo(x - 7, cy + 4); g.bezierCurveTo(x - 1, cy + 4, x + 1, cy - 4, x + 7, cy - 4); g.lineWidth = 2; g.stroke();
+      ed.joins.push({ x, y:cy, lane:li, a:sg[i], b:sg[i + 1] });
+    }
+  });
   $('#edEmpty').hidden = true;
 }
 function edReadouts(){
@@ -3133,6 +3238,7 @@ function edReadouts(){
   $('#edDel').textContent = 'Delete'; $('#edDel').setAttribute('aria-label', sel ? 'Delete ' + fmtS(sel.b - sel.a) : 'Delete');
   $('#edLayer').disabled = state.layers.length >= MAX_LAYERS || !has;
   $('#edSaveSfx').hidden = !sel;
+  $('#edBlend').hidden = !has || rec.state !== 'idle' || !hasJoins(); if ($('#edBlend').hidden && blendMode){ blendMode = false; $('#edBlend').setAttribute('aria-pressed', 'false'); }
   $('#edRemoveLayer').hidden = state.activeLayer === 0;
   $('#edRemoveLayer').textContent = 'Remove layer ' + (state.activeLayer + 1);
   const where = (state.layers.length > 1 ? 'layer ' + (state.activeLayer + 1) : 'your song') + ' at ' + fmtT(state.activeLayer === 0 ? Math.min(state.playhead1, state.layers[0].segs.reduce((d, s) => Math.max(d, segEnd(s)), 0)) : state.playhead1);
@@ -3202,7 +3308,8 @@ function fxLabel(key, v){
 function openFxSheet(hit){
   const { seg, r, lane } = hit, sr = seg.src.sr;
   const a = Math.max(r.a / sr, seg.start), b = Math.min(r.b / sr, seg.end);
-  fxEdit = { seg, lane, A:Math.floor(a * sr), B:Math.ceil(b * sr), rows:r.list.map((f) => ({ key:f.key, v:f.v, orig:f.v, removed:false })) };
+  fxEdit = { seg, lane, A:Math.floor(a * sr), B:Math.ceil(b * sr), rows:r.list.map((f) => ({ key:f.key, v:f.v, orig:f.v, removed:false })), adds:[] };
+  $('#fxPicker').hidden = true; $('#fxAddMore').setAttribute('aria-expanded', 'false'); renderFxAdds();
   ed.fxSel = { seg, r }; drawEditor();
   $('#fxTitle').textContent = r.list.length > 1 ? 'Effects here' : fxName(r.list[0].key);
   $('#fxWhen').textContent = 'From ' + fmtT(seg.at + a - seg.start) + ' to ' + fmtT(seg.at + b - seg.start) + '. Slide to change how strong it is.';
@@ -3220,24 +3327,49 @@ function openFxSheet(hit){
   }));
   $('#fxSheet').hidden = false;
 }
+// + Add more: stack another effect (any pad or anything in the library) onto this same part
+function renderFxAdds(){
+  if (!fxEdit) return;
+  $('#fxAdds').replaceChildren(...fxEdit.adds.map((p) => {
+    const x = h('button', { type:'button', class:'linkish danger-link' }, 'Remove');
+    x.addEventListener('click', () => { fxEdit.adds = fxEdit.adds.filter((q) => q !== p); renderFxAdds(); renderFxPicker(); });
+    return h('div', { class:'fx-add-row', style:'--c:' + p.color }, h('span', { class:'fx-dot', 'aria-hidden':'true' }), h('span', { class:'fx-name', text:p.name }), h('span', { class:'tag' }, 'Adding'), x);
+  }));
+}
+function renderFxPicker(){
+  if (!fxEdit) return;
+  const chip = (p) => {
+    const on = fxEdit.adds.includes(p);
+    const c = h('button', { type:'button', class:'fx-chip', style:'--c:' + p.color, 'aria-pressed':on ? 'true' : 'false' }, h('span', { class:'dot', 'aria-hidden':'true' }), p.name);
+    c.addEventListener('click', () => { if (on) fxEdit.adds = fxEdit.adds.filter((q) => q !== p); else fxEdit.adds.push(p); renderFxAdds(); renderFxPicker(); });
+    return c;
+  };
+  const mine = boardIds().map(fxById), rest = allFx().filter((p) => !boardIds().includes(p.id));
+  $('#fxPicker').replaceChildren(h('h3', { text:'Your pads' }), h('div', { class:'fx-chips' }, ...mine.map(chip)), h('h3', { text:'More effects' }), h('div', { class:'fx-chips' }, ...rest.map(chip)));
+}
+$('#fxAddMore').addEventListener('click', () => {
+  const open = $('#fxPicker').hidden; $('#fxPicker').hidden = !open; $('#fxAddMore').setAttribute('aria-expanded', open ? 'true' : 'false');
+  if (open){ renderFxPicker(); $('#fxPicker').scrollIntoView({ block:'nearest', behavior:'smooth' }); }
+});
 function closeFxSheet(){ $('#fxSheet').hidden = true; fxEdit = null; ed.fxSel = null; drawEditor(); }
 $('#fxCancel').addEventListener('click', closeFxSheet);
 $('#fxSheet').addEventListener('click', (e) => { if (e.target === $('#fxSheet')) closeFxSheet(); });
 $('#fxSave').addEventListener('click', async () => {
   if (!fxEdit) return;
-  const { seg, A, B, rows } = fxEdit, changed = rows.filter((x) => x.removed || x.v !== x.orig);
+  const { seg, A, B, rows, adds } = fxEdit, changed = rows.filter((x) => x.removed || x.v !== x.orig);
   $('#fxSheet').hidden = true; ed.fxSel = null;
-  if (!changed.length){ fxEdit = null; drawEditor(); return; }
+  if (!changed.length && !adds.length){ fxEdit = null; drawEditor(); return; }
   fxEdit = null;
-  const src = seg.src, events = mapEvents(src.events.length ? src.events : [{ at:0, params:Object.assign({}, NEUTRAL) }], A, B, (p) => changed.reduce((q, x) => setFx(q, x.key, x.removed ? null : x.v), p));
+  const overs = adds.map((p) => effectParamsOf(p));
+  const src = seg.src, events = mapEvents(src.events.length ? src.events : [{ at:0, params:Object.assign({}, NEUTRAL) }], A, B, (p) => overs.reduce((q, o) => overlayParams(q, o), changed.reduce((q, x) => setFx(q, x.key, x.removed ? null : x.v), p)));
   const ns = { id:uid('src'), raw:src.raw, sr:src.sr, events, hist:src.hist, segs:fxSegments(events, src.raw.length, src.sr), key:null, buffer:null };
   paint.busy = true; document.body.classList.add('painting');
   try {
     storeRender(ns, await renderTake(ns.raw, ns.sr, events, state.key, (f) => setStatus($('#status1'), 'Updating the effect… ' + Math.round(f * 100) + '%')), state.key);
     saveSrc(ns); seg.src = ns;
   } finally { paint.busy = false; document.body.classList.remove('painting'); }
-  histNext = changed.map((x) => fxName(x.key) + (x.removed ? ' removed' : ' changed')).join(', ');
-  setStatus($('#status1'), changed.every((x) => x.removed) ? 'Effect removed.' : 'Effect updated.', 'ok');
+  histNext = changed.map((x) => fxName(x.key) + (x.removed ? ' removed' : ' changed')).concat(adds.map((p) => p.name + ' added')).join(', ');
+  setStatus($('#status1'), adds.length ? adds.map((p) => p.name).join(' and ') + ' added here' + (changed.length ? ', and your changes saved.' : '.') : changed.every((x) => x.removed) ? 'Effect removed.' : 'Effect updated.', 'ok');
   renderClips();
 });
 
@@ -3354,6 +3486,12 @@ $('#clipDelete').addEventListener('click', () => {
     if (rec.state !== 'idle' || paint.busy) return;
     cancelAnimationFrame(glide);
     const r = edCanvas.getBoundingClientRect();
+    if (blendMode){
+      // blending: a tap on a gold circle ties those two clips together
+      const j = (ed.joins || []).find((q) => Math.hypot(e.clientX - r.left - q.x, e.clientY - r.top - q.y) <= 26);
+      if (j) blendJoin(j); else setStatus($('#status1'), 'Tap one of the gold circles, where two clips meet. Tap Blend again to stop.', '');
+      return;
+    }
     const st = (ed.starts || []).find((q) => Math.hypot(e.clientX - r.left - q.x, e.clientY - r.top - q.y) <= q.r);
     if (st){
       const l = state.layers[st.lane], start = l.segs.length ? Math.min(...l.segs.map((x) => x.at)) : 0;
@@ -3727,7 +3865,7 @@ function edPlay(fxNode, fxLane){
     PADS && drawEditor();
     setStatus($('#status1'), 'Your phone paused the sound. Tap Play again.', 'error');
   }, 700);
-  $('#edPlay').textContent = 'Pause'; paintRecPlay();
+  $('#edPlay').innerHTML = PAUSE_SVG; $('#edPlay').setAttribute('aria-label', 'Pause'); paintRecPlay();
   const loop = () => {
     const t = from + Math.max(0, c.currentTime - t0);
     if (paint.on){ paint.b = Math.min(t, paint.limit); if (t >= paint.limit){ state.playhead1 = paint.limit; edStop(); drawEditor(); edReadouts(); return; } }
@@ -3743,7 +3881,7 @@ function edStop(keepLabel){
   if (edPlayState.bus){ try { edPlayState.bus.disconnect(); } catch (e) {} }
   if (edPlayState.fxNode){ try { edPlayState.fxNode.disconnect(); } catch (e) {} edPlayState.fxNode = null; }
   edPlayState.nodes = []; edPlayState.bus = null; cancelAnimationFrame(edPlayState.raf);
-  edPlayState.playing = false; if (!keepLabel) $('#edPlay').textContent = 'Play';
+  edPlayState.playing = false; if (!keepLabel){ $('#edPlay').innerHTML = PLAY_SVG; $('#edPlay').setAttribute('aria-label', 'Play'); }
   paintRecPlay();
 }
 $('#edPlay').addEventListener('click', () => { if (edPlayState.playing) edStop(); else { stopAllPlayback(); edPlay(); } });
@@ -7012,6 +7150,7 @@ const TOURS = {
     { sel:'.editor', title:'Your wave', text:'Tap the wave to place the red line, or drag its round handle. Slide to scroll. Spread two fingers to zoom in, pinch to zoom out, or use + and −. The round button on the left, next to the layer you tapped, jumps the red line to that layer\'s start. Tap outside the wave to hide the red line.' },
     { sel:'.editor', title:'Edit a part', text:'Tap a part to select it. Drag its pink handles in to trim, or back out to bring trimmed audio back. Then Duplicate, Delete, Split at the red line, or Fade its start and end. Hold a part and drag to move it, even onto another layer. Double-tap a part to delete it.' },
     { sel:'.editor', title:'Layers', text:'+ Layer stacks up to 4 layers, and the new one records from the red line while the others play. Tap a layer to set its volume. Tap an empty layer and press Delete to remove it. The + at the end of your audio records more there or adds audio from a file or your camera roll.' },
+    { sel:'.editor', title:'Blend', text:'After you split and cut, the two sides can sound choppy. Tap Blend under the wave, then tap the gold circle where two clips meet: they\'re crossfaded into one smooth clip. Undo splits them back. Tap a gold effect strip, then + Add more, to stack another effect on that part.' },
     { sel:'#pads', title:'Voice effects', text:'While you record: tap a pad to turn it on or off, or hold and slide up for more, down for less. After you record: put the red line where an effect should start (or select a part), then hold a pad to add it to your song. A quick tap still just turns a pad on or off. Tap a gold effect strip to change it or remove it.' },
     { sel:'#pads', title:'Add all your effects', text:'After you record, turn on the pads you want (or tap a preset), then hold the gold "Hold to add all your effects" button. Your song plays and every effect you have on goes in from the red line until you let go. If you selected a part, it stops at the end of the part.' },
     { sel:'.fx-tools', title:'Edit, add and your library', text:'Edit lets you drag your pads into any order, or tap the red x to take one off. Add effects (in Edit) shows what\'s trending, more effects and the basics: + puts one on your pads, the flag saves it. Effects library is yours: Created (effects you mixed yourself) and Saved. On uses an effect right now, even while you record.' },
