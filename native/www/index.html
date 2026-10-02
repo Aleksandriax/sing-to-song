@@ -3777,8 +3777,9 @@ function pushHist(){
   const sn = snapLayers(), pads = snapshot(), k = snapKey(sn) + '#' + JSON.stringify(pads), cur = hist.stack[hist.idx];
   const label = histNext || 'Edit'; histNext = null;
   if (cur && cur.k === k) return;
-  const before = histBefore || (cur && cur.after) || null; histBefore = null;
-  hist.stack = hist.stack.slice(0, hist.idx + 1); hist.stack.push({ sn, k, pads, label, before, after:{ t:state.playhead1, layer:state.activeLayer } });
+  const here = { t:state.playhead1, layer:state.activeLayer };
+  const before = histBefore || here; histBefore = null;   // undo brings you back to where this edit was made, not the start
+  hist.stack = hist.stack.slice(0, hist.idx + 1); hist.stack.push({ sn, k, pads, label, before, after:here });
   if (hist.stack.length > 80) hist.stack.shift();
   hist.idx = hist.stack.length - 1; updHistBtns();
 }
