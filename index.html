@@ -156,6 +156,28 @@ body:not(.recording) #page1 .rec-core{width:30px;height:30px}
 .speed-btn{display:inline-flex;align-items:center;gap:6px}
 .speed-btn[hidden]{display:none}
 .speed-btn .ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.recorder{position:relative}
+.tick-btn{position:absolute;right:calc(50% + 46px);top:19px;display:inline-flex;align-items:center;gap:5px;height:38px;padding:0 10px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:13px;font-weight:800;cursor:pointer;transition:background .08s,border-color .08s}
+.tick-btn .ic{width:17px;height:17px}
+.tick-btn[aria-pressed="true"]{color:var(--text);border-color:var(--accent-a);background:color-mix(in srgb,var(--accent-a) 22%,var(--surface))}
+.tick-btn.beat{background:color-mix(in srgb,var(--accent-b) 55%,var(--surface));border-color:var(--accent-b)}
+.tick-btn.beat.one{background:#fbbf24;border-color:#fbbf24;color:#241a05}
+.rec-top .tick-btn{position:static;margin-right:auto;width:auto;height:38px;border-radius:99px;font-size:13px;padding:0 12px;background:rgba(20,14,36,.9)}
+.rec-top .tick-btn[aria-pressed="true"]{background:color-mix(in srgb,var(--accent-a) 30%,rgb(20,14,36))}
+.rec-top .tick-btn.beat{background:color-mix(in srgb,var(--accent-b) 60%,rgb(20,14,36))}
+.rec-top .tick-btn.beat.one{background:#fbbf24;color:#241a05}
+.tick-head{display:flex;align-items:center;justify-content:space-between}
+.tick-dot{width:18px;height:18px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line)}
+.tick-dot.beat{background:var(--accent-b);border-color:var(--accent-b)}
+.tick-dot.beat.one{background:#fbbf24;border-color:#fbbf24}
+.tick-bpm{display:flex;align-items:center;justify-content:center;gap:14px}
+.tick-step{width:48px;height:48px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:inherit;font-size:24px;font-weight:700;line-height:1;cursor:pointer;padding:0}
+.tick-num{display:flex;align-items:baseline;gap:6px}
+.tick-num input{width:110px;font:inherit;font-size:40px;font-weight:800;text-align:center;background:var(--surface-2);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:4px 6px;-moz-appearance:textfield}
+.tick-num input::-webkit-outer-spin-button,.tick-num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.tick-num span{font-size:14px;font-weight:800;color:var(--muted)}
+#tickRange{width:100%}
+.tick-chips{grid-template-columns:repeat(5,1fr)}
 .speed-chips{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
 .speed-chips button{appearance:none;min-height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:inherit;font-size:13px;font-weight:800;cursor:pointer}
 .speed-chips button[aria-pressed="true"]{background:linear-gradient(135deg,var(--accent-a),var(--accent-b));border-color:transparent;color:#fff}
@@ -888,6 +910,7 @@ legend{padding:0}
         <div class="rec-zoom"><button type="button" id="rzOut" aria-label="Zoom out">−</button><button type="button" id="rzIn" aria-label="Zoom in">+</button></div>
       </div>
       <div class="recorder">
+        <button type="button" id="tickBtn" class="tick-btn" aria-pressed="false" aria-label="Beat ticker, off"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3h5l4 17.5H5.5z"/><path d="M6.5 16h11"/><path d="M12 16l5.5-9"/></svg><span id="tickBpm" class="mono">90</span></button>
         <button type="button" id="recBtn" class="rec" aria-label="Start recording" aria-pressed="false"><span class="rec-core"><svg class="rec-mic" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span></button>
         <div id="recTime" class="rec-time mono">0:00</div>
         <div id="recHist" class="rec-hist" hidden>
@@ -1398,6 +1421,23 @@ legend{padding:0}
 
 <div id="countdown" class="countdown" hidden role="status" aria-live="assertive"><span id="cdNum">3</span><small>Tap to cancel</small></div>
 
+<div id="tickSheet" class="sheet-backdrop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="tickTitle">
+    <div class="tick-head"><h2 id="tickTitle" style="margin:0">Beat ticker</h2><span id="tickDot" class="tick-dot" aria-hidden="true"></span></div>
+    <p class="hint" style="margin:0">A clock tick that plays while you record, so you stay on the beat. Type how many beats per minute (BPM) you want.</p>
+    <div class="tick-bpm">
+      <button type="button" id="tickMinus" class="tick-step" aria-label="1 BPM slower">−</button>
+      <label class="tick-num"><input type="number" id="tickInput" inputmode="numeric" min="40" max="220" step="1" value="90" aria-label="Beats per minute"><span>BPM</span></label>
+      <button type="button" id="tickPlus" class="tick-step" aria-label="1 BPM faster">+</button>
+    </div>
+    <input type="range" id="tickRange" min="40" max="220" step="1" value="90" aria-label="Beats per minute">
+    <div id="tickChips" class="speed-chips tick-chips" role="group" aria-label="Common speeds"></div>
+    <button type="button" id="tickTap" class="btn">Tap the beat</button>
+    <p id="tickNote" class="hint" style="margin:0"></p>
+    <label class="switch" for="tickSw"><span>Tick while I record<small>Starts with the 3-2-1 countdown, or when you hold to record. Headphones keep the tick out of your recording.</small></span><input type="checkbox" id="tickSw" role="switch"></label>
+    <div class="actions"><button type="button" id="tickHear" class="btn">Hear it</button><button type="button" id="tickDone" class="btn primary">Done</button></div>
+  </div>
+</div>
 <div id="speedSheet" class="sheet-backdrop" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="speedTitle">
     <h2 id="speedTitle" style="margin:0">Speed</h2>
@@ -2069,6 +2109,7 @@ function placePresets(){
 }
 function setRecUI(){
   const on = rec.state === 'recording';
+  if (typeof tickSync === 'function') tickSync();
   // holding the button records right here; only a tap goes to the countdown and recording screen
   const live = (rec.state !== 'idle' && !rec.startedByPress) || cd.on;
   const busy = live || state.recView;
@@ -2080,6 +2121,7 @@ function setRecUI(){
   if (busy !== document.body.classList.contains('recording')){
     document.body.classList.toggle('recording', busy);
     placePresets();
+    if (busy) $('#recBack').after($('#tickBtn')); else $('.recorder').prepend($('#tickBtn'));
     if (busy) window.scrollTo(0, 0);
     requestAnimationFrame(() => { if (typeof drawEditor === 'function'){ sizeEditor(); drawEditor(); } });
   }
@@ -2157,7 +2199,7 @@ async function startRecording(){
     const backingPlays = state.layers.length > 1 && state.layers.some((l, i) => i !== state.activeLayer && l.segs.length);
     audioSession('play-and-record');
     if (micAsking) await micAsking.catch(() => {});
-    const stream = await getMic({ echoCancellation:backingPlays, noiseSuppression:false, autoGainControl:true });
+    const stream = await getMic({ echoCancellation:backingPlays || tickWanted(), noiseSuppression:false, autoGainControl:true });
     rec.stream = stream;
     if (c.state !== 'running') await c.resume();
     rec.src = c.createMediaStreamSource(stream);
@@ -2247,6 +2289,86 @@ async function stopRecording(){
   rec.live = []; drawEditor();
   setStatus($('#status1'), 'Added ' + fmt(raw.length / sr) + (state.layers.length > 1 ? ' to layer ' + layerNo : '') + '.' + (rec.hitLimit ? ' It reached the 10-minute limit, so recording stopped.' : ''), 'ok');
 }
+
+/* ---------- beat ticker: a clock tick at the BPM you pick, while you record ---------- */
+const tick = { timer:null, next:0, n:0, out:null, preview:false, bufs:null, taps:[], flashes:[] };
+const tk = () => lib.ticker || (lib.ticker = { on:false, bpm:90 });
+const tickWanted = () => tick.preview || (tk().on && (cd.on || rec.state === 'starting' || rec.state === 'recording'));
+function tickBufs(c){
+  if (tick.bufs && tick.bufs.sr === c.sampleRate) return tick.bufs;
+  // a wooden clock tick: a short knock plus a bright click; the first beat of each bar is higher
+  const make = (f, gain) => {
+    const sr = c.sampleRate, n = Math.round(sr * 0.06), b = c.createBuffer(1, n, sr), d = b.getChannelData(0); let seed = 7, lp = 0;
+    for (let i = 0; i < n; i++){
+      const t = i / sr; seed = (seed * 16807) % 2147483647; const nz = seed / 1073741823.5 - 1; lp += 0.55 * (nz - lp);
+      d[i] = gain * (Math.sin(2 * Math.PI * f * t) * Math.exp(-t * 70) * 0.75 + (nz - lp) * Math.exp(-t * 260) * 0.6);
+    }
+    return b;
+  };
+  return (tick.bufs = { sr:c.sampleRate, one:make(2400, 0.9), beat:make(1700, 0.7) });
+}
+function tickFlash(one){
+  ['#tickBtn', '#tickDot'].forEach((q) => { const el = $(q); if (!el) return; el.classList.toggle('one', one); el.classList.add('beat'); });
+  setTimeout(() => ['#tickBtn', '#tickDot'].forEach((q) => { const el = $(q); if (el) el.classList.remove('beat'); }), 110);
+}
+function tickPump(){
+  const c = ctx(), spb = 60 / tk().bpm, bf = tickBufs(c);
+  if (tick.next < c.currentTime) tick.next = c.currentTime + 0.03;
+  while (tick.next < c.currentTime + 0.12){
+    const one = tick.n % 4 === 0, s = c.createBufferSource(); s.buffer = one ? bf.one : bf.beat; s.connect(tick.out); s.start(tick.next);
+    tick.flashes.push(setTimeout(() => tickFlash(one), Math.max(0, (tick.next - c.currentTime - (c.outputLatency || 0) * -1) * 1000)));
+    if (tick.flashes.length > 16) tick.flashes.shift();
+    tick.next += spb; tick.n++;
+  }
+}
+function tickSync(){
+  const want = tickWanted();
+  if (want && !tick.timer){
+    const c = ctx(); if (c.state !== 'running') c.resume();
+    tick.out = c.createGain(); tick.out.gain.value = 0.9; tick.out.connect(c.destination);
+    tick.next = c.currentTime + 0.05; tick.n = 0; tick.timer = setInterval(tickPump, 25); tickPump();
+  } else if (!want && tick.timer){
+    clearInterval(tick.timer); tick.timer = null; tick.flashes.forEach(clearTimeout); tick.flashes = [];
+    const out = tick.out; tick.out = null; if (out){ try { out.gain.setTargetAtTime(0, ctx().currentTime, 0.01); } catch (_) {} setTimeout(() => { try { out.disconnect(); } catch (_) {} }, 200); }
+  }
+  const hb = $('#tickHear'); if (hb) hb.textContent = tick.preview ? 'Stop' : 'Hear it';
+}
+function paintTickBtn(){
+  const t = tk(), b = $('#tickBtn'); if (!b) return;
+  $('#tickBpm').textContent = t.on ? t.bpm : 'Off';
+  b.setAttribute('aria-pressed', t.on ? 'true' : 'false'); b.setAttribute('aria-label', 'Beat ticker, ' + (t.on ? t.bpm + ' BPM' : 'off'));
+}
+function setTickBpm(v, from){
+  const t = tk(); t.bpm = clamp(Math.round(+v || 0), 40, 220);
+  if (from !== 'input') $('#tickInput').value = t.bpm;
+  $('#tickRange').value = t.bpm;
+  $('#tickChips').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', +b.dataset.bpm === t.bpm ? 'true' : 'false'));
+  const feel = t.bpm < 70 ? 'slow ballad' : t.bpm < 95 ? 'chill, R&B, hip-hop' : t.bpm < 115 ? 'pop, mid-tempo' : t.bpm < 135 ? 'upbeat pop, dance' : t.bpm < 160 ? 'trap (often felt half-time), fast pop' : 'very fast, drum and bass';
+  $('#tickNote').textContent = t.bpm + ' BPM: a tick every ' + (60 / t.bpm).toFixed(2) + ' s. Feels like ' + feel + '. The first beat of every 4 is higher.';
+  paintTickBtn(); saveLib();
+}
+$('#tickChips').replaceChildren(...[70, 90, 100, 120, 140].map((v) => { const b = h('button', { type:'button', 'data-bpm':v, 'aria-pressed':'false' }, String(v)); b.addEventListener('click', () => setTickBpm(v)); return b; }));
+$('#tickInput').addEventListener('input', () => { const v = +$('#tickInput').value; if (v >= 40 && v <= 220) setTickBpm(v, 'input'); });
+$('#tickInput').addEventListener('change', () => setTickBpm($('#tickInput').value || tk().bpm));
+$('#tickRange').addEventListener('input', () => setTickBpm($('#tickRange').value));
+$('#tickMinus').addEventListener('click', () => setTickBpm(tk().bpm - 1));
+$('#tickPlus').addEventListener('click', () => setTickBpm(tk().bpm + 1));
+$('#tickTap').addEventListener('click', () => {
+  const now = performance.now(); tick.taps = tick.taps.filter((x) => now - x < 2500); tick.taps.push(now);
+  if (tick.taps.length >= 3){ const gaps = tick.taps.slice(1).map((x, i) => x - tick.taps[i]); setTickBpm(60000 / (gaps.reduce((a, x) => a + x, 0) / gaps.length)); }
+  else $('#tickNote').textContent = 'Keep tapping in time…';
+});
+$('#tickSw').addEventListener('change', () => { tk().on = $('#tickSw').checked; paintTickBtn(); saveLib(); tickSync(); });
+$('#tickHear').addEventListener('click', () => { const was = tick.preview; stopAllPlayback(); tick.preview = !was; tick.n = 0; tickSync(); });
+const closeTick = () => { tick.preview = false; tickSync(); $('#tickSheet').hidden = true; };
+$('#tickDone').addEventListener('click', closeTick);
+$('#tickSheet').addEventListener('click', (e) => { if (e.target === $('#tickSheet')) closeTick(); });
+$('#tickBtn').addEventListener('click', () => {
+  if (rec.state !== 'idle' || cd.on){ tk().on = !tk().on; paintTickBtn(); saveLib(); tickSync(); return; }   // while recording: tap turns it on or off
+  const t = tk();
+  $('#tickSw').checked = t.on; $('#tickInput').value = t.bpm; setTickBpm(t.bpm); tick.taps = [];
+  $('#tickSheet').hidden = false;
+});
 
 // 3, 2, 1, then recording starts
 function startCountdown(){
@@ -2986,7 +3108,7 @@ Object.defineProperty(state, 'clips', { get(){ return state.layers.flatMap((l) =
 
 let playing = null;
 function stopClipPlayback(){ edStop(); }
-function stopAllPlayback(){ if (typeof trySt !== 'undefined' && trySt.on) tryStop(); edStop(); tlStop(); plPause(); previewStop(); }
+function stopAllPlayback(){ if (typeof tick !== 'undefined' && tick.preview){ tick.preview = false; tickSync(); } if (typeof trySt !== 'undefined' && trySt.on) tryStop(); edStop(); tlStop(); plPause(); previewStop(); }
 
 function storeRender(src, y, key){
   const buf = ctx().createBuffer(1, y.length, src.sr); buf.getChannelData(0).set(y);
@@ -6230,7 +6352,7 @@ function saveLib(){ clearTimeout(libTimer); libTimer = setTimeout(() => store.se
 async function loadLib(){
   const v = await store.get('lib');
   if (v && typeof v === 'object'){
-    lib.premium = !!v.premium; lib.cleanVoice = !!v.cleanVoice; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'likes', 'activity', 'sales', 'withdrawals', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media', 'customFx', 'board', 'savedFx']) if (Array.isArray(v[k])) lib[k] = v[k]; if (v.fxUses && typeof v.fxUses === 'object') lib.fxUses = v.fxUses; }
+    lib.premium = !!v.premium; lib.cleanVoice = !!v.cleanVoice; if (v.ticker && typeof v.ticker === 'object') lib.ticker = { on:!!v.ticker.on, bpm:clamp(+v.ticker.bpm || 90, 40, 220) }; if (v.verify) lib.verify = v.verify; if (v.toursSeen) lib.toursSeen = v.toursSeen; if (Array.isArray(v.presetNames)) lib.presetNames = v.presetNames; Object.assign(lib.profile, v.profile || {}); for (const k of ['songs', 'sfx', 'saved', 'likes', 'activity', 'sales', 'withdrawals', 'follows', 'requests', 'purchases', 'presets', 'drafts', 'media', 'customFx', 'board', 'savedFx']) if (Array.isArray(v[k])) lib[k] = v[k]; if (v.fxUses && typeof v.fxUses === 'object') lib.fxUses = v.fxUses; }
 }
 const uid = (p) => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -7715,6 +7837,7 @@ const TOURS = {
     { sel:'#pads', title:'Add all your effects', text:'After you record, turn on the pads you want (or tap a preset), then hold the gold "Hold to add all your effects" button. Your song plays and every effect you have on goes in from the red line until you let go. If you selected a part, it stops at the end of the part.' },
     { sel:'.fx-tools', title:'Edit, add and your library', text:'Edit lets you drag your pads into any order, or tap the red x to take one off. Add effects (in Edit) shows what\'s trending, more effects and the basics: + puts one on your pads, the flag saves it. Effects library is yours: Created (effects you mixed yourself) and Saved. On uses an effect right now, even while you record.' },
     { sel:'#cleanBtn', title:'Clear background noise', text:'Turn this on to clear the background noise (hum, fan, room hiss) from what you\'ve recorded and from every new take, so it\'s just your voice. Undo brings the noise back.' },
+    { sel:'#tickBtn', title:'Beat ticker', text:'Tap it and type how many beats per minute (BPM) you want, or tap the beat. A clock tick then plays with the 3-2-1 countdown and while you record, so you stay on the beat. The first tick of every 4 is higher. While recording, tap it to turn the tick on or off. Headphones keep it out of your recording.' },
     { sel:'#monitorBtn', title:'Hear yourself', text:'Plays your voice with the effects while you record. It needs headphones, or the speaker feeds back into the mic.' },
     { sel:'#tryBtn', title:'Try a sample', text:'Plays a sample voice on repeat. Tap the pads while it plays to hear what each effect does.' },
     { sel:'#presets', title:'Presets', text:'Hold a number to save the pads you have on, then name it or skip. Tap a number to load it. Double-tap one to erase it. Off turns every pad off.' },
@@ -8005,7 +8128,7 @@ setKey(state.key);
 renderClips(); updateAiMode();
 renderPresets();
 loadLib().catch(() => {}).then(async () => {
-  loadFxBoard(); renderPresets(); $('#cleanSw').checked = !!lib.cleanVoice; renderDrafts(); syncPremiumUI(); renderHome();
+  loadFxBoard(); renderPresets(); $('#cleanSw').checked = !!lib.cleanVoice; paintTickBtn(); renderDrafts(); syncPremiumUI(); renderHome();
   if (needsProfile()) showOnboarding();
   // pick up where you left off
   try {
