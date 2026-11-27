@@ -187,6 +187,49 @@ body:not(.recording) #page1 .rec-core{width:30px;height:30px}
 .ly-time{font-size:13px;color:var(--muted);flex:none}
 .ly-info{margin:0;font-size:13px;color:var(--muted)}
 .ly-list{display:flex;flex-direction:column;gap:10px}
+.ly-quick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ly-quick-btn{appearance:none;display:flex;align-items:center;gap:10px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;text-align:left;cursor:pointer;min-width:0}
+.ly-quick-btn svg{flex:none;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ly-quick-btn span{display:flex;flex-direction:column;min-width:0;line-height:1.25}
+.ly-quick-btn b{font-size:14px}
+.ly-quick-btn small{font-size:11.5px;color:var(--muted)}
+.ly-quick-btn.ai{border-color:color-mix(in srgb,#fbbf24 55%,var(--line));background:color-mix(in srgb,#fbbf24 10%,var(--surface))}
+.ly-quick-btn.ai svg{color:#fbbf24}
+.ly-player .spacer{flex:1}
+.ly-editor{display:flex;flex-direction:column;gap:10px}
+.ly-wrap{margin:0 -6px;touch-action:pan-y}
+#lyCanvas{display:block;width:100%;touch-action:pan-y;cursor:pointer}
+.ly-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ly-tools .spacer{flex:1}
+.ly-del:not(:disabled){color:#f87171;border-color:color-mix(in srgb,#ef4444 45%,var(--line))}
+.ly-style-btn{appearance:none;display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;padding:10px 12px;border-radius:12px;border:1px solid color-mix(in srgb,var(--c) 45%,var(--line));background:color-mix(in srgb,var(--c) 10%,var(--surface-2));color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.ly-style-btn span{display:flex;flex-direction:column;line-height:1.25}
+.ly-style-btn small{font-size:12px;color:var(--muted)}
+.ly-style-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;flex:none}
+.ly-sheet{max-height:92vh;max-height:92dvh}
+.ly-sh-head{display:flex;align-items:center;gap:12px}
+.ly-sh-head small{display:block;margin-top:2px}
+.ly-bpm{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+.ly-bpm-row{display:flex;align-items:center;gap:10px}
+.ly-bpm-row b{flex:1;font-size:15px}
+.ly-bpm-row .tick-step{width:40px;height:40px;font-size:20px}
+.ly-bpm-num input{width:76px;font-size:24px;padding:2px 4px}
+.ly-bpm-chips{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ly-bpm-chips button{appearance:none;min-height:34px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.ly-bpm-chips button[aria-pressed="true"]{border-color:transparent;background:var(--c,var(--accent-a));color:#140c22}
+.ly-style-list{display:flex;flex-direction:column;gap:6px;overflow-y:auto;min-height:120px;flex:1 1 auto;max-height:42vh;max-height:42dvh;padding-right:2px}
+.ly-srow{appearance:none;display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font:inherit;text-align:left;cursor:pointer}
+.ly-srow[aria-checked="true"]{border-color:var(--c,var(--accent-a));background:color-mix(in srgb,var(--c,var(--accent-a)) 14%,var(--surface-2))}
+.ly-sp{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--c,var(--accent-a));color:#140c22}
+.ly-sp svg{width:15px;height:15px;fill:currentColor}
+.ly-srow.loading .ly-sp{opacity:.5;animation:lyPulse .8s ease-in-out infinite alternate}
+@keyframes lyPulse{from{transform:scale(.9)}to{transform:scale(1)}}
+@media (prefers-reduced-motion: reduce){ .ly-srow.loading .ly-sp{animation:none} }
+.ly-sname{flex:1;display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.ly-sname b{font-size:15px}
+.ly-sname small{font-size:12px;color:var(--muted)}
+.ly-check{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid var(--line)}
+.ly-srow[aria-checked="true"] .ly-check{border-color:var(--c,var(--accent-a));background:var(--c,var(--accent-a));box-shadow:inset 0 0 0 3px var(--surface-2)}
 .ly-list:empty{display:none}
 .ly-card{position:relative;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--c,var(--accent-a));border-radius:14px;padding:12px 12px 12px 12px;display:flex;flex-direction:column;gap:10px}
 .ly-card.muted{opacity:.55}
@@ -1026,15 +1069,32 @@ legend{padding:0}
     <button type="button" class="back-top" data-to="1" aria-label="Back to Record and edit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
     <div>
       <h1>Add layers</h1>
-      <p class="lede">Build your song one instrument at a time. Every layer plays on your beat and in your key, around your voice.</p>
+      <p class="lede">Build your song one instrument at a time, in your key. Move, cut and split each layer on the timeline.</p>
     </div>
-    <section class="panel ly-player" aria-label="Hear your layers">
+    <div class="ly-quick">
+      <button type="button" id="lyAi" class="ly-quick-btn ai"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg><span><b>AI pick for my voice</b><small>layers that fit how you sing</small></span></button>
+      <button type="button" id="lyRand" class="ly-quick-btn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="15" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="9" cy="15" r="1.2"/></svg><span><b>Randomize</b><small>a surprise mix</small></span></button>
+    </div>
+    <section class="panel ly-player" aria-label="Your layers">
       <div class="ly-transport">
         <button type="button" id="lyPlay" class="ly-play" aria-label="Play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg></button>
-        <input type="range" id="lyScrub" min="0" max="1000" step="1" value="0" aria-label="Song position">
         <span id="lyTime" class="mono ly-time">0:00</span>
+        <span class="spacer"></span>
+        <button type="button" id="lyUndo" class="ly-btn" aria-label="Undo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg></button>
+        <button type="button" id="lyRedo" class="ly-btn" aria-label="Redo" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 0 0 0 12h3"/></svg></button>
       </div>
-      <p id="lyInfo" class="ly-info">Tap play to hear your voice with your layers.</p>
+      <div id="lyEditor" class="ly-editor" hidden>
+        <div class="ly-wrap"><canvas id="lyCanvas" aria-label="Your layers on a timeline. Tap a clip to pick it, drag it to move it, drag its edges to trim. Tap empty space to move the red line."></canvas></div>
+        <div class="ly-tools">
+          <button type="button" id="lySplit" class="btn small">Split all</button>
+          <button type="button" id="lyDup" class="btn small" disabled>Duplicate</button>
+          <button type="button" id="lyDel" class="btn small ly-del" disabled>Delete</button>
+          <span class="spacer"></span>
+          <button type="button" id="lyZoomOut" class="btn small" style="min-width:36px" aria-label="Zoom out">−</button>
+          <button type="button" id="lyZoomIn" class="btn small" style="min-width:36px" aria-label="Zoom in">+</button>
+        </div>
+      </div>
+      <p id="lyInfo" class="ly-info">Add a layer, or let the AI pick some for your voice. Then tap play.</p>
     </section>
     <div id="status4" class="status" role="status" aria-live="polite"></div>
     <div id="lyList" class="ly-list" aria-label="Your layers"></div>
@@ -1499,10 +1559,23 @@ legend{padding:0}
     <div class="actions"><button type="button" id="tickHear" class="btn">Hear it</button><button type="button" id="tickDone" class="btn primary">Done</button></div>
   </div>
 </div>
+<div id="lySheet" class="sheet-backdrop" hidden>
+  <div class="sheet ly-sheet" role="dialog" aria-modal="true" aria-labelledby="lyShTitle">
+    <div class="ly-sh-head"><span id="lyShIc" class="ly-ic"></span><div><h2 id="lyShTitle" style="margin:0">Drums</h2><small id="lyShSub" class="hint"></small></div></div>
+    <div id="lyBpmBox" class="ly-bpm">
+      <div class="ly-bpm-row"><b>Speed</b><button type="button" id="lyBpmMinus" class="tick-step" aria-label="1 BPM slower">−</button><label class="tick-num ly-bpm-num"><input type="number" id="lyBpm" inputmode="numeric" min="40" max="220" step="1" aria-label="Beats per minute"><span>BPM</span></label><button type="button" id="lyBpmPlus" class="tick-step" aria-label="1 BPM faster">+</button></div>
+      <div id="lyBpmChips" class="ly-bpm-chips" role="group" aria-label="Quick speeds"></div>
+      <p id="lyBpmNote" class="hint" style="margin:0"></p>
+    </div>
+    <div id="lyShStatus" class="status" role="status" aria-live="polite"></div>
+    <div id="lyStyles" class="ly-style-list" role="radiogroup" aria-label="Styles"></div>
+    <div class="actions"><button type="button" id="lyShCancel" class="btn">Cancel</button><button type="button" id="lyShOk" class="btn primary">Add to song</button></div>
+  </div>
+</div>
 <div id="lyAddSheet" class="sheet-backdrop" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lyAddTitle">
     <h2 id="lyAddTitle" style="margin:0">Add a layer</h2>
-    <p class="hint" style="margin:0">Pick an instrument. You can change its style and volume after.</p>
+    <p class="hint" style="margin:0">Pick an instrument. Next you can hear its styles and set its speed before adding it.</p>
     <div id="lyKinds" class="ly-kinds"></div>
     <div class="actions"><button type="button" id="lyAddCancel" class="btn">Cancel</button></div>
   </div>
@@ -2442,150 +2515,443 @@ $('#tickBtn').addEventListener('click', () => {
   $('#tickSheet').hidden = false;
 });
 
-/* ---------- step 2: add layers. Each layer is one instrument, played on your beat and in your key ---------- */
+/* ---------- step 2: add layers. Each layer is one instrument: its own style, pace (BPM), volume and clips you can move, cut and split ---------- */
+// drum patterns: one bar of 16 steps. X loud, x normal, o soft. k kick, s snare, c clap, r rim, h hi-hat, o open hat, sh shaker
+const DRUM_STYLES = [
+  { id:'pop', name:'Pop', d:'steady and bright', k:'x.......x.x.....', s:'....x.......x...', h:'x.x.x.x.x.x.x.x.', crash:1, fill:1 },
+  { id:'trap', name:'Trap', d:'deep kick, rolling hi-hats', k:'x.........x.....', s:'........x.......', h:'x.x.x.x.x.x.x.x.', kick:'boom', roll:1 },
+  { id:'boombap', name:'Hip-hop', d:'90s boom bap, a little swing', k:'x......x.x......', s:'....X.......X...', h:'x.x.x.x.x.x.x.x.', swing:0.58 },
+  { id:'rnb', name:'R&B', d:'smooth, laid back', k:'x......x..x.....', c:'....x.......x...', h:'x.xxx.x.x.xxx.x.', swing:0.55, vel:0.85 },
+  { id:'rock', name:'Rock', d:'big snare, crash cymbals', k:'x.......x.x.....', s:'....X.......X...', h:'X.x.X.x.X.x.X.x.', crash:1, fill:1, vel:1.1 },
+  { id:'four', name:'Dance', d:'four on the floor', k:'x...x...x...x...', c:'....x.......x...', o:'..x...x...x...x.' },
+  { id:'house', name:'House', d:'club kick, claps, shaker', k:'x...x...x...x...', c:'....x.......x...', o:'..x...x...x...x.', sh:'oooooooooooooooo' },
+  { id:'halftime', name:'Lo-fi', d:'slow, dusty, swung', k:'x......x..x.....', s:'........x.......', h:'x.x.x.x.x.x.x.x.', swing:0.6, vel:0.8 },
+  { id:'drill', name:'Drill', d:'sliding kicks, tight snares', k:'x.....x.......x.', s:'......x.......x.', h:'x..x..x.x..x..x.', kick:'boom', roll:1 },
+  { id:'afro', name:'Afrobeats', d:'bouncy, rim clicks, shaker', k:'x......x..x.....', c:'....x.......x...', r:'..x..x....x..x..', sh:'xoxoxoxoxoxoxoxo' },
+  { id:'reggaeton', name:'Reggaeton', d:'the dembow beat', k:'x...x...x...x...', s:'...x..x....x..x.', h:'o.o.o.o.o.o.o.o.' },
+  { id:'funk', name:'Funk', d:'busy 16ths, ghost notes', k:'x..x..x...x..x..', s:'....X..o.o..X..o', h:'xoxoxoxoxoxoxoxo', fill:1 },
+  { id:'disco', name:'Disco', d:'open hats on the off-beat', k:'x...x...x...x...', s:'....x.......x...', o:'..x...x...x...x.', h:'x...x...x...x...' },
+  { id:'punk', name:'Punk', d:'fast and loud', k:'x.x...x.x.x...x.', s:'....X.......X...', h:'X.X.X.X.X.X.X.X.', crash:1, fill:1, vel:1.1 },
+  { id:'dnb', name:'Breakbeat', d:'drum and bass break', k:'x.x.......xx....', s:'....x..o.o..x..o', h:'x.x.x.x.x.x.x.x.' },
+  { id:'jersey', name:'Jersey club', d:'bouncing kick pattern', k:'x..x..x...x.x...', c:'....x.......x...', h:'x.x.x.x.x.x.x.x.' },
+  { id:'shuffle', name:'Shuffle', d:'blues swing', k:'x.......x.......', s:'....x.......x...', h:'x.x.x.x.x.x.x.x.', swing:0.67 },
+  { id:'bossa', name:'Bossa nova', d:'soft Latin groove', k:'x..x....x..x....', r:'x..x..x...x..x..', sh:'xoxoxoxoxoxoxoxo', vel:0.7 },
+  { id:'ballad', name:'Ballad', d:'gentle, lots of space', k:'x.........x.....', r:'........x.......', h:'x...x...x...x...', vel:0.7 },
+  { id:'soft', name:'Soft', d:'quiet brushes', k:'x.......x.......', r:'....x.......x...', sh:'x.x.x.x.x.x.x.x.', vel:0.75 }
+];
+const ST = (id, name, d) => ({ id, name, d });
 const BAND = {
-  drums:{ name:'Drums', sub:'the beat', c:'#fb923c', styles:[['pop', 'Pop'], ['trap', 'Trap'], ['rock', 'Rock'], ['four', 'Dance'], ['halftime', 'Lo-fi'], ['soft', 'Soft']],
+  drums:{ name:'Drums', sub:'the beat', c:'#fb923c', styles:DRUM_STYLES,
     svg:'<ellipse cx="12" cy="9" rx="8" ry="3"/><path d="M4 9v7c0 1.7 3.6 3 8 3s8-1.3 8-3V9"/><path d="M6 3.5l5 5M18 3.5l-5 5"/>' },
-  bass:{ name:'Bass', sub:'the low end', c:'#4ade80', styles:[['whole', 'Smooth'], ['rootfifth', 'Bounce'], ['pulse', 'Pulse'], ['808', '808']],
+  bass:{ name:'Bass', sub:'the low end', c:'#4ade80', styles:[ST('whole', 'Smooth', 'long notes on the chords'), ST('rootfifth', 'Bounce', 'root and fifth'), ST('pulse', 'Pulse', 'driving eighth notes'), ST('808', '808', 'deep hip-hop boom'),
+    ST('walking', 'Walking', 'jazzy, a note every beat'), ST('funk', 'Funk', 'slap-style, octave jumps'), ST('octave', 'Octaves', 'disco octaves'), ST('reggae', 'Reggae', 'laid-back dub'), ST('synth', 'Synth bass', 'buzzy electronic'), ST('sub', 'Deep sub', 'a low rumble you feel')],
     svg:'<path d="M4.5 9.5a5 5 0 0 1 10 -1c.8 5-3.5 9.5-10 11"/><circle cx="4.8" cy="9.6" r="1.4"/><circle cx="19" cy="8" r=".9"/><circle cx="19" cy="13" r=".9"/>' },
-  guitar:{ name:'Guitar', sub:'acoustic strings', c:'#facc15', styles:[['strum', 'Strum'], ['pick', 'Pick'], ['muted', 'Muted']],
+  guitar:{ name:'Guitar', sub:'acoustic strings', c:'#facc15', styles:[ST('strum', 'Strum', 'down, down-up'), ST('pick', 'Pick', 'one string at a time'), ST('muted', 'Muted', 'palm-muted chugs'), ST('power', 'Power chords', 'rock'),
+    ST('skank', 'Reggae', 'short chops on the off-beat'), ST('funk', 'Funky', 'scratchy 16ths'), ST('ballad', 'Slow picking', 'gentle and ringing'), ST('folk', 'Folk', 'bass note, then strum'), ST('island', 'Ukulele', 'bright island strum')],
     svg:'<path d="M14 10l6.5-6.5M18.5 2.5l3 3"/><path d="M13.6 10.4a4 4 0 0 0-5.3-.6 3.2 3.2 0 0 0-3.7 3.4c0 3.2 3.1 6.3 6.3 6.3a3.2 3.2 0 0 0 3.4-3.7 4 4 0 0 0-.7-5.4z"/><circle cx="10" cy="14" r="1.3"/>' },
-  piano:{ name:'Piano', sub:'chords and keys', c:'#60a5fa', styles:[['ballad', 'Ballad'], ['broken', 'Broken'], ['block', 'Chords']],
+  piano:{ name:'Piano', sub:'chords and keys', c:'#60a5fa', styles:[ST('ballad', 'Ballad', 'soft and open'), ST('broken', 'Broken chords', 'flowing'), ST('block', 'Chords', 'full and steady'), ST('pulse', 'Pop pulse', 'eighth-note chords'),
+    ST('oompah', 'Bounce', 'bass, then chord'), ST('arp', 'Arpeggio', 'fast up and down'), ST('sparse', 'Sparse', 'one chord a bar'), ST('house', 'House', 'off-beat stabs')],
     svg:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7.5 5v8M12 5v8M16.5 5v8M3 13h18"/>' },
-  strings:{ name:'Strings', sub:'violins and cellos', c:'#fb7185', styles:[['long', 'Long'], ['short', 'Short']],
+  strings:{ name:'Strings', sub:'violins and cellos', c:'#fb7185', styles:[ST('long', 'Long', 'held chords'), ST('short', 'Short', 'quick bows'), ST('swell', 'Swell', 'fades in each bar'), ST('pizz', 'Pizzicato', 'plucked'), ST('high', 'High', 'airy, up high'), ST('tremolo', 'Tremolo', 'fast shimmer')],
     svg:'<path d="M12 2v5"/><path d="M9.5 7h5l.8 3.5-1.8 1.3 1.8 1.7-.8 4.5h-5l-.8-4.5 1.8-1.7-1.8-1.3z"/><path d="M12 18v4M10.5 12h3"/>' },
-  synth:{ name:'Synth', sub:'electronic', c:'#a78bfa', styles:[['arps', 'Arps'], ['stabs', 'Stabs']],
+  synth:{ name:'Synth', sub:'electronic', c:'#a78bfa', styles:[ST('arps', 'Arps', 'rippling notes'), ST('stabs', 'Stabs', 'off-beat chords'), ST('pluck', 'Pluck', 'short and bouncy'), ST('pads', 'Saw pad', 'big held chords'),
+    ST('seq', 'Sequence', 'fast 16ths'), ST('retro', 'Retro', '8-bit, up and down'), ST('wobble', 'Wobble', 'filter that pulses')],
     svg:'<path d="M3 12h3l2-5 3 10 3-8 2 3h5"/>' },
-  pad:{ name:'Pad', sub:'soft background', c:'#2dd4bf', styles:[],
+  pad:{ name:'Pad', sub:'soft background', c:'#2dd4bf', styles:[ST('warm', 'Warm', 'soft and round'), ST('bright', 'Bright', 'a bit of shine'), ST('dark', 'Dark', 'deep and moody'), ST('shimmer', 'Shimmer', 'high and dreamy')],
     svg:'<path d="M7 18a4 4 0 0 1-.6-8A5.5 5.5 0 0 1 17 8.6 4 4 0 0 1 17.5 18z"/>' },
-  bells:{ name:'Bells', sub:'a sparkly hook', c:'#fbbf24', styles:[],
+  bells:{ name:'Bells', sub:'a sparkly hook', c:'#fbbf24', styles:[ST('sparkle', 'Sparkle', 'a little hook'), ST('musicbox', 'Music box', 'high and twinkly'), ST('arp', 'Arpeggio', 'chord notes in turn'), ST('glock', 'Glockenspiel', 'one note a beat'), ST('chimes', 'Chimes', 'slow and ringing')],
     svg:'<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>' },
-  melody:{ name:'Melody', sub:'answers your voice', c:'#f472b6', styles:[['piano', 'Piano'], ['synth', 'Synth'], ['bells', 'Bells'], ['strings', 'Strings']],
+  melody:{ name:'Melody', sub:'answers your voice', c:'#f472b6', noBpm:true, styles:[ST('piano', 'Piano', 'clear and simple'), ST('synth', 'Synth lead', 'bright and electronic'), ST('bells', 'Bells', 'sparkly'), ST('strings', 'Violin', 'smooth and sung'), ST('flute', 'Flute', 'soft and breathy'), ST('guitar', 'Guitar', 'plucked notes')],
     svg:'<path d="M9 18V5l10-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>' }
 };
 const VOICE_SVG = '<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>';
 const SPK_ON = '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/>', SPK_OFF = '<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/>';
+const PLAY_I = '<path d="M8 5.5v13l11-6.5z"/>', STOP_I = '<rect x="7" y="7" width="10" height="10" rx="1.5"/>';
 const svgEl = (inner) => { const t = document.createElement('template'); t.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + inner + '</svg>'; return t.content.firstChild; };
-const bandLabel = (l) => { const k = BAND[l.kind], st = k.styles.find((x) => x[0] === l.style); return k.name + (st ? ' (' + st[1] + ')' : ''); };
-const bandForPlan = () => (state.band || []).filter((l) => !l.mute && BAND[l.kind]).map((l) => ({ kind:l.kind, style:l.style, vol:l.vol }));
-var lay = { pending:false, buf:null, key:'', base:null, baseKey:'', seed:0, src:null, t0:0, off:0, playing:false, raf:0, busy:false, again:false, timer:0 };
-function lyReset(){ lyStop(); lay.buf = null; lay.key = ''; lay.base = null; lay.baseKey = ''; lay.seed = 0; lay.off = 0; }
+const styleOf = (l) => { const k = BAND[l.kind]; return k.styles.find((x) => x.id === l.style) || k.styles[0]; };
+const bandLabel = (l) => BAND[l.kind].name + ' (' + styleOf(l).name + ')';
+const layerBpm = (l) => l.bpm || (lay.base ? lay.base.tempo : 0);
+// what the song uses: every layer that isn't muted, with its clips
+const bandForPlan = () => (state.band || []).filter((l) => !l.mute && BAND[l.kind]).map((l) => ({ kind:l.kind, style:styleOf(l).id, bpm:l.bpm || null, vol:l.vol, clips:Array.isArray(l.clips) ? l.clips.map((c) => ({ start:c.start, end:c.end, at:c.at })) : null }));
+const clipsOf = (l, dur) => Array.isArray(l.clips) ? l.clips : [{ id:0, start:0, end:dur, at:0 }];
+const strHash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+const STEM_CACHE = new Map(), baseHash = new WeakMap();
+// one instrument on its own, rendered on the song's timeline (same length as the song, so clips line up)
+async function stemOf(base, vLen, sr, l){
+  let bh = baseHash.get(base); if (!bh){ bh = strHash(JSON.stringify(base)); baseHash.set(base, bh); }
+  const key = [bh, vLen, sr, l.kind, l.style || '', l.bpm || ''].join('|');
+  if (STEM_CACHE.has(key)){ const b = STEM_CACHE.get(key); STEM_CACHE.delete(key); STEM_CACHE.set(key, b); return b; }
+  const p = JSON.parse(JSON.stringify(base)); delete p.layered; delete p.layerBase;
+  Object.assign(p, { harmony:0, blend:false, beat:true, band:[{ kind:l.kind, style:l.style, bpm:l.bpm || null, vol:1 }] });
+  const buf = await mixSong(new Float32Array(Math.max(1, vLen)), null, null, sr, p, { instrumental:true, gain:1 });
+  STEM_CACHE.set(key, buf); while (STEM_CACHE.size > 48) STEM_CACHE.delete(STEM_CACHE.keys().next().value);
+  return buf;
+}
+var lay = { msg:'', wantPlay:false, pending:false, base:null, baseKey:'', vLen:0, sr:0, voiceBuf:null, voiceKey:'', mix:null, mixKey:'', src:null, t0:0, off:0, playing:false, raf:0, busy:false, again:false, timer:0, undo:[], redo:[], prev:null };
+function lyReset(){ lyStop(); Object.assign(lay, { base:null, baseKey:'', voiceBuf:null, voiceKey:'', mix:null, mixKey:'', off:0, undo:[], redo:[] }); LYE.head = 0; LYE.sel = null; LYE.view = 0; LYE.span = 0; }
 const lyVoiceKey = () => snapKey(snapLayers());
-const lyKey = () => lyVoiceKey() + '|' + JSON.stringify(bandForPlan()) + '|' + JSON.stringify(state.bandVoice);
-function lyPos(){ return lay.playing && lay.buf ? Math.min(lay.buf.duration, ctx().currentTime - lay.t0) : lay.off; }
+const lyMixKey = () => lay.baseKey + '|' + JSON.stringify(state.band.map((l) => [l.kind, l.style, l.bpm, l.vol, l.mute, l.clips])) + '|' + JSON.stringify(state.bandVoice);
+// your voice once: its beat, key and melody, which every layer is written to fit
+async function lyEnsureBase(voc, sr){
+  const vk = lyVoiceKey();
+  if (lay.base && lay.baseKey === vk) return lay.base;
+  if (!state.bandSeed) state.bandSeed = freshSeed();
+  const plan = keywordPlan(0, state.bandSeed);
+  await fitToVoice(voc, sr, plan); plan.chords = await melodyChords(voc, sr, plan);
+  Object.assign(lay, { base:plan, baseKey:vk, vLen:voc.length, sr, voiceBuf:null, mix:null });
+  return plan;
+}
+async function lyVoice(){
+  await prepareAll(null); await refreshSongKey(null);
+  const j = joined();
+  if (j.dur < 0.3) throw new Error('your recording is too short. Record at least a third of a second on step 1.');
+  const voc = new Float32Array(j.data); for (let i = 0; i < voc.length; i++) voc[i] *= 0.9 / j.peak;
+  return { voc, sr:ctx().sampleRate };
+}
+async function lyEnsure(){
+  const { voc, sr } = await lyVoice();
+  const base = await lyEnsureBase(voc, sr);
+  if (!lay.voiceBuf){
+    const p = JSON.parse(JSON.stringify(base)); Object.assign(p, { harmony:0, blend:false, band:[{ kind:'none' }] });
+    lay.voiceBuf = await mixSong(voc, null, null, sr, p, { raw:true });
+  }
+  for (const l of state.band){
+    if (l._stem && l._stemKey === stemKeyOf(l)) continue;
+    setStatus($('#status4'), 'Making the ' + BAND[l.kind].name.toLowerCase() + '…'); await nextTick();
+    l._stem = await stemOf(base, lay.vLen, lay.sr, { kind:l.kind, style:styleOf(l).id, bpm:l.bpm || null }); l._stemKey = stemKeyOf(l);
+    if (!Array.isArray(l.clips)) l.clips = [{ id:nextId++, start:0, end:l._stem.duration, at:0 }];
+  }
+}
+const stemKeyOf = (l) => lay.baseKey + '|' + l.kind + '|' + styleOf(l).id + '|' + (l.bpm || '');
+// mix your voice and every clip right here (fast, so edits are heard straight away)
+function lyMix(){
+  const vb = lay.voiceBuf, sr = vb.sampleRate, vv = state.bandVoice; let len = vb.length;
+  const live = state.band.filter((l) => !l.mute && l._stem);
+  live.forEach((l) => clipsOf(l, l._stem.duration).forEach((c) => { len = Math.max(len, Math.ceil((c.at + c.end - c.start) * sr)); }));
+  const out = [new Float32Array(len), new Float32Array(len)];
+  if (!vv.mute) for (let ch = 0; ch < 2; ch++){ const d = vb.getChannelData(Math.min(ch, vb.numberOfChannels - 1)), o = out[ch], g = vv.vol; for (let i = 0; i < d.length; i++) o[i] += d[i] * g; }
+  const fade = Math.round(sr * 0.005);
+  for (const l of live) for (const c of clipsOf(l, l._stem.duration)){
+    const s0 = Math.round(c.start * sr), s1 = Math.min(l._stem.length, Math.round(c.end * sr)), a = Math.round(c.at * sr), n = s1 - s0; if (n <= 0) continue;
+    for (let ch = 0; ch < 2; ch++){
+      const d = l._stem.getChannelData(Math.min(ch, l._stem.numberOfChannels - 1)), o = out[ch], g = l.vol == null ? 1 : l.vol;
+      for (let i = 0; i < n; i++){ const k = a + i; if (k < 0 || k >= len) continue; const f = i < fade ? i / fade : n - i < fade ? (n - i) / fade : 1; o[k] += d[s0 + i] * g * f; }
+    }
+  }
+  let pk = 0; for (const o of out) for (let i = 0; i < o.length; i += 2) pk = Math.max(pk, Math.abs(o[i]));
+  const g = pk > 0 ? 0.95 / pk : 1, buf = ctx().createBuffer(2, len, sr);
+  for (let ch = 0; ch < 2; ch++){ const o = out[ch]; for (let i = 0; i < o.length; i++) o[i] *= g; buf.getChannelData(ch).set(o); }
+  lay.mix = buf; lay.mixKey = lyMixKey();
+}
+const lyLen = () => { let d = lay.voiceBuf ? lay.voiceBuf.duration : songDur(); state.band.forEach((l) => { if (Array.isArray(l.clips)) l.clips.forEach((c) => { d = Math.max(d, c.at + c.end - c.start); }); }); return d; };
+function lyPos(){ return lay.playing && lay.mix ? Math.min(lay.mix.duration, ctx().currentTime - lay.t0) : LYE.head; }
 function paintLy(){
   const b = $('#lyPlay'); if (!b) return;
-  b.classList.toggle('busy', lay.busy); b.setAttribute('aria-label', lay.busy ? 'Building your layers' : lay.playing ? 'Stop' : 'Play');
-  b.innerHTML = lay.playing ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>' : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>';
-  const d = lay.buf ? lay.buf.duration : 0, p = lyPos();
-  $('#lyScrub').value = d ? Math.round((p / d) * 1000) : 0;
-  $('#lyTime').textContent = fmt(p) + (d ? ' / ' + fmt(d) : '');
+  b.classList.toggle('busy', lay.busy); b.setAttribute('aria-label', lay.busy ? 'Getting your layers ready' : lay.playing ? 'Stop' : 'Play');
+  b.replaceChildren(svgEl(lay.playing ? STOP_I : PLAY_I));
+  $('#lyTime').textContent = fmt(lyPos()) + ' / ' + fmt(lyLen());
+  $('#lyUndo').disabled = !lay.undo.length; $('#lyRedo').disabled = !lay.redo.length;
 }
 function lyStop(){
   if (lay.src){ const s = lay.src; lay.src = null; s.onended = null; try { s.stop(); } catch (_) {} }
-  if (lay.playing){ lay.off = lyPos(); lay.playing = false; }
-  cancelAnimationFrame(lay.raf); paintLy();
+  if (lay.playing){ LYE.head = lyPos(); lay.playing = false; }
+  cancelAnimationFrame(lay.raf); paintLy(); if (typeof lyDraw === 'function') lyDraw();
 }
 async function lyBuild(){
   lay.busy = true; paintLy();
-  setStatus($('#status4'), state.band.length ? 'Building your layers…' : 'Getting your voice ready…');
-  try {
-    const sr = ctx().sampleRate;
-    await prepareAll(null); await refreshSongKey(null);
-    const j = joined();
-    if (j.dur < 0.3) throw new Error('your recording is too short. Record at least a third of a second on step 1.');
-    let voc = new Float32Array(j.data); for (let i = 0; i < voc.length; i++) voc[i] *= 0.9 / j.peak;
-    const vk = lyVoiceKey();
-    if (lay.baseKey !== vk || !lay.base){
-      // find your beat, key and melody once; every layer is written to fit them
-      const plan = keywordPlan(state.variation, lay.seed || (lay.seed = freshSeed()));
-      await fitToVoice(voc, sr, plan); plan.chords = await melodyChords(voc, sr, plan);
-      lay.base = plan; lay.baseKey = vk;
-    }
-    const key = lyKey(), plan = JSON.parse(JSON.stringify(lay.base));
-    plan.harmony = 0; plan.blend = false; plan.band = bandForPlan(); plan.beat = true;
-    if (!plan.band.length) plan.band = [{ kind:'none' }];   // just your voice
-    const vv = state.bandVoice; if (!vv.mute && vv.vol !== 1) for (let i = 0; i < voc.length; i++) voc[i] *= vv.vol;
-    lay.buf = await mixSong(voc, null, null, sr, plan, vv.mute ? { instrumental:true } : null);
-    lay.key = key;
-    $('#lyInfo').textContent = 'Your beat: ' + plan.tempo + ' BPM · ' + NOTE_NAMES[((plan.root % 12) + 12) % 12] + ' ' + plan.scale + '. ' + (state.band.length ? 'Playing ' + bandForPlan().map(bandLabel).join(', ') + (vv.mute ? '' : ' with your voice') + '.' : 'Just your voice so far. Add a layer below.');
-    setStatus($('#status4'), '');
-  } catch (err){ lay.buf = null; setStatus($('#status4'), 'Couldn\'t build your layers: ' + (err.message || err), 'error'); }
-  finally { lay.busy = false; paintLy(); }
+  try { await lyEnsure(); lyMix(); setStatus($('#status4'), lay.msg || '', lay.msg ? 'ok' : ''); lay.msg = ''; lyInfo(); }
+  catch (err){ lay.mix = null; setStatus($('#status4'), 'Couldn\'t get your layers ready: ' + (err.message || err), 'error'); }
+  finally { lay.busy = false; paintLy(); lySize(); lyDraw(); if (lay.wantPlay){ lay.wantPlay = false; setTimeout(() => { if (state.page === 4) lyPlay(); }, 0); } }
 }
 async function lyPlay(from){
-  if (lay.busy) return;
-  stopAllPlayback();
-  // keep rebuilding until it matches your latest changes (you can keep tapping while it builds)
+  if (lay.busy){ lay.wantPlay = true; paintLy(); return; }
+  stopAllPlayback(); lyPrevStop();
   lay.pending = true;
-  try { for (let n = 0; n < 6 && (!lay.buf || lay.key !== lyKey()); n++){ await lyBuild(); if (!lay.buf) return; } }
+  try { for (let n = 0; n < 6 && (!lay.mix || lay.mixKey !== lyMixKey() || state.band.some((l) => !l._stem || l._stemKey !== stemKeyOf(l))); n++){ await lyBuild(); if (!lay.mix) return; } }
   finally { lay.pending = false; }
-  if (!lay.buf || state.page !== 4 || lay.playing) return;
+  if (!lay.mix || state.page !== 4 || lay.playing) return;
   const c = ctx(); if (c.state !== 'running') await c.resume();
-  lay.off = from != null ? from : lay.off; if (lay.off >= lay.buf.duration - 0.05) lay.off = 0;
-  const s = c.createBufferSource(); s.buffer = lay.buf; s.connect(c.destination); s.start(0, lay.off);
-  lay.t0 = c.currentTime - lay.off; lay.src = s; lay.playing = true;
-  s.onended = () => { if (lay.src === s){ lay.src = null; lay.playing = false; lay.off = 0; cancelAnimationFrame(lay.raf); paintLy(); } };
-  const loop = () => { paintLy(); if (lay.playing) lay.raf = requestAnimationFrame(loop); };
+  let off = from != null ? from : LYE.head; if (off >= lay.mix.duration - 0.05) off = 0;
+  const s = c.createBufferSource(); s.buffer = lay.mix; s.connect(c.destination); s.start(0, off);
+  lay.t0 = c.currentTime - off; lay.src = s; lay.playing = true;
+  s.onended = () => { if (lay.src === s){ lay.src = null; lay.playing = false; LYE.head = 0; cancelAnimationFrame(lay.raf); paintLy(); lyDraw(); } };
+  const loop = () => { const p = lyPos(); if (p > LYE.view + LYE.span * 0.9 || p < LYE.view) LYE.view = Math.max(0, p - LYE.span * 0.1); paintLy(); lyDraw(); if (lay.playing) lay.raf = requestAnimationFrame(loop); };
   loop();
 }
-// a change while it plays: rebuild and carry on from the same spot
+// after any change: remix (and rebuild a layer if its sound changed), carrying on from the same spot if it was playing
 function lyChanged(){
-  saveLayers();
+  if (typeof autosave === 'function') autosave();
+  lySize(); lyDraw(); paintLy();
   clearTimeout(lay.timer);
-  if (lay.pending) return;   // a play is building right now and picks this change up
-  if (!lay.playing && !lay.again) return;
-  const at = lyPos(); lay.again = true; lyStop(); lay.off = at;
-  lay.timer = setTimeout(async () => { if (lay.busy){ lyChanged(); return; } lay.again = false; if (state.page === 4) await lyPlay(at); }, 350);
+  if (lay.pending) return;
+  if (!lay.playing && !lay.again){ if (state.band.some((l) => !l._stem || l._stemKey !== stemKeyOf(l)) && !lay.busy) lyBuild(); return; }
+  const at = lyPos(); lay.again = true; lyStop(); LYE.head = at;
+  lay.timer = setTimeout(async () => { if (lay.busy){ lyChanged(); return; } lay.again = false; if (state.page === 4) await lyPlay(at); }, 120);
 }
-function saveLayers(){ if (typeof autosave === 'function') autosave(); }
+// undo and redo for everything on this page
+const lySnap = () => JSON.stringify({ band:state.band.map((l) => ({ kind:l.kind, style:l.style, bpm:l.bpm, vol:l.vol, mute:l.mute, clips:l.clips })), voice:state.bandVoice });
+function lyPush(){ lay.undo.push(lySnap()); if (lay.undo.length > 60) lay.undo.shift(); lay.redo = []; paintLy(); }
+function lyRestore(snap){
+  const d = JSON.parse(snap), old = state.band;
+  state.band = d.band.map((l) => { const o = old.find((x) => x.kind === l.kind); return Object.assign(l, o && o._stemKey ? { _stem:o._stem, _stemKey:o._stemKey } : {}); });
+  state.bandVoice = d.voice; LYE.sel = null; renderLayers(); lyChanged();
+}
+$('#lyUndo').addEventListener('click', () => { if (!lay.undo.length) return; lay.redo.push(lySnap()); lyRestore(lay.undo.pop()); setStatus($('#status4'), 'Undone.', 'ok'); });
+$('#lyRedo').addEventListener('click', () => { if (!lay.redo.length) return; lay.undo.push(lySnap()); lyRestore(lay.redo.pop()); setStatus($('#status4'), 'Redone.', 'ok'); });
+
+/* ----- the timeline: a lane for your voice and one for each layer. Tap a clip to pick it, drag to move it,
+   drag its edges to trim. Tap empty space to move the red line, drag it to scroll. ----- */
+var LYE = { view:0, span:0, head:0, sel:null, drag:null, w:0, h:0 };
+const LY_RULER = 22, LY_LANE = 46, LY_GAP = 6;
+const lyBeat = () => lay.base ? 60 / lay.base.tempo : 0.5;
+const lySnapT = (t) => Math.max(0, Math.round(t / lyBeat()) * lyBeat());
+const peakCacheL = new WeakMap();
+function peaksOf(buf){
+  let p = peakCacheL.get(buf); if (p) return p;
+  const hop = Math.max(1, Math.round(buf.sampleRate / 200)), n = Math.ceil(buf.length / hop); p = new Float32Array(n);
+  for (let c = 0; c < buf.numberOfChannels; c++){ const d = buf.getChannelData(c); for (let i = 0; i < n; i++){ let m = 0; for (let j = i * hop, e = Math.min(d.length, j + hop); j < e; j += 4){ const v = Math.abs(d[j]); if (v > m) m = v; } if (m > p[i]) p[i] = m; } }
+  let top = 0; for (let i = 0; i < n; i++) top = Math.max(top, p[i]); if (top > 0) for (let i = 0; i < n; i++) p[i] /= top;
+  peakCacheL.set(buf, p); return p;
+}
+function lySize(){
+  const c = $('#lyCanvas'); if (!c || !c.parentElement) return;
+  const w = c.parentElement.clientWidth || 320, h = LY_RULER + (1 + state.band.length) * (LY_LANE + LY_GAP), dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)){ c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); c.style.height = h + 'px'; }
+  LYE.w = w; LYE.h = h;
+  const total = Math.max(lyLen(), 1);
+  if (!LYE.span) LYE.span = Math.min(total, Math.max(8, Math.min(24, total)));
+  LYE.span = Math.min(LYE.span, Math.max(total, 1)); LYE.view = clamp(LYE.view, 0, Math.max(0, total - LYE.span * 0.5));
+}
+const lyX = (t) => (t - LYE.view) / LYE.span * LYE.w, lyT = (x) => LYE.view + x / LYE.w * LYE.span;
+const laneY = (i) => LY_RULER + i * (LY_LANE + LY_GAP);
+function lyDraw(){
+  const c = $('#lyCanvas'); if (!c || state.page !== 4 || !LYE.w) return;
+  const g = c.getContext('2d'), dpr = c.width / LYE.w, W = LYE.w, cs = getComputedStyle(document.body);
+  g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, LYE.h);
+  const muted = cs.getPropertyValue('--muted') || '#999', line = cs.getPropertyValue('--line') || '#333';
+  // bars and beats
+  const bt = lyBeat(), bar = bt * 4, pxBar = bar / LYE.span * W, every = pxBar > 34 ? 1 : pxBar > 17 ? 2 : pxBar > 8 ? 4 : 8;
+  g.font = '600 10px ui-monospace,monospace'; g.textBaseline = 'middle';
+  for (let k = Math.floor(LYE.view / bar); k * bar < LYE.view + LYE.span; k++){
+    const x = lyX(k * bar); if (k % every) continue;
+    g.fillStyle = line; g.fillRect(Math.round(x), 4, 1, LYE.h - 4);
+    g.fillStyle = muted; g.fillText(String(k + 1), x + 3, 11);
+  }
+  if (pxBar > 60){ g.fillStyle = 'rgba(255,255,255,.05)'; for (let t = Math.floor(LYE.view / bt) * bt; t < LYE.view + LYE.span; t += bt){ const x = lyX(t); g.fillRect(Math.round(x), LY_RULER, 1, LYE.h - LY_RULER); } }
+  const lanes = [{ name:'Your voice', c:cs.getPropertyValue('--accent-b').trim() || '#ec4899', mute:state.bandVoice.mute, voice:true }].concat(state.band.map((l) => ({ name:BAND[l.kind].name, c:BAND[l.kind].c, mute:l.mute, l })));
+  lanes.forEach((ln, i) => {
+    const y = laneY(i);
+    g.fillStyle = 'rgba(255,255,255,.035)'; g.fillRect(0, y, W, LY_LANE);
+    const clips = ln.voice ? (lay.voiceBuf ? [{ start:0, end:lay.voiceBuf.duration, at:0 }] : []) : ln.l._stem ? clipsOf(ln.l, ln.l._stem.duration) : [];
+    const buf = ln.voice ? lay.voiceBuf : ln.l._stem, pk = buf ? peaksOf(buf) : null;
+    clips.forEach((cl, ci) => {
+      const x0 = lyX(cl.at), x1 = lyX(cl.at + cl.end - cl.start); if (x1 < 0 || x0 > W) return;
+      const sel = !ln.voice && LYE.sel && LYE.sel.li === i - 1 && LYE.sel.ci === ci;
+      g.globalAlpha = ln.mute ? 0.35 : 1;
+      g.fillStyle = ln.c + '33'; g.beginPath(); g.roundRect ? g.roundRect(x0, y, x1 - x0, LY_LANE, 6) : g.rect(x0, y, x1 - x0, LY_LANE); g.fill();
+      if (pk){ g.fillStyle = ln.c; const mid = y + LY_LANE / 2;
+        for (let x = Math.max(0, Math.floor(x0)); x < Math.min(W, x1); x++){ const t = cl.start + (lyT(x) - cl.at), t2 = cl.start + (lyT(x + 1) - cl.at); let m = 0; for (let b = Math.floor(t * 200); b <= Math.floor(t2 * 200); b++) if (b >= 0 && b < pk.length && pk[b] > m) m = pk[b]; const hh = Math.max(0.5, m * (LY_LANE / 2 - 4)); g.fillRect(x, mid - hh, 1, hh * 2); } }
+      g.globalAlpha = 1;
+      if (sel){ g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.roundRect ? g.roundRect(x0 + 1, y + 1, x1 - x0 - 2, LY_LANE - 2, 6) : g.rect(x0 + 1, y + 1, x1 - x0 - 2, LY_LANE - 2); g.stroke();
+        g.fillStyle = '#fff'; [x0 + 3, x1 - 9].forEach((hx) => { g.beginPath(); g.roundRect ? g.roundRect(hx, y + LY_LANE / 2 - 12, 6, 24, 3) : g.rect(hx, y + LY_LANE / 2 - 12, 6, 24); g.fill(); }); }
+    });
+    // the lane's name
+    g.font = '700 11px system-ui,sans-serif'; const tw = g.measureText(ln.name).width;
+    g.fillStyle = 'rgba(15,10,28,.75)'; g.fillRect(4, y + 3, tw + 10, 16); g.fillStyle = ln.mute ? muted : '#fff'; g.fillText(ln.name, 9, y + 11);
+  });
+  // the red line
+  const hx = lyX(lyPos());
+  if (hx >= -2 && hx <= W + 2){ g.fillStyle = '#ef4444'; g.fillRect(Math.round(hx) - 1, 4, 2, LYE.h - 4); g.beginPath(); g.arc(hx, 9, 6, 0, Math.PI * 2); g.fill(); }
+}
+function lyHit(x, y){
+  const i = Math.floor((y - LY_RULER) / (LY_LANE + LY_GAP)), inLane = y >= LY_RULER && (y - LY_RULER) % (LY_LANE + LY_GAP) <= LY_LANE;
+  if (i < 1 || !inLane || i > state.band.length) return { lane:i };
+  const l = state.band[i - 1]; if (!l._stem) return { lane:i };
+  const t = lyT(x), cl = clipsOf(l, l._stem.duration);
+  for (let ci = cl.length - 1; ci >= 0; ci--){ const c = cl[ci]; if (t >= c.at && t <= c.at + c.end - c.start) return { lane:i, li:i - 1, ci, l }; }
+  return { lane:i, li:i - 1, l };
+}
+const lyCanvas = $('#lyCanvas');
+lyCanvas.addEventListener('pointerdown', (e) => {
+  if (lay.busy) return;
+  const r = lyCanvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, hit = lyHit(x, y);
+  lyCanvas.setPointerCapture(e.pointerId);
+  const base = { x0:x, moved:false, view0:LYE.view };
+  if (hit.ci != null){
+    const c = clipsOf(hit.l, hit.l._stem.duration)[hit.ci], x0 = lyX(c.at), x1 = lyX(c.at + c.end - c.start), isSel = LYE.sel && LYE.sel.li === hit.li && LYE.sel.ci === hit.ci;
+    const type = isSel && x - x0 < 18 ? 'trimL' : isSel && x1 - x < 18 ? 'trimR' : 'move';
+    LYE.drag = Object.assign(base, { type, li:hit.li, ci:hit.ci, orig:Object.assign({}, c), t:lyT(x) });
+  } else LYE.drag = Object.assign(base, { type:'pan', t:lyT(x), lane:hit.lane });
+});
+lyCanvas.addEventListener('pointermove', (e) => {
+  const d = LYE.drag; if (!d) return;
+  const r = lyCanvas.getBoundingClientRect(), x = e.clientX - r.left, dx = x - d.x0;
+  if (!d.moved && Math.abs(dx) < 6) return;
+  if (!d.moved){ d.moved = true; if (d.type !== 'pan'){ lyPush(); const l = state.band[d.li]; if (!Array.isArray(l.clips)) l.clips = clipsOf(l, l._stem.duration).map((c) => Object.assign({}, c)); LYE.sel = { li:d.li, ci:d.ci }; } }
+  if (d.type === 'pan'){ LYE.view = clamp(d.view0 - dx / LYE.w * LYE.span, 0, Math.max(0, lyLen() - LYE.span * 0.5)); lyDraw(); return; }
+  const l = state.band[d.li], c = l.clips[d.ci], o = d.orig, dt = dx / LYE.w * LYE.span, bt = lyBeat(), dur = l._stem.duration;
+  if (d.type === 'move') c.at = lySnapT(o.at + dt);
+  else if (d.type === 'trimL'){ const at = clamp(lySnapT(o.at + dt), o.at - o.start, o.at + (o.end - o.start) - bt / 2); c.start = o.start + (at - o.at); c.at = at; }
+  else { const end = lySnapT(o.at + (o.end - o.start) + dt) - o.at + o.start; c.end = clamp(end, o.start + bt / 2, dur); }
+  lyDraw(); paintLy();
+});
+const lyUp = () => {
+  const d = LYE.drag; LYE.drag = null; if (!d) return;
+  if (d.moved){ if (d.type !== 'pan'){ lyChanged(); setStatus($('#status4'), d.type === 'move' ? 'Moved. It snaps to the beat.' : 'Trimmed.', 'ok'); } return; }
+  // a tap: pick the clip (or nothing) and put the red line there
+  LYE.sel = d.ci != null ? { li:d.li, ci:d.ci } : null;
+  const t = lySnapT(d.t);
+  if (lay.playing) lyPlay(t); else LYE.head = t;
+  lyTools(); lyDraw(); paintLy();
+};
+lyCanvas.addEventListener('pointerup', lyUp);
+lyCanvas.addEventListener('pointercancel', () => { LYE.drag = null; });
+function lySelClip(){ const s = LYE.sel; if (!s) return null; const l = state.band[s.li]; if (!l || !Array.isArray(l.clips) || !l.clips[s.ci]) return null; return { l, c:l.clips[s.ci] }; }
+function lyTools(){ const has = !!lySelClip(); $('#lyDup').disabled = !has; $('#lyDel').disabled = !has; $('#lySplit').textContent = has ? 'Split' : 'Split all'; }
+function lyEnsureClips(l){ if (!Array.isArray(l.clips) && l._stem) l.clips = [{ id:nextId++, start:0, end:l._stem.duration, at:0 }]; }
+$('#lySplit').addEventListener('click', () => {
+  const t = lyPos(), sel = lySelClip(), targets = sel ? [sel.l] : state.band.filter((l) => l._stem);
+  let n = 0; const before = lySnap();
+  for (const l of targets){
+    lyEnsureClips(l);
+    const list = sel ? [sel.c] : l.clips.slice();
+    for (const c of list){ const off = t - c.at; if (off <= 0.05 || off >= c.end - c.start - 0.05) continue; const nc = { id:nextId++, start:c.start + off, end:c.end, at:t }; c.end = c.start + off; l.clips.splice(l.clips.indexOf(c) + 1, 0, nc); n++; }
+  }
+  if (!n){ setStatus($('#status4'), sel ? 'Put the red line inside that clip first, then split.' : 'Put the red line over a layer first, then split.', 'error'); return; }
+  lay.undo.push(before); lay.redo = []; LYE.sel = null; lyTools(); lyChanged();
+  setStatus($('#status4'), sel ? 'Split in two at the red line.' : 'Split every layer at the red line. Tap a piece to move or delete it.', 'ok');
+});
+$('#lyDel').addEventListener('click', () => { const s = lySelClip(); if (!s) return; lyPush(); s.l.clips.splice(s.l.clips.indexOf(s.c), 1); LYE.sel = null; lyTools(); lyChanged(); setStatus($('#status4'), 'Deleted. Undo brings it back.', 'ok'); });
+$('#lyDup').addEventListener('click', () => { const s = lySelClip(); if (!s) return; lyPush(); const len = s.c.end - s.c.start, nc = { id:nextId++, start:s.c.start, end:s.c.end, at:lySnapT(s.c.at + len) }; s.l.clips.push(nc); LYE.sel = { li:state.band.indexOf(s.l), ci:s.l.clips.length - 1 }; if (lyX(nc.at + len) > LYE.w) LYE.view = Math.max(0, nc.at + len - LYE.span * 0.9); lyChanged(); setStatus($('#status4'), 'Copied right after it.', 'ok'); });
+$('#lyZoomIn').addEventListener('click', () => { const c = lyPos(); LYE.span = Math.max(lyBeat() * 2, LYE.span / 1.6); LYE.view = Math.max(0, c - LYE.span / 2); lySize(); lyDraw(); });
+$('#lyZoomOut').addEventListener('click', () => { const c = lyPos(); LYE.span = Math.min(Math.max(lyLen(), 1), LYE.span * 1.6); LYE.view = Math.max(0, c - LYE.span / 2); lySize(); lyDraw(); });
+window.addEventListener('resize', () => { if (state.page === 4){ lySize(); lyDraw(); } });
+
+/* ----- the cards under the timeline ----- */
+function lyInfo(){
+  const b = lay.base; if (!b) return;
+  $('#lyInfo').textContent = 'Your song: ' + b.tempo + ' BPM · ' + NOTE_NAMES[((b.root % 12) + 12) % 12] + ' ' + b.scale + '. Tap a clip to pick it, drag to move it, drag its white edges to trim.';
+}
 function lyCard(l, i){
-  const k = BAND[l.kind], card = h('div', { class:'ly-card' + (l.mute ? ' muted' : '') + (l.fresh ? ' fresh' : ''), style:'--c:' + k.c, 'data-kind':l.kind });
+  const k = BAND[l.kind], st = styleOf(l), card = h('div', { class:'ly-card' + (l.mute ? ' muted' : '') + (l.fresh ? ' fresh' : ''), style:'--c:' + k.c, 'data-kind':l.kind });
   delete l.fresh;
   const ic = h('span', { class:'ly-ic' }); ic.append(svgEl(k.svg));
-  const st = k.styles.find((x) => x[0] === l.style);
   const mute = h('button', { type:'button', class:'ly-btn', 'aria-pressed':l.mute ? 'true' : 'false', 'aria-label':(l.mute ? 'Unmute ' : 'Mute ') + k.name }); mute.append(svgEl(l.mute ? SPK_OFF : SPK_ON));
-  mute.addEventListener('click', () => { l.mute = !l.mute; renderLayers(); lyChanged(); });
+  mute.addEventListener('click', () => { lyPush(); l.mute = !l.mute; renderLayers(); lyChanged(); });
   const x = h('button', { type:'button', class:'ly-btn ly-x', 'aria-label':'Remove ' + k.name }); x.append(svgEl('<path d="M6 6l12 12M18 6L6 18"/>'));
-  x.addEventListener('click', () => { state.band.splice(i, 1); renderLayers(); lyChanged(); setStatus($('#status4'), k.name + ' removed.', 'ok'); });
-  card.append(h('div', { class:'ly-top' }, ic, h('div', { class:'ly-name' }, h('b', { text:k.name }), h('small', { text:st ? st[1] + ' · ' + k.sub : k.sub })), mute, x));
-  if (k.styles.length){
-    const row = h('div', { class:'ly-styles', role:'group', 'aria-label':k.name + ' style' });
-    k.styles.forEach(([v, name]) => { const b = h('button', { type:'button', 'aria-pressed':l.style === v ? 'true' : 'false' }, name); b.addEventListener('click', () => { if (l.style === v) return; l.style = v; renderLayers(); lyChanged(); }); row.append(b); });
-    card.append(row);
-  }
-  card.append(volRow(k.name, l));
+  x.addEventListener('click', () => { lyPush(); state.band.splice(i, 1); LYE.sel = null; renderLayers(); lyChanged(); setStatus($('#status4'), k.name + ' removed. Undo brings it back.', 'ok'); });
+  const bpmTxt = k.noBpm ? 'follows your voice' : (l.bpm ? l.bpm + ' BPM' : (lay.base ? lay.base.tempo + ' BPM' : 'song speed'));
+  card.append(h('div', { class:'ly-top' }, ic, h('div', { class:'ly-name' }, h('b', { text:k.name }), h('small', { text:st.name + ' · ' + bpmTxt })), mute, x));
+  const edit = h('button', { type:'button', class:'ly-style-btn' }, h('span', {}, h('b', { text:st.name }), h('small', { text:k.styles.length + ' styles' + (k.noBpm ? '' : ' · speed ' + bpmTxt) })), svgEl('<path d="M9 6l6 6-6 6"/>'));
+  edit.addEventListener('click', () => openLySheet(l.kind, l));
+  card.append(edit, volRow(k.name, l));
   return card;
 }
 function volRow(name, o){
   const val = h('span', { class:'mono', text:Math.round(o.vol * 100) + '%' }), r = h('input', { type:'range', min:'0', max:'150', step:'5', value:String(Math.round(o.vol * 100)), 'aria-label':name + ' volume' });
-  r.addEventListener('input', () => { o.vol = +r.value / 100; val.textContent = r.value + '%'; });
-  r.addEventListener('change', lyChanged);
+  let pushed = false;
+  r.addEventListener('input', () => { if (!pushed){ lyPush(); pushed = true; } o.vol = +r.value / 100; val.textContent = r.value + '%'; });
+  r.addEventListener('change', () => { pushed = false; lyChanged(); });
   return h('label', { class:'ly-vol' }, h('span', { text:'Volume' }), r, val);
 }
 function renderLayers(){
   const list = $('#lyList'), vv = state.bandVoice;
   const vic = h('span', { class:'ly-ic' }); vic.append(svgEl(VOICE_SVG));
   const vm = h('button', { type:'button', class:'ly-btn', 'aria-pressed':vv.mute ? 'true' : 'false', 'aria-label':vv.mute ? 'Unmute your voice' : 'Mute your voice' }); vm.append(svgEl(vv.mute ? SPK_OFF : SPK_ON));
-  vm.addEventListener('click', () => { vv.mute = !vv.mute; renderLayers(); lyChanged(); });
+  vm.addEventListener('click', () => { lyPush(); vv.mute = !vv.mute; renderLayers(); lyChanged(); });
   const voice = h('div', { class:'ly-card' + (vv.mute ? ' muted' : ''), style:'--c:var(--accent-b)' },
     h('div', { class:'ly-top' }, vic, h('div', { class:'ly-name' }, h('b', { text:'Your voice' }), h('small', { text:fmt(songDur()) + ' recorded on step 1' })), vm), volRow('Your voice', vv));
   list.replaceChildren(voice, ...state.band.map(lyCard));
   $('#lyAdd').hidden = state.band.length >= Object.keys(BAND).length;
-  if (!lay.playing && !lay.busy && (!lay.buf || lay.key !== lyKey())) $('#lyInfo').textContent = state.band.length ? 'Tap play to hear your voice with ' + bandForPlan().map(bandLabel).join(', ') + '.' : 'Tap play to hear your voice, then add your first layer.';
-  paintLy();
+  $('#lyEditor').hidden = !state.band.length;
+  lyTools(); lySize(); lyDraw(); paintLy();
 }
+
+/* ----- pick an instrument, then hear its styles and set its speed before adding it ----- */
+var lsh = { kind:null, layer:null, style:'', bpm:null, prev:null, prevKey:'', prevBusy:false };
+function lyPrevStop(){ if (lsh.prev){ try { lsh.prev.onended = null; lsh.prev.stop(); } catch (_) {} lsh.prev = null; } lsh.prevKey = ''; document.querySelectorAll('.ly-srow .ly-sp').forEach((b) => b.replaceChildren(svgEl(PLAY_I))); document.querySelectorAll('.ly-srow').forEach((r) => r.classList.remove('playing')); }
+async function lyPreview(styleId){
+  const key = styleId + '|' + (lsh.bpm || '');
+  if (lsh.prev && lsh.prevKey === key){ lyPrevStop(); return; }
+  lyStop(); lyPrevStop(); stopAllPlayback();
+  const row = document.querySelector('.ly-srow[data-id="' + styleId + '"]'); if (row){ row.classList.add('loading'); }
+  try {
+    lsh.prevBusy = true;
+    if (!lay.base){ setStatus($('#lyShStatus'), 'Listening to your voice first…'); const { voc, sr } = await lyVoice(); await lyEnsureBase(voc, sr); lyBpmPaint(); }
+    const b = lay.base, sr = lay.sr, bar = 240 / b.tempo, intro = b.fit ? (b.introBars || 1) * bar : bar, vAt = voiceAtOf(b), bars = 8;
+    // eight bars, just this instrument, in your song's key
+    const vLen = Math.max(Math.round(sr * 0.5), Math.round((intro + bars * bar - vAt) * sr));
+    setStatus($('#lyShStatus'), '');
+    const buf = await stemOf(b, vLen, sr, { kind:lsh.kind, style:styleId, bpm:lsh.bpm || null });
+    if ($('#lySheet').hidden) return;
+    const c = ctx(); if (c.state !== 'running') await c.resume();
+    const s = c.createBufferSource(), g = c.createGain(); s.buffer = buf; s.connect(g); g.connect(c.destination);
+    const from = lsh.kind === 'melody' ? Math.max(0, vAt - bar) : intro, len = Math.min(buf.duration - from, bars * bar + 0.6);
+    g.gain.setValueAtTime(1, c.currentTime + len - 0.3); g.gain.linearRampToValueAtTime(0, c.currentTime + len);
+    s.start(0, from, len); lsh.prev = s; lsh.prevKey = key;
+    if (row){ row.classList.add('playing'); row.querySelector('.ly-sp').replaceChildren(svgEl(STOP_I)); }
+    s.onended = () => { if (lsh.prev === s) lyPrevStop(); };
+  } catch (err){ setStatus($('#lyShStatus'), 'Couldn\'t play it: ' + (err.message || err), 'error'); }
+  finally { lsh.prevBusy = false; if (row) row.classList.remove('loading'); }
+}
+function lyBpmPaint(){
+  const k = BAND[lsh.kind], song = lay.base ? lay.base.tempo : 0, v = lsh.bpm || song;
+  $('#lyBpmBox').hidden = !!k.noBpm;
+  if (k.noBpm) return;
+  $('#lyBpm').value = v || '';
+  $('#lyBpmChips').replaceChildren(...[['Half', 0.5], ['Song', 1], ['Double', 2]].map(([n, f]) => {
+    const val = song ? Math.round(song * f) : 0, b = h('button', { type:'button', 'aria-pressed':song && v === val ? 'true' : 'false' }, n + (val ? ' ' + val : ''));
+    b.disabled = !song || val < 40 || val > 220; b.addEventListener('click', () => { lyBpmSet(f === 1 ? null : val); }); return b;
+  }));
+  const r = song && v ? v / song : 1;
+  $('#lyBpmNote').textContent = !song ? 'Your song\'s speed shows here once your voice is ready.' : v === song ? 'Matches your song (' + song + ' BPM), so it lines up with your singing.' :
+    [0.5, 2].includes(Math.round(r * 100) / 100) ? (r > 1 ? 'Twice as fast as your song: the same sound, closer together. It still lines up with your beat.' : 'Half as fast as your song: the same sound, more space. It still lines up with your beat.') :
+    (v > song ? 'Faster' : 'Slower') + ' than your song (' + song + ' BPM): the same sound, ' + (v > song ? 'closer together' : 'further apart') + '. It won\'t line up exactly with your singing.';
+}
+function lyBpmSet(v){
+  const song = lay.base ? lay.base.tempo : 0;
+  v = v == null ? null : clamp(Math.round(+v || 0), 40, 220);
+  lsh.bpm = v && v !== song ? v : null; lyBpmPaint();
+  if (lsh.prev){ const id = lsh.style; lyPrevStop(); lyPreview(id); }
+}
+$('#lyBpm').addEventListener('change', () => lyBpmSet($('#lyBpm').value));
+$('#lyBpmMinus').addEventListener('click', () => lyBpmSet((lsh.bpm || (lay.base ? lay.base.tempo : 90)) - 1));
+$('#lyBpmPlus').addEventListener('click', () => lyBpmSet((lsh.bpm || (lay.base ? lay.base.tempo : 90)) + 1));
+function openLySheet(kind, layer){
+  lyStop(); lyPrevStop();
+  const k = BAND[kind];
+  Object.assign(lsh, { kind, layer:layer || null, style:layer ? styleOf(layer).id : k.styles[0].id, bpm:layer ? layer.bpm || null : null });
+  $('#lyShIc').replaceChildren(svgEl(k.svg)); $('#lyShIc').style.setProperty('--c', k.c); $('#lySheet .sheet').style.setProperty('--c', k.c);
+  $('#lyShTitle').textContent = k.name; $('#lyShSub').textContent = k.styles.length + ' styles. Tap one to hear it' + (k.noBpm ? ' with your melody.' : ', then pick its speed.');
+  $('#lyShOk').textContent = layer ? 'Done' : 'Add to song';
+  $('#lyStyles').replaceChildren(...k.styles.map((s) => {
+    const sp = h('span', { class:'ly-sp', 'aria-hidden':'true' }); sp.append(svgEl(PLAY_I));
+    const row = h('button', { type:'button', class:'ly-srow', 'data-id':s.id, role:'radio', 'aria-checked':s.id === lsh.style ? 'true' : 'false' }, sp, h('span', { class:'ly-sname' }, h('b', { text:s.name }), h('small', { text:s.d })), h('span', { class:'ly-check', 'aria-hidden':'true' }));
+    row.addEventListener('click', () => { lsh.style = s.id; $('#lyStyles').querySelectorAll('.ly-srow').forEach((r) => r.setAttribute('aria-checked', r.dataset.id === s.id ? 'true' : 'false')); lyPreview(s.id); });
+    return row;
+  }));
+  setStatus($('#lyShStatus'), '');
+  lyBpmPaint();
+  $('#lyAddSheet').hidden = true; $('#lySheet').hidden = false; $('#lyStyles').scrollTop = 0;
+  // find your song's speed right away so the BPM box shows it
+  if (!lay.base && !lay.busy){ setStatus($('#lyShStatus'), 'Finding your song\'s speed…'); lyVoice().then(({ voc, sr }) => lyEnsureBase(voc, sr)).then(() => { setStatus($('#lyShStatus'), ''); if (!$('#lySheet').hidden) lyBpmPaint(); }).catch(() => setStatus($('#lyShStatus'), '')); }
+}
+function closeLySheet(){ lyPrevStop(); $('#lySheet').hidden = true; }
+$('#lyShCancel').addEventListener('click', closeLySheet);
+$('#lySheet').addEventListener('click', (e) => { if (e.target === $('#lySheet')) closeLySheet(); });
+$('#lyShOk').addEventListener('click', () => {
+  const k = BAND[lsh.kind]; lyPush();
+  if (lsh.layer){ const l = lsh.layer; l.style = lsh.style; l.bpm = k.noBpm ? null : lsh.bpm; }
+  else { state.band.push({ kind:lsh.kind, style:lsh.style, bpm:k.noBpm ? null : lsh.bpm, vol:1, mute:false, clips:null, fresh:true }); }
+  const was = lsh.layer; closeLySheet(); renderLayers(); lyChanged();
+  setStatus($('#status4'), was ? k.name + ' changed to ' + styleOf(was).name + '.' : k.name + ' (' + (k.styles.find((s) => s.id === lsh.style) || k.styles[0]).name + ') added. Tap play to hear it with your voice.', 'ok');
+});
 function openLyAdd(){
   $('#lyKinds').replaceChildren(...Object.entries(BAND).map(([kind, k]) => {
     const has = state.band.some((l) => l.kind === kind), ic = h('span', { class:'ly-ic', style:'--c:' + k.c }); ic.append(svgEl(k.svg));
-    const b = h('button', { type:'button', class:'ly-kind', style:'--c:' + k.c }, ic, h('b', { text:k.name }), h('small', { text:has ? 'Added' : k.sub }));
+    const b = h('button', { type:'button', class:'ly-kind', style:'--c:' + k.c }, ic, h('b', { text:k.name }), h('small', { text:has ? 'Added' : k.styles.length + ' styles' }));
     if (has) b.disabled = true;
-    b.addEventListener('click', () => {
-      state.band.push({ kind, style:k.styles.length ? k.styles[0][0] : '', vol:1, mute:false, fresh:true });
-      $('#lyAddSheet').hidden = true; renderLayers(); lyChanged();
-      setStatus($('#status4'), k.name + ' added. ' + (lay.playing || lay.again ? 'Playing it with your voice…' : 'Tap play to hear it with your voice.'), 'ok');
-      const c = $('#lyList').lastElementChild; if (c && c.scrollIntoView) c.scrollIntoView({ block:'nearest', behavior:'smooth' });
-    });
+    b.addEventListener('click', () => openLySheet(kind, null));
     return b;
   }));
   $('#lyAddSheet').hidden = false;
@@ -2594,8 +2960,58 @@ $('#lyAdd').addEventListener('click', openLyAdd);
 $('#lyAddCancel').addEventListener('click', () => { $('#lyAddSheet').hidden = true; });
 $('#lyAddSheet').addEventListener('click', (e) => { if (e.target === $('#lyAddSheet')) $('#lyAddSheet').hidden = true; });
 $('#lyPlay').addEventListener('click', () => { if (lay.playing) lyStop(); else lyPlay(); });
-$('#lyScrub').addEventListener('input', () => { if (!lay.buf) return; const t = (+$('#lyScrub').value / 1000) * lay.buf.duration; if (lay.playing) lyPlay(t); else { lay.off = t; paintLy(); } });
 $('#toPrep').addEventListener('click', () => showPage(2));
+
+/* ----- let the AI pick layers for your voice, or roll random ones ----- */
+function setBand(list, msg){
+  lyPush(); LYE.sel = null;
+  state.band = list.map((x) => Object.assign({ vol:1, mute:false, clips:null, bpm:null, fresh:true }, x));
+  renderLayers(); if (typeof autosave === 'function') autosave(); LYE.head = 0; lay.msg = msg; lyPlay(0);
+  setStatus($('#status4'), msg, 'ok');
+}
+async function lyAiPick(){
+  if (lay.busy) return;
+  try {
+    lay.busy = true; paintLy(); setStatus($('#status4'), 'Listening to your voice…');
+    const { voc, sr } = await lyVoice(); const b = await lyEnsureBase(voc, sr);
+    // your energy: how much of the take you're singing, and how much the loudness moves
+    let act = 0, n = 0; const hop = Math.round(sr * 0.05);
+    for (let i = 0; i + hop < voc.length; i += hop){ let e = 0; for (let j = i; j < i + hop; j += 8) e += voc[j] * voc[j]; if (Math.sqrt(e / (hop / 8)) > 0.05) act++; n++; }
+    const busy = n ? act / n : 0.5, fast = b.tempo >= 112, slow = b.tempo < 82, minor = b.scale === 'minor', words = (($('#vibe') && $('#vibe').value) + ' ' + (($('#artists') && $('#artists').value) || '')).toLowerCase();
+    const has = (re) => re.test(words);
+    let pick;
+    if (has(/trap|drill|hip.?hop|rap|808/)) pick = [['drums', has(/drill/) ? 'drill' : 'trap'], ['bass', '808'], ['pad', 'dark'], ['bells', 'musicbox']];
+    else if (has(/rock|punk|band|guitar/)) pick = [['drums', has(/punk/) ? 'punk' : 'rock'], ['bass', 'pulse'], ['guitar', 'power'], ['strings', 'long']];
+    else if (has(/acoustic|folk|country/)) pick = [['guitar', 'folk'], ['bass', 'rootfifth'], ['drums', 'soft'], ['strings', 'swell']];
+    else if (has(/r&b|rnb|soul/)) pick = [['drums', 'rnb'], ['bass', 'sub'], ['piano', 'ballad'], ['pad', 'warm']];
+    else if (has(/dance|edm|club|house/)) pick = [['drums', has(/house/) ? 'house' : 'four'], ['bass', 'octave'], ['synth', 'stabs'], ['piano', 'house']];
+    else if (has(/afro|reggaeton|latin/)) pick = [['drums', has(/reggaeton/) ? 'reggaeton' : 'afro'], ['bass', 'funk'], ['guitar', 'skank'], ['bells', 'arp']];
+    else if (has(/lo.?fi|chill|study/)) pick = [['drums', 'halftime'], ['piano', 'sparse'], ['bass', 'sub'], ['pad', 'warm']];
+    else if (slow && minor) pick = [['piano', 'ballad'], ['strings', 'swell'], ['pad', 'dark'], ['bass', 'sub'], ['drums', 'ballad']];
+    else if (slow) pick = [['guitar', 'ballad'], ['piano', 'sparse'], ['strings', 'long'], ['bass', 'whole']];
+    else if (fast && minor) pick = [['drums', 'trap'], ['bass', '808'], ['synth', 'pluck'], ['pad', 'dark']];
+    else if (fast) pick = [['drums', busy > 0.6 ? 'pop' : 'four'], ['bass', 'pulse'], ['guitar', 'strum'], ['synth', 'arps']];
+    else if (minor) pick = [['drums', 'boombap'], ['bass', 'whole'], ['piano', 'broken'], ['strings', 'short']];
+    else pick = [['drums', 'pop'], ['bass', 'rootfifth'], ['guitar', 'strum'], ['piano', 'pulse'], ['bells', 'sparkle']];
+    if (busy < 0.45 && !pick.some(([k]) => k === 'melody')) pick.push(['melody', fast ? 'synth' : minor ? 'strings' : 'piano']);   // lots of space between your lines: a melody answers you
+    lay.busy = false;
+    const why = (b.tempo + ' BPM, ' + b.scale) + (words.trim() ? ', and your words on step 3' : '');
+    setBand(pick.map(([kind, style]) => ({ kind, style })), 'Picked for your voice (' + why + '): ' + pick.map(([k, s]) => BAND[k].name + ' (' + (BAND[k].styles.find((x) => x.id === s) || BAND[k].styles[0]).name + ')').join(', ') + '. Change anything, or Undo.');
+  } catch (err){ lay.busy = false; setStatus($('#status4'), 'Couldn\'t pick layers: ' + (err.message || err), 'error'); }
+  finally { paintLy(); }
+}
+function lyRandom(){
+  const kinds = Object.keys(BAND).filter((k) => k !== 'melody'), R = mulberry(freshSeed());
+  for (let i = kinds.length - 1; i > 0; i--){ const j = Math.floor(R() * (i + 1)); [kinds[i], kinds[j]] = [kinds[j], kinds[i]]; }
+  let pick = kinds.slice(0, 3 + Math.floor(R() * 3));
+  if (!pick.includes('drums') && R() < 0.8) pick[0] = 'drums';
+  if (!pick.includes('bass') && R() < 0.7) pick[1] = 'bass';
+  pick = [...new Set(pick)]; if (R() < 0.3) pick.push('melody');
+  const list = pick.map((kind) => { const st = BAND[kind].styles; return { kind, style:st[Math.floor(R() * st.length)].id }; });
+  setBand(list, 'Random layers: ' + list.map(bandLabel).join(', ') + '. Tap Randomize again for another mix, or Undo.');
+}
+$('#lyAi').addEventListener('click', lyAiPick);
+$('#lyRand').addEventListener('click', lyRandom);
 
 // 3, 2, 1, then recording starts
 function startCountdown(){
@@ -3335,7 +3751,7 @@ Object.defineProperty(state, 'clips', { get(){ return state.layers.flatMap((l) =
 
 let playing = null;
 function stopClipPlayback(){ edStop(); }
-function stopAllPlayback(){ if (typeof lyStop === 'function') lyStop(); if (typeof tick !== 'undefined' && tick.preview){ tick.preview = false; tickSync(); } if (typeof trySt !== 'undefined' && trySt.on) tryStop(); edStop(); tlStop(); plPause(); previewStop(); }
+function stopAllPlayback(){ if (typeof lyStop === 'function'){ lyStop(); lyPrevStop(); } if (typeof tick !== 'undefined' && tick.preview){ tick.preview = false; tickSync(); } if (typeof trySt !== 'undefined' && trySt.on) tryStop(); edStop(); tlStop(); plPause(); previewStop(); }
 
 function storeRender(src, y, key){
   const buf = ctx().createBuffer(1, y.length, src.sr); buf.getChannelData(0).set(y);
@@ -5887,8 +6303,8 @@ function arrange(oc, music, verb, plan, o){
     if (vib) lfoG.connect(osc.detune);
     env(g, t, att, vel / types.length, len - rel * 0.3, rel); osc.connect(g); g.connect(dest); osc.start(t); osc.stop(t + len + rel + 0.05);
   }));
-  const synth = (m, t, len, vel) => {
-    const osc = oc.createOscillator(), f = oc.createBiquadFilter(), g = oc.createGain(); osc.type = plan.wave === 'square' ? 'square' : 'sawtooth'; osc.frequency.value = hz(m);
+  const synth = (m, t, len, vel, type) => {
+    const osc = oc.createOscillator(), f = oc.createBiquadFilter(), g = oc.createGain(); osc.type = type || (plan.wave === 'square' ? 'square' : 'sawtooth'); osc.frequency.value = hz(m);
     f.type = 'lowpass'; f.Q.value = 4; f.frequency.setValueAtTime(3200 * bright, t); f.frequency.exponentialRampToValueAtTime(500, t + len);
     g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel, t + 0.005); g.gain.exponentialRampToValueAtTime(0.001, t + len);
     osc.connect(f); f.connect(g); g.connect(B.synth); osc.start(t); osc.stop(t + len + 0.02);
@@ -5901,6 +6317,12 @@ function arrange(oc, music, verb, plan, o){
     g.gain.setValueAtTime(vel * 0.7, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18); s.connect(f); f.connect(g); g.connect(B.drums); s.start(t); s.stop(t + 0.25);
     const osc = oc.createOscillator(), og = oc.createGain(); osc.frequency.setValueAtTime(200, t); osc.frequency.exponentialRampToValueAtTime(140, t + 0.08); og.gain.setValueAtTime(vel * 0.35, t); og.gain.exponentialRampToValueAtTime(0.001, t + 0.1); osc.connect(og); og.connect(B.drums); osc.start(t); osc.stop(t + 0.12);
   };
+  // more drum sounds for the drum styles
+  const clap = (t, vel) => { for (let j = 0; j < 3; j++){ const s = oc.createBufferSource(), f = oc.createBiquadFilter(), g = oc.createGain(), tt = t + j * 0.011; s.buffer = noise; f.type = 'bandpass'; f.frequency.value = 1300; f.Q.value = 1.2; g.gain.setValueAtTime(vel * (j === 2 ? 0.85 : 0.55), tt); g.gain.exponentialRampToValueAtTime(0.001, tt + (j === 2 ? 0.16 : 0.03)); s.connect(f); f.connect(g); g.connect(B.drums); s.start(tt); s.stop(tt + 0.2); } };
+  const rim = (t, vel) => { const o = oc.createOscillator(), g = oc.createGain(), f = oc.createBiquadFilter(); o.type = 'square'; o.frequency.value = 1750; f.type = 'bandpass'; f.frequency.value = 2200; f.Q.value = 3; g.gain.setValueAtTime(vel * 0.6, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.035); o.connect(f); f.connect(g); g.connect(B.drums); o.start(t); o.stop(t + 0.05); };
+  const shaker = (t, vel) => { const s = oc.createBufferSource(), f = oc.createBiquadFilter(), g = oc.createGain(); s.buffer = noise; f.type = 'highpass'; f.frequency.value = 6000; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel * 0.5, t + 0.012); g.gain.exponentialRampToValueAtTime(0.001, t + 0.07); s.connect(f); f.connect(g); g.connect(B.drums); s.start(t, R() * 0.25); s.stop(t + 0.09); };
+  const boom = (t, vel) => { const o = oc.createOscillator(), g = oc.createGain(); o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.12); g.gain.setValueAtTime(vel * 1.1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.75); o.connect(g); g.connect(B.drums); o.start(t); o.stop(t + 0.8); };
+  const crash = (t, vel) => { const s = oc.createBufferSource(), f = oc.createBiquadFilter(), g = oc.createGain(); s.buffer = noise; s.loop = true; f.type = 'highpass'; f.frequency.value = 4500; g.gain.setValueAtTime(vel * 0.6, t); g.gain.exponentialRampToValueAtTime(0.001, t + 1.4); s.connect(f); f.connect(g); g.connect(B.drums); s.start(t); s.stop(t + 1.5); };
   // guitar: a plucked string; a strum rolls through the chord low to high (down) or high to low (up)
   const gtr = (m, t, vel, dur) => {
     const s = oc.createBufferSource(), g = oc.createGain(); s.buffer = pluckBuf(m); t = Math.max(0, t);
@@ -5928,8 +6350,8 @@ function arrange(oc, music, verb, plan, o){
     const vn = plan.notes.map(([t, d, m]) => ({ t:t + vAt, d, m })).filter((n) => n.t >= 0 && n.t < songEnd);
     if (vn.length < 3) return false;
     const ins = plan.instruments || [];
-    const kind = mel ? ({ piano:'piano', synth:'synth', bells:'bell', strings:'string' })[mel.style] || 'piano' : ins.includes('synth') ? 'synth' : ins.includes('bells') ? 'bell' : ins.includes('strings') && plan.tempo < 100 ? 'string' : ins.includes('harp') ? 'harp' : 'piano';
-    const melVol = mel ? clamp(mel.vol == null ? 1 : mel.vol, 0, 1.5) * (kind === 'synth' || kind === 'string' ? 3.5 : 2.5) : 1;
+    const kind = mel ? ({ piano:'piano', synth:'synth', bells:'bell', strings:'string', flute:'flute', guitar:'harp' })[mel.style] || 'piano' : ins.includes('synth') ? 'synth' : ins.includes('bells') ? 'bell' : ins.includes('strings') && plan.tempo < 100 ? 'string' : ins.includes('harp') ? 'harp' : 'piano';
+    const melVol = mel ? clamp(mel.vol == null ? 1 : mel.vol, 0, 1.5) * (kind === 'synth' || kind === 'string' || kind === 'flute' ? 3.5 : kind === 'bell' || kind === 'harp' ? 7 : 2.5) : 1;
     const sortedM = vn.map((n) => n.m).sort((a, b) => a - b), vMed = sortedM[sortedM.length >> 1];
     const center = clamp(vMed + 12, 64, 81);
     const toReg = (m) => { while (m < center - 7) m += 12; while (m > center + 7) m -= 12; return m; };
@@ -5947,6 +6369,7 @@ function arrange(oc, music, verb, plan, o){
       else if (kind === 'bell') bell(m, t, vel * 0.9);
       else if (kind === 'harp') harp(m, t, vel);
       else if (kind === 'string') sustained([m], t, Math.max(len, beat), B.lead, ['sawtooth', 'triangle'], 0.06, 0.35, 8, true, vel * 0.8);
+      else if (kind === 'flute') sustained([m + 12], t, Math.max(len, beat * 0.5), B.lead, ['sine', 'triangle'], 0.05, 0.2, 4, true, vel * 0.9);
       else { const osc = oc.createOscillator(), f = oc.createBiquadFilter(), g = oc.createGain(); osc.type = 'sawtooth'; osc.frequency.value = hz(m); f.type = 'lowpass'; f.Q.value = 2; f.frequency.setValueAtTime(2600 * bright, t); f.frequency.exponentialRampToValueAtTime(900, t + Math.max(0.15, len));
         g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel * 0.5, t + 0.02); g.gain.setValueAtTime(vel * 0.4, t + Math.max(0.03, len * 0.7)); g.gain.linearRampToValueAtTime(0, t + len + 0.12); osc.connect(f); f.connect(g); g.connect(B.lead); osc.start(t); osc.stop(t + len + 0.2); }
     };
@@ -6030,6 +6453,7 @@ function arrange(oc, music, verb, plan, o){
   }
   const hasLead = writeMelody();
   const barJob = (k) => {
+    if (band) return;   // a layer from the Add layers page is played by the layer engine below
     const t = k * bar, last = k === nBars - 1;
     const deg = degs[k];
     const st = at(t), e = t < intro ? 0.5 : st.energy, v = voicing(deg), bm = bassOf(deg);
@@ -6095,6 +6519,144 @@ function arrange(oc, music, verb, plan, o){
       }
     }
   };
+  /* ---- one layer from the Add layers page: its own style and pace (BPM), always on your song's chords ---- */
+  if (band){
+    const L = band[0], K = L && BAND[L.kind];
+    if (K && L.kind !== 'melody'){
+      const S = K.styles.find((x) => x.id === L.style) || K.styles[0], sid = S.id;
+      const sb = (t) => clamp(Math.floor(t / bar + 1e-6), 0, nBars - 1);
+      const VO = [], BMs = []; for (let k = 0; k < nBars; k++){ VO.push(voicing(degs[k])); BMs.push(bassOf(degs[k])); }
+      const cv = (t) => VO[sb(t)], cb = (t) => BMs[sb(t)], lastT = (nBars - 1) * bar;
+      const lb = 60 / clamp(L.bpm || plan.tempo, 30, 260), lbar = lb * 4;
+      const en = (t) => t < intro ? 0.5 : at(t).energy, live = (t) => t >= 0 && t < lastT - 0.01;
+      const bn = (m, t, l, vel, types) => sustained([m], t, l, B.bass, types || ['sine', 'triangle'], 0.02, 0.15, 0, false, vel);
+      const gch = (t) => [cb(t) + 12].concat(cv(t), [cv(t)[0] + 12]).sort((a, b) => a - b);
+      const STEP_V = { X:1.15, x:0.85, o:0.4 };
+      // a rhythm layer: one bar of its own pace at a time
+      const layerBar = (kk) => {
+        const t0 = kk * lbar; if (!live(t0)) return;
+        const e = en(t0), q = lb / 4, beatOn = at(t0).beat;
+        if (L.kind === 'drums'){
+          if (t0 < intro - 1e-6 || !beatOn) return;
+          const dv = (0.55 + 0.45 * e) * (S.vel || 1), sw = S.swing || 0.5, fillBar = S.fill && kk % 8 === 7, rollBar = S.roll && kk % 2 === 1;
+          if (S.crash && kk % 4 === 0) crash(t0, dv * 0.5);
+          for (let i = 0; i < 16; i++){
+            const tt = t0 + i * q + (i % 4 === 2 ? (sw - 0.5) * lb : i % 2 ? (sw - 0.5) * lb / 2 : 0); if (!live(tt)) continue;
+            const v = (row) => row ? STEP_V[row[i % row.length]] || 0 : 0;
+            if (v(S.k)) (S.kick === 'boom' ? boom : kick)(tt, dv * v(S.k));
+            if (fillBar && i >= 12){ snare(tt, dv * (0.45 + 0.13 * (i - 12))); continue; }
+            if (v(S.s)) snare(tt, dv * v(S.s));
+            if (v(S.c)) clap(tt, dv * v(S.c));
+            if (v(S.r)) rim(tt, dv * v(S.r));
+            if (v(S.sh)) shaker(tt, dv * v(S.sh) * 0.7);
+            if (v(S.o)) hat(tt, dv * v(S.o) * 0.35, true);
+            if (v(S.h) && !(rollBar && i >= 12)) hat(tt, dv * v(S.h) * 0.3);
+          }
+          if (rollBar) for (let j = 0; j < 6; j++) hat(t0 + 3 * lb + j * lb / 6, dv * (0.1 + j * 0.03));
+          return;
+        }
+        if (L.kind === 'bass'){
+          if (t0 < intro - 1e-6) return;
+          const bv = 0.55 + 0.35 * e, H = (b, f) => { const tt = t0 + b * lb; if (live(tt)) f(tt, cb(tt)); };
+          if (sid === '808'){ H(0, (t, m) => b808(m, t, lb * 1.5, bv)); H(2.5, (t, m) => b808(e > 0.75 && kk % 2 ? m + 7 > 47 ? m - 5 : m + 7 : m, t, lb * 1.2, bv * 0.9)); }
+          else if (sid === 'rootfifth'){ H(0, (t, m) => bn(m, t, lb * 1.9, bv)); H(2, (t, m) => bn(m + 7 > 47 ? m - 5 : m + 7, t, lb * 1.9, bv)); }
+          else if (sid === 'pulse') for (let i = 0; i < 8; i++) H(i / 2, (t, m) => bn(m, t, lb * 0.4, bv * (i % 2 ? 0.8 : 1)));
+          else if (sid === 'walking'){
+            const iv0 = SCALES[plan.scale]; H(0, (t, m) => bn(m, t, lb * 0.9, bv)); H(1, (t, m) => bn(m + iv0[2] - iv0[0], t, lb * 0.9, bv * 0.85)); H(2, (t, m) => bn(m + 7, t, lb * 0.9, bv * 0.9));
+            H(3, (t) => { const nx = cb(t + lb), ap = nx + (R() < 0.5 ? 1 : -1); bn(ap, t, lb * 0.9, bv * 0.8); });
+          }
+          else if (sid === 'funk'){ const p = 'x..x..x.x.x..x..'; for (let i = 0; i < 16; i++) if (p[i] === 'x') H(i / 4, (t, m) => bn(i % 6 === 3 ? m + 12 : m, t, lb * 0.22, bv * (i % 4 ? 0.8 : 1), ['triangle', 'sawtooth'])); }
+          else if (sid === 'octave') for (let i = 0; i < 8; i++) H(i / 2, (t, m) => bn(i % 2 ? m + 12 : m, t, lb * 0.35, bv));
+          else if (sid === 'reggae'){ H(0, (t, m) => bn(m, t, lb * 1.4, bv)); H(2.5, (t, m) => bn(m + 7 > 47 ? m - 5 : m + 7, t, lb * 0.4, bv * 0.85)); H(3, (t, m) => bn(m, t, lb * 0.6, bv * 0.9)); }
+          else if (sid === 'synth') for (let i = 0; i < 8; i++) H(i / 2, (t, m) => bn(m, t, lb * 0.38, bv * 0.75, ['sawtooth']));
+          else if (sid === 'sub') H(0, (t, m) => bn(m, t, lbar * 0.97, bv * 1.1, ['sine']));
+          else { H(0, (t, m) => bn(m, t, lb * 1.95, bv)); H(2, (t, m) => bn(m, t, lb * 1.95, bv)); }
+          return;
+        }
+        if (L.kind === 'guitar'){
+          const gv = 0.55 + 0.4 * e, H = (b, f) => { const tt = t0 + b * lb; if (live(tt)) f(tt, gch(tt)); };
+          if (sid === 'pick'){ [0, 2, 1, 3, 2, 4, 3, 2].forEach((ix, i) => H(i / 2, (t, ch) => gtr(ch[Math.min(ix, ch.length - 1)], t + jit(), gv * (i % 2 ? 0.7 : 0.9), lb * 1.6))); }
+          else if (sid === 'muted'){ for (let i = 0; i < 8; i++) H(i / 2, (t) => { const m = cb(t); [m + 12, m + 19].forEach((x) => gtr(x, t + jit() * 0.5, gv * (i % 2 ? 0.85 : 1.3), 0.09)); }); }
+          else if (sid === 'power'){ for (let i = 0; i < (e > 0.8 ? 8 : 4); i++) H(e > 0.8 ? i / 2 : i, (t) => { const m = cb(t); strum([m + 12, m + 19, m + 24], t, gv * 1.2, false, (e > 0.8 ? lb / 2 : lb) * 0.95); }); }
+          else if (sid === 'skank'){ [0.5, 1.5, 2.5, 3.5].forEach((b) => H(b, (t) => strum(cv(t).map((x) => x + 12), t, gv * 0.9, false, 0.1))); }
+          else if (sid === 'funk'){ const p = 'xoXoxoxoXoxoxxoo'; for (let i = 0; i < 16; i++) H(i / 4, (t) => strum(cv(t).map((x) => x + 12), t, gv * (p[i] === 'X' ? 1.1 : p[i] === 'x' ? 0.7 : 0.35), i % 2 === 1, p[i] === 'X' ? 0.1 : 0.05)); }
+          else if (sid === 'ballad'){ [0, 1, 2, 3].forEach((b) => H(b, (t, ch) => gtr(ch[[0, 2, 3, 4][b] % ch.length], t + jit(), gv * 0.85, lb * 2.2))); }
+          else if (sid === 'folk'){ H(0, (t, ch) => gtr(ch[0], t, gv, lb * 0.9)); H(2, (t, ch) => gtr(ch[0] + 7, t, gv * 0.9, lb * 0.9)); [[1, 0], [1.5, 1], [3, 0], [3.5, 1]].forEach(([b, up]) => H(b, (t, ch) => strum(ch.slice(1), t, gv * 0.8, !!up, lb * 0.45))); }
+          else if (sid === 'island'){ [[0, 0, 1], [1, 0, 0.5], [1.5, 1, 1], [2.5, 1, 0.5], [3, 0, 0.5], [3.5, 1, 0.5]].forEach(([b, up, d]) => H(b, (t) => { const ch = cv(t).map((x) => x + 12); ch.forEach((m, i) => gtr(m, t + (up ? ch.length - 1 - i : i) * 0.008, gv * (up ? 0.5 : 0.75), lb * d)); })); }
+          else if (e < 0.6){ H(0, (t, ch) => strum(ch, t, gv, false, lb * 2)); H(2, (t, ch) => strum(ch, t, gv * 0.85, false, lb * 2)); }
+          else [[0, 0, 1], [1, 0, 0.5], [1.5, 1, 1], [2.5, 1, 0.5], [3, 0, 0.5], [3.5, 1, 0.5]].forEach(([b, up, d]) => H(b, (t, ch) => strum(ch, t, gv, !!up, lb * d + 0.04)));
+          return;
+        }
+        if (L.kind === 'piano'){
+          const pv = 0.55 + 0.35 * e, H = (b, f) => { const tt = t0 + b * lb; if (live(tt)) f(tt, cv(tt), cb(tt)); };
+          if (sid === 'block'){ H(0, (t, v, m) => { v.forEach((x) => piano(x, t, lb * 2, pv)); piano(m + 12, t, lb * 2, pv); }); H(2, (t, v) => v.forEach((x) => piano(x, t, lb * 2, pv * 0.7))); if (e > 0.8) H(1.5, (t, v) => v.forEach((x) => piano(x, t, lb / 2, pv * 0.5))); }
+          else if (sid === 'ballad'){ H(0, (t, v, m) => piano(m + 12, t, lb * 2, pv)); [1, 2, 3].forEach((b, i) => H(b, (t, v) => piano(v[i % v.length], t, lb * 2, pv * (i ? 0.6 : 0.75)))); }
+          else if (sid === 'pulse'){ H(0, (t, v, m) => piano(m + 12, t, lb * 2, pv * 0.8)); for (let i = 0; i < 8; i++) H(i / 2, (t, v) => v.forEach((x) => piano(x, t, lb * 0.45, pv * (i % 2 ? 0.45 : 0.6)))); }
+          else if (sid === 'oompah'){ H(0, (t, v, m) => piano(m + 12, t, lb, pv)); H(2, (t, v, m) => piano(m + 19, t, lb, pv * 0.9)); [1, 3].forEach((b) => H(b, (t, v) => v.forEach((x) => piano(x, t, lb * 0.6, pv * 0.6)))); }
+          else if (sid === 'arp'){ for (let i = 0; i < 16; i++) H(i / 4, (t, v) => { const up = v.concat(v.map((x) => x + 12)), j = i < 8 ? i : 15 - i; piano(up[j % up.length], t, lb * 0.5, pv * (i % 4 ? 0.5 : 0.7)); }); }
+          else if (sid === 'sparse') H(0, (t, v, m) => { v.concat([m + 12]).forEach((x) => piano(x, t, lbar, pv * 0.55)); });
+          else if (sid === 'house'){ [0.5, 1.5, 2.5, 3.5].forEach((b) => H(b, (t, v) => v.forEach((x) => piano(x + 12, t, lb * 0.3, pv * 0.7)))); }
+          else { const seq = [0, 1, 2, 3, 3, 2, 1, 2]; seq.forEach((ix, i) => H(i / 2, (t, v) => piano(v[Math.min(ix, v.length - 1)] + (i === 3 ? 12 : 0), t, lb, pv * (i % 2 ? 0.6 : 0.8)))); H(0, (t, v, m) => piano(m + 12, t, lbar, pv * 0.7)); }
+          return;
+        }
+        if (L.kind === 'strings'){
+          const sv = 0.45 + 0.5 * e, H = (b, f) => { const tt = t0 + b * lb; if (live(tt)) f(tt, cv(tt)); };
+          if (sid === 'short') for (let i = 0; i < 8; i++) H(i / 2, (t, v) => sustained(v.concat([v[0] + 12]), t, lb * 0.3, B.strings, ['sawtooth'], 0.01, 0.07, 0, false, sv * (i % 2 ? 0.7 : 1)));
+          else if (sid === 'pizz') for (let i = 0; i < 4; i++) H(i, (t, v) => sustained([v[i % v.length] + (i === 3 ? 12 : 0)], t, 0.05, B.strings, ['triangle'], 0.003, 0.18, 0, false, sv * 2.2));
+          else if (sid === 'tremolo') for (let i = 0; i < 16; i++) H(i / 4, (t, v) => sustained(v.concat([v[0] + 12]), t, lb * 0.2, B.strings, ['sawtooth'], 0.01, 0.04, 6, false, sv * (0.6 + 0.2 * (i % 4 === 0))));
+          return;
+        }
+        if (L.kind === 'synth'){
+          const yv = 0.5 + 0.4 * e, H = (b, f) => { const tt = t0 + b * lb; if (live(tt)) f(tt, cv(tt)); };
+          if (sid === 'stabs') [0.5, 1.5, 2.5, 3.5].forEach((b) => H(b, (t, v) => v.forEach((m) => synth(m + 12, t, lb * 0.3, (0.7 + 0.7 * e) / Math.sqrt(v.length)))));
+          else if (sid === 'pluck'){ const p = [0, 2, 1, 2, 0, 3, 1, 2]; p.forEach((ix, i) => H(i / 2, (t, v) => synth(v[ix % v.length] + 12, t, lb * 0.18, yv, 'square'))); }
+          else if (sid === 'seq') for (let i = 0; i < 16; i++) H(i / 4, (t, v) => { const up = v.concat(v.map((x) => x + 12)); synth(up[(i * 5) % up.length], t, lb * 0.2, yv * (i % 4 ? 0.6 : 0.9)); });
+          else if (sid === 'retro') for (let i = 0; i < 8; i++) H(i / 2, (t, v) => { const up = v.concat([v[0] + 12]), j = i < 4 ? i : 7 - i; synth(up[j % up.length] + 12, t, lb * 0.4, yv * 0.8, 'square'); });
+          else if (sid === 'arps') for (let i = 0; i < 8; i++) H(i / 2, (t, v) => { const up = v.concat(v.map((x) => x + 12)); synth(up[(i * 3) % up.length], t, lb * 0.45, yv); });
+          return;
+        }
+        if (L.kind === 'bells'){
+          const H = (b, f) => { const tt = t0 + b * lb; if (live(tt)) f(tt, cv(tt)); }, bv = 0.45 + 0.3 * e;
+          if (sid === 'musicbox') motif.forEach((mo) => H(mo.pos / 4, (t, v) => { const tones = v.map((m) => m + 24); bell(tones[mo.tone % tones.length], t, bv * 0.8); }));
+          else if (sid === 'arp') for (let i = 0; i < 8; i++) H(i / 2, (t, v) => { const up = v.map((m) => m + 12).concat([v[0] + 24]); bell(up[i % up.length], t, bv * (i % 2 ? 0.6 : 0.85)); });
+          else if (sid === 'glock') for (let i = 0; i < 4; i++) H(i, (t, v) => bell(v[i % v.length] + 24, t, bv * 0.8));
+          else if (sid === 'chimes'){ H(0, (t, v) => v.forEach((m, i) => bell(m + 12, t + i * lb * 0.33, bv * 0.7))); }
+          else motif.forEach((mo) => { if ((kk % 2) * 8 <= mo.pos && mo.pos < (kk % 2) * 8 + 8) H((mo.pos % 8) / 2, (t, v) => { const tones = v.map((m) => m + 12).concat([v[0] + 24, v[1] + 24]); bell(tones[mo.tone % tones.length], t, bv); }); });
+          return;
+        }
+      };
+      // held layers follow the song's bars (their sound doesn't have a pace)
+      const heldBar = (k) => {
+        const t = k * bar, v = VO[k], last = k === nBars - 1, e = en(t), len = last ? bar * 2.5 : bar;
+        if (L.kind === 'pad'){
+          if (sid === 'bright') sustained(v, t, len + 0.4, B.pad, ['sawtooth', 'triangle'], Math.min(1, bar * 0.35), 1.2, 12, false, (0.35 + 0.35 * e) * 1.7);
+          else if (sid === 'dark') sustained(v.map((m) => m - 12).concat([v[0]]), t, len + 0.4, B.pad, ['sine'], Math.min(1.4, bar * 0.45), 1.4, 0, false, 0.6 + 0.4 * e);
+          else if (sid === 'shimmer'){ sustained(v.map((m) => m + 12), t, len + 0.4, B.pad, ['triangle'], Math.min(1.2, bar * 0.4), 1.4, 8, false, 0.35 + 0.3 * e); sustained(v.map((m) => m + 24), t, len + 0.4, B.pad, ['sine'], Math.min(1.5, bar * 0.5), 1.6, 0, false, 0.18 + 0.15 * e); }
+          else sustained(v, t, len + 0.4, B.pad, ['triangle', 'sine'], Math.min(1.2, bar * 0.4), 1.2, 10, false, 0.5 + 0.5 * e);
+        } else if (L.kind === 'strings' && (['long', 'swell', 'high'].includes(sid) || last)){
+          const notes = sid === 'high' ? v.map((m) => m + 12).concat([v[0] + 24]) : v.concat([v[0] + 12]);
+          sustained(notes, t, len + 0.2, B.strings, ['sawtooth', 'sawtooth'], sid === 'swell' && !last ? bar * 0.85 : Math.min(0.8, bar * 0.3), sid === 'swell' ? 0.5 : 0.9, 14, true, (sid === 'swell' ? 0.45 : 0.35) + 0.65 * e);
+        } else if (L.kind === 'synth' && (sid === 'pads' || sid === 'wobble')){
+          if (sid === 'pads') sustained(v.map((m) => m + 12), t, len + 0.3, B.synth, ['sawtooth', 'sawtooth'], 0.3, 0.8, 14, false, (0.3 + 0.25 * e) * 0.4);
+          else {
+            const f = oc.createBiquadFilter(), lfo = oc.createOscillator(), lg = oc.createGain(); f.type = 'lowpass'; f.Q.value = 6; f.frequency.value = 900; lfo.frequency.value = 2 / beat; lg.gain.value = 700;
+            lfo.connect(lg); lg.connect(f.frequency); f.connect(B.synth); lfo.start(t); lfo.stop(t + len + 0.6);
+            sustained(v.map((m) => m + 12).concat([BMs[k] + 12]), t, len + 0.2, f, ['sawtooth'], 0.02, 0.3, 10, false, (0.5 + 0.3 * e) * 0.17);
+          }
+        } else if (last){
+          // the last bar holds the final chord
+          if (L.kind === 'drums' && at(t).beat !== false){ kick(t, 0.9); crash(t, 0.45); }
+          else if (L.kind === 'bass'){ if (sid === '808') b808(BMs[k], t, bar * 1.5, 0.8); else bn(BMs[k], t, bar * 2, 0.8); }
+          else if (L.kind === 'guitar') strum([BMs[k] + 12].concat(v, [v[0] + 12]).sort((a, b) => a - b), t, 0.8, false, null);
+          else if (L.kind === 'piano') v.concat([BMs[k] + 12]).forEach((m) => piano(m, t, bar * 2, 0.7));
+          else if (L.kind === 'synth') v.forEach((m) => synth(m + 12, t, bar * 1.5, 0.5));
+          else if (L.kind === 'bells') v.forEach((m, i) => bell(m + 12, t + i * 0.12, 0.55));
+        }
+      };
+      for (let k = 0; k < nBars; k++) sched(k * bar, () => heldBar(k));
+      for (let kk = 0; kk * lbar < lastT; kk++) sched(kk * lbar, () => layerBar(kk));
+    }
+  }
   /* Make each few bars' notes just before they play (the render pauses to add them). Creating every
      note up front made long songs crawl, because every waiting note was processed the whole time. */
   later.sort((p, q) => p[0] - q[0]); let li = 0;
@@ -6112,7 +6674,11 @@ async function mixSong(voc, harmUp, harmDown, sr, plan, opts){
   const inst = !!(opts && opts.instrumental);   // the music only: no voice, no sung harmonies
   const beat = 60 / plan.tempo, bar = beat * 4, intro = plan.fit ? (plan.introBars || 1) * bar : bar;
   const vAt = plan.fit ? voiceAtOf(plan) : intro;   // where the voice starts in the song
-  const songEnd = Math.ceil((Math.max(intro, vAt + voc.length / sr)) / bar) * bar + bar * (plan.fit ? 2 : 1);
+  // layers you built on step 2: each instrument is its own audio, placed clip by clip
+  const stems = [];
+  if (plan.layered && plan.layerBase) for (const l of plan.layered){ if (l.mute || !BAND[l.kind]) continue; const buf = await stemOf(plan.layerBase, voc.length, sr, l); stems.push({ l, buf }); }
+  let stemEnd = 0; stems.forEach(({ l, buf }) => clipsOf(l, buf.duration).forEach((c) => { stemEnd = Math.max(stemEnd, c.at + c.end - c.start); }));
+  const songEnd = Math.max(Math.ceil((Math.max(intro, vAt + voc.length / sr)) / bar) * bar + bar * (plan.fit ? 2 : 1), stemEnd);
   const oc = offline(2, Math.ceil((songEnd + plan.reverbSec + 0.3) * sr), sr);
   // arrangement state at a song time, from the plan's sections (vocal time + intro)
   // a section with `until` applies only inside its range; later sections win
@@ -6167,10 +6733,17 @@ async function mixSong(voc, harmUp, harmDown, sr, plan, opts){
   if (harmDown && !inst) addVoice(harmDown, 0.26 * plan.harmony, 0.5, 1, true);
 
   arrange(oc, music, verb, plan, { songEnd, bar, beat, intro, at, vAt });
+  for (const { l, buf } of stems) for (const c of clipsOf(l, buf.duration)){
+    const len = c.end - c.start; if (len < 0.01) continue;
+    const s = oc.createBufferSource(), g = oc.createGain(), v = clamp(l.vol == null ? 1 : l.vol, 0, 1.5) / 0.9;   // the stem already went through a master gain of 0.9
+    s.buffer = buf; g.gain.setValueAtTime(0, c.at); g.gain.linearRampToValueAtTime(v, c.at + 0.005); g.gain.setValueAtTime(v, Math.max(c.at + 0.005, c.at + len - 0.005)); g.gain.linearRampToValueAtTime(0, c.at + len);
+    s.connect(g); g.connect(music); s.start(c.at, c.start, len);
+  }
 
   const out = await renderOffline(oc);
   let peak = 0;
   for (let c = 0; c < out.numberOfChannels; c++){ const d = out.getChannelData(c); for (let i = 0; i < d.length; i++){ const v = Math.abs(d[i]); if (v > peak) peak = v; } }
+  if (opts && opts.raw) return out;
   if (inst && opts.gain){ const g = opts.gain; for (let c = 0; c < out.numberOfChannels; c++){ const d = out.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] *= g; } return out; }
   if (peak > 0){ const g = 0.95 / peak; out.normGain = g; for (let c = 0; c < out.numberOfChannels; c++){ const d = out.getChannelData(c); for (let i = 0; i < d.length; i++) d[i] *= g; } }
   return out;
@@ -6232,13 +6805,20 @@ async function generate(regenerate){
     if (!plan){ setProgress(1); plan = keywordPlan(state.variation, seed); await nextTick(); }
     plan.blend = lib.premium && state.blend;
     const band = bandForPlan();
-    if (band.length){ plan.band = band; plan.beat = true; if (state.bandVoice && !state.bandVoice.mute) for (let i = 0; i < voc.length; i++) voc[i] *= state.bandVoice.vol; }
+    if (band.length){
+      // your layers from step 2, exactly as you built and edited them, on the same beat and key
+      setProgress(1, 0.85, 'Lining up your layers');
+      const B0 = await lyEnsureBase(voc, sr);
+      for (const f of ['tempo', 'introBars', 'voiceAt', 'fit', 'grid', 'notes', 'root', 'scale', 'chords', 'progression', 'sections']) if (B0[f] !== undefined) plan[f] = JSON.parse(JSON.stringify(B0[f]));
+      Object.assign(plan, { band:[{ kind:'none' }], beat:true, layered:band, layerBase:JSON.parse(JSON.stringify(B0)) });
+      if (state.bandVoice && !state.bandVoice.mute) for (let i = 0; i < voc.length; i++) voc[i] *= state.bandVoice.vol;
+    }
     setProgress(1, 0.85, 'Finding your beat and your melody');
-    await fitToVoice(voc, sr, plan);
+    if (!band.length) await fitToVoice(voc, sr, plan);
     if (plan.grid === 'voice' && plan.summary) plan.summary = plan.summary.replace(/about \d+ BPM/, 'about ' + plan.tempo + ' BPM');
     plan.summary = (plan.summary || '') + ' ' + (plan.grid === 'voice' ? 'Found the beat you sang at (' + plan.tempo + ' BPM) and lined the music up so your notes land on it.' : 'Lined your first note up with the downbeat.') + (band.length && !band.some((l) => l.kind === 'melody') ? '' : ' Wrote a new melody from yours: it plays your opening line in the intro so your voice comes in as the answer, answers you between phrases, harmonizes softly under you, and brings your hook back at the end.');
     setProgress(1, 0.9, 'Fitting chords to your melody');
-    plan.chords = await melodyChords(voc, sr, plan);
+    if (!band.length) plan.chords = await melodyChords(voc, sr, plan);
     if (band.length) plan.summary = (plan.summary || '') + ' Your layers: ' + band.map((l) => bandLabel(l)).join(', ') + '.';
 
     setProgress(2, 0);
@@ -6375,6 +6955,7 @@ $('#fixGo').addEventListener('click', async () => {
     let instruments = COMBOS[Math.floor(R() * COMBOS.length)].slice();
     for (let k = 0; k < 6 && instruments.join() === (plan.instruments || []).join(); k++) instruments = COMBOS[Math.floor(R() * COMBOS.length)].slice();
     const alt = Object.assign({}, plan, { seed:freshSeed(), instruments, brightness:clamp(plan.brightness + (R() - 0.5) * 0.25, 0.15, 0.9) });
+    if (plan.layered) alt.layerBase = Object.assign({}, plan.layerBase, { seed:freshSeed() });   // your same layers, played a new way
     const fresh = await mixSong(v.voc, v.harmUp, v.harmDown, v.sr, alt);
     // match levels: undo each render's own normalizing, so the voice stays exactly as loud
     const k = (plan.normGain || 1) / (fresh.normGain || 1), sr = r.base.sampleRate;
@@ -7117,7 +7698,7 @@ function projectDoc(){
   return {
     v:1, saved:Date.now(), key:state.key, keyFrom:state.keyFrom, blend:state.blend, page:state.page || state.workPage || 1,
     layers:state.layers.map((l) => ({ id:l.id, vol:l.vol, segs:l.segs.map((s) => ({ id:s.id, src:s.src.id, start:s.start, end:s.end, at:s.at, lo:s.lo, hi:s.hi, fadeIn:s.fadeIn, fadeOut:s.fadeOut })) })),
-    activeLayer:state.activeLayer, playhead1:state.playhead1, band:state.band.map((l) => Object.assign({}, l)), bandVoice:Object.assign({}, state.bandVoice),
+    activeLayer:state.activeLayer, playhead1:state.playhead1, band:state.band.map((l) => ({ kind:l.kind, style:l.style, bpm:l.bpm || null, vol:l.vol, mute:!!l.mute, clips:Array.isArray(l.clips) ? l.clips : null })), bandVoice:Object.assign({}, state.bandVoice), bandSeed:state.bandSeed || 0,
     markers:state.markers.filter((m) => m.text.trim()).map((m) => ({ id:m.id, t:m.t, end:m.end, text:m.text })),
     sfx2:state.sfx2.map((p) => ({ itemId:p.item.id, name:p.name, at:p.at })),
     vibe:$('#vibe').value, songName:$('#songName').value, songDesc:$('#songDesc').value, artists:$('#artists').value, refLink:$('#refLink').value, variation:state.variation,
@@ -7172,7 +7753,7 @@ async function loadProject(doc, statusEl, landHome){
         state.result.sfx = doc.result.sfx.map((p) => { const item = lib.sfx.find((x) => x.id === p.itemId); return item ? { id:uid('p'), item, name:p.name, at:p.at } : null; }).filter(Boolean);
       }
     }
-    state.band = Array.isArray(doc.band) ? doc.band.filter((l) => BAND[l.kind]) : []; state.bandVoice = doc.bandVoice || { vol:1, mute:false }; lyReset();
+    state.band = Array.isArray(doc.band) ? doc.band.filter((l) => BAND[l.kind]) : []; state.bandVoice = doc.bandVoice || { vol:1, mute:false }; state.bandSeed = doc.bandSeed || 0; lyReset();
     invalidateJoined(); renderClips(); renderMarkerList(); refreshMood();
     state.workPage = doc.page || 1;
     if (!landHome) showPage(state.workPage);
@@ -8203,9 +8784,10 @@ const TOURS = {
     { sel:'#toStep2', title:'Next', text:'When you like your recording, go on to step 2, Add layers.' }
   ],
   p4:[
-    { sel:'#lyAdd', title:'Add a layer', text:'Each layer is one instrument: drums, bass, guitar, piano, strings, synth, pad, bells, or a melody that answers your voice. They all play on your beat and in your key.' },
-    { sel:'.ly-player', title:'Hear it', text:'Tap play to hear your voice with your layers. Change a layer while it plays and you hear the change in a moment.' },
-    { sel:'#lyList', title:'Your layers', text:'Tap a style to change how a layer plays, like Trap drums or 808 bass. Slide its volume, tap the speaker to mute it, or the x to take it off. Your voice has its own volume too.' },
+    { sel:'.ly-quick', title:'AI pick or Randomize', text:'AI pick for my voice listens to your speed, key and how much you sing (and the words you wrote on step 3) and picks layers that fit. Randomize rolls a surprise mix. Undo takes either back.' },
+    { sel:'#lyAdd', title:'Add a layer', text:'Pick an instrument: drums, bass, guitar, piano, strings, synth, pad, bells, or a melody that answers your voice. Then tap its styles to hear them (drums has 20), set its speed in BPM, and add it.' },
+    { sel:'.ly-player', title:'Your timeline', text:'Every layer gets its own lane with its sound wave. Tap a clip to pick it, drag it to move it (it snaps to the beat), drag its white edges to trim. Split cuts at the red line, then move or delete the pieces. Tap play to hear it all.' },
+    { sel:'#lyList', title:'Change a layer', text:'Tap a layer\'s style button to hear other styles or change its speed. Slide its volume, tap the speaker to mute it, or the x to take it off. Your voice has its own volume too.' },
     { sel:'#toPrep', title:'Next', text:'Go on to step 3, Prep and adjust. When you generate, your song uses exactly these layers. No layers? The AI picks the instruments for you.' }
   ],
   p2:[
@@ -8376,7 +8958,7 @@ function resetProject(){
   resetHist();
   if (state.recView){ state.recView = false; setRecUI(); }
   stopAllPlayback();
-  Object.assign(state, { layers:[{ id:nextId++, segs:[] }], activeLayer:0, playhead1:0, sel1:null, zoom1:0, span1:6, markers:[], sfx2:[], selMarker:null, playhead2:0, result:null, variation:0, workPage:1, band:[], bandVoice:{ vol:1, mute:false } }); lyReset();
+  Object.assign(state, { layers:[{ id:nextId++, segs:[] }], activeLayer:0, playhead1:0, sel1:null, zoom1:0, span1:6, markers:[], sfx2:[], selMarker:null, playhead2:0, result:null, variation:0, workPage:1, band:[], bandVoice:{ vol:1, mute:false }, bandSeed:0 }); lyReset();
   takeCount = 0; $('#vibe').value = ''; $('#songName').value = ''; $('#songDesc').value = ''; $('#songSell').checked = false; $('#songSave').checked = lib.profile.allowSaves !== false; fix.on = false; $('#artists').value = ''; setTimeout(renderArtistUI); $('#refLink').value = ''; $('#refLink').hidden = true; state.ref = null; $('#refInfo').textContent = ''; $('#refPlay').hidden = true; $('#refClear').hidden = true; $('#mkEditor').hidden = true;
   resetPads(); state.keyFrom = null; setKey('60:chromatic'); rec.live = [];
   ['#status1', '#status2', '#status3'].forEach((s) => setStatus($(s), ''));
@@ -8458,7 +9040,7 @@ function showPage(p){
   if (p === 1) requestAnimationFrame(renderClips);
   if (p === 2) requestAnimationFrame(layoutTimeline);
   if (p === 3){ paintIdle(); paintCoverThumb(); }
-  if (p === 4) renderLayers();
+  if (p === 4){ renderLayers(); if (state.band.length && (!lay.mix || state.band.some((l) => !l._stem)) && !lay.busy) lyBuild(); }
   if (p === 2) renderSfxPanel();
   updateTabs();
   maybeTour();
